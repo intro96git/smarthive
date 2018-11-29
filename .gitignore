@@ -1,6 +1,9 @@
-.classpath
+example/
+.settings
 .project
 .metadata
-.settings
-.vagrant
+.ivy2
 target
+.classpath
+.cache*
+.vagrant
