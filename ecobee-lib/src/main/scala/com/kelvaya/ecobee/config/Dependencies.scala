@@ -16,11 +16,12 @@ import net.codingwell.scalaguice.ScalaModule
  */
 abstract class CanInject[T: Manifest] {
 
-  /** Returns a new instance of $injectedType using Guice injection.
-    *
-    * @param injector The `ScalaInjector` that performs the injection
-    */
-  def apply()(implicit injector : ScalaInjector) = injector.instance[T]
+  /**
+   * Returns a new instance of $injectedType using Guice injection.
+   *
+   * @param injector The `ScalaInjector` that performs the injection
+   */
+  def apply()(implicit injector: ScalaInjector) = injector.instance[T]
 }
 
 object Dependencies {
