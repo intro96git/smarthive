@@ -11,5 +11,8 @@ import spray.json.JsonFormat
 trait RequestExecutor {
   def generateAuthorizationHeader: Authorization
   def getAppKey: String
+  def getAuthCode: Option[String]
+  def getAccessToken: Option[String]
+  def getRefreshToken: Option[String]
   def executeRequest[T[_] : Realizer,S : JsonFormat](req : HttpRequest) : T[Either[HttpResponse,S]]
 }

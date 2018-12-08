@@ -16,9 +16,18 @@ import com.google.inject.Provider
 import com.kelvaya.ecobee.config.Settings
 
 
-class MockReqExecutor(responses : Map[HttpRequest, JsObject])(implicit settings : Settings) extends RequestExecutor with TestConstants {
+/** May be overkill?  At least, the executeRequest method may be overkill.  Do we ever really care to have actual
+ *  responses in the tests?
+ * @author mike
+ *
+ */
+class TestExecutor(responses : Map[HttpRequest, JsObject])(implicit settings : Settings) extends RequestExecutor with TestConstants {
+
   def generateAuthorizationHeader = Authorization(OAuth2BearerToken(MockAuthToken))
-  def getAppKey = ""
+  def getAppKey = TestAppKey
+  def getAccessToken: Option[String] = Some(AccessToken)
+  def getAuthCode: Option[String] = Some(AuthCode)
+  def getRefreshToken: Option[String] = Some(RefreshToken)
 
   def executeRequest[T[_], S](req: HttpRequest)(implicit realizer: Realizer[T], formatter : JsonFormat[S]): T[Either[HttpResponse,S]] = {
     val fixedReq = req.withUri(settings.EcobeeServerRoot)

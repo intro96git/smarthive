@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.test
 
 import com.kelvaya.ecobee.Identity
-import com.kelvaya.ecobee.client.MockReqExecutor
+import com.kelvaya.ecobee.client.TestExecutor
 import com.kelvaya.ecobee.client.Realizer
 import com.kelvaya.ecobee.client.RequestExecutor
 
@@ -26,7 +26,14 @@ import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.model.HttpRequest
 import com.kelvaya.ecobee.config.Settings
 
-trait BaseTestSpec extends FlatSpec with Matchers with OptionValues with TestConstants with SprayJsonSupport with DefaultJsonProtocol with AdditionalFormats {
+trait BaseTestSpec extends FlatSpec
+with Matchers
+with OptionValues
+with TestConstants
+with SprayJsonSupport
+with DefaultJsonProtocol
+with AdditionalFormats {
+
   implicit val actorSys = ActorSystem("ecobee-lib-test-suite")
   implicit val injector: ScalaInjector = TestDependencies.injector
 
@@ -38,7 +45,7 @@ trait BaseTestSpec extends FlatSpec with Matchers with OptionValues with TestCon
 
   def realize[T[_],S](v : T[S])(implicit r : Realizer[T]) = r.realize(v)
 
-  def createExecutor(reqResp : Map[HttpRequest,JsObject])(implicit settings : Settings) : RequestExecutor = new MockReqExecutor(reqResp)
+  def createExecutor(reqResp : Map[HttpRequest,JsObject])(implicit settings : Settings) : RequestExecutor = new TestExecutor(reqResp)
 
 
   def createRequestMap(mapping : Map[HttpRequest, String])(implicit settings : Settings) : Map[HttpRequest, JsObject] = {

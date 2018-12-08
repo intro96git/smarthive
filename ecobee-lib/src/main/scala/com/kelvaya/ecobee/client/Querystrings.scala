@@ -16,6 +16,10 @@ object Querystrings {
     val SmartRead: Querystring = (("scope", PinScope.SmartRead.toString()))
   }
 
+  object GrantType {
+    val Pin : Querystring = (("grant_type", "ecobeePin"))
+  }
+
   private var _clientId: Option[Querystring] = None
   def ClientId(implicit settings: Settings) = _clientId.getOrElse {
     _clientId = Some(("client_id", settings.EcobeeAppKey))
