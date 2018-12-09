@@ -53,8 +53,30 @@ with AdditionalFormats {
     req.method shouldBe HttpMethods.POST
     req.entity shouldBe HttpEntity.Empty
     req.uri.path shouldBe Uri.Path("/token")
+    req.uri.query() should contain theSameElementsAs(Seq(("grant_type","ecobeePin"),("code",this.AuthCode),("client_id",this.ClientId)))
 
-    val TestResponse = InitialTokensResponse(AccessToken, TokenType.Bearer, TokenExpiration, RefreshToken, PinScope.SmartWrite)
+    val TestResponse = TokensResponse(InitAccessToken, TokenType.Bearer, InitTokenExpiration, InitRefreshToken, PinScope.SmartWrite)
+    TestResponse.toJson shouldBe s"""{
+      "access_token": "${InitAccessToken}",
+      "token_type": "Bearer",
+      "expires_in": ${InitTokenExpiration},
+      "refresh_token": "${InitRefreshToken}",
+      "scope": "smartWrite"
+      }""".parseJson
+  }
+
+
+  they must "include support for getting a new access token using the refresh token" in {
+    val tokenReq = new RefreshTokensRequest()
+    RefreshTokensService.execute(tokenReq)
+
+    val req: HttpRequest = tokenReq.createRequest
+    req.method shouldBe HttpMethods.POST
+    req.entity shouldBe HttpEntity.Empty
+    req.uri.path shouldBe Uri.Path("/token")
+    req.uri.query() should contain theSameElementsAs(Seq(("grant_type","refresh_token"),("refresh_token",this.RefreshToken),("client_id",this.ClientId)))
+
+    val TestResponse = TokensResponse(AccessToken, TokenType.Bearer, TokenExpiration, RefreshToken, PinScope.SmartWrite)
     TestResponse.toJson shouldBe s"""{
       "access_token": "${AccessToken}",
       "token_type": "Bearer",
@@ -63,7 +85,4 @@ with AdditionalFormats {
       "scope": "smartWrite"
       }""".parseJson
   }
-
-
-  they must "include support for getting a new access token using the refresh token" in (pending)
 }

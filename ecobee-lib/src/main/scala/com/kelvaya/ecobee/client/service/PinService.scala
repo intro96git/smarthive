@@ -25,12 +25,16 @@ class PinRequest(implicit exec: RequestExecutor, settings: Settings) extends Req
 }
 
 
+// ---------------------
+
 
 object PinResponse {
   implicit val format = DefaultJsonProtocol.jsonFormat5(PinResponse.apply)
 }
 case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scope : PinScope, interval : Int)
 
+
+// ---------------------
 
 
 object PinService extends EcobeeJsonService[PinRequest,PinResponse] {

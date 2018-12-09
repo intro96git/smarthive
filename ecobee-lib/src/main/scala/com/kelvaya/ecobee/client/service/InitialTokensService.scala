@@ -16,26 +16,17 @@ import com.kelvaya.ecobee.client.TokenType
 import spray.json.DefaultJsonProtocol
 import spray.json.JsonFormat
 import com.kelvaya.ecobee.client.PostRequest
+import com.kelvaya.ecobee.client.Querystrings.GrantType
 
-class InitialTokensRequest(implicit e : RequestExecutor, s : Settings) extends PostRequest {
-  import Querystrings._
-
-  val entity: Option[String] = None
-  val query: List[Querystring] = {
-    val qs = GrantType.Pin :: ClientId :: Nil
-    this.getAuthCodeQs map { _ :: qs } getOrElse qs
-  }
-  val uri = Uri.Path("/token")
+class InitialTokensRequest(implicit e : RequestExecutor, s : Settings) extends TokensRequest {
+  final def authTokenQs : Option[Querystrings.Entry] = this.getAuthCodeQs
+  final def grantTypeQs : Querystrings.Entry = GrantType.Pin
 }
 
 
-object InitialTokensResponse extends DefaultJsonProtocol {
-  implicit val format = DefaultJsonProtocol.jsonFormat5(InitialTokensResponse.apply)
-}
-case class InitialTokensResponse(access_token : String, token_type : TokenType, expires_in : Int, refresh_token : String, scope : PinScope)
+// ---------------------
 
 
-object InitialTokensService extends EcobeeJsonService[InitialTokensRequest,InitialTokensResponse] {
-  def execute[R[_]](implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings) : R[Either[HttpResponse, InitialTokensResponse]] =
-    this.execute(new InitialTokensRequest)
+object InitialTokensService extends TokensService[InitialTokensRequest] {
+  def newTokenRequest(implicit e : RequestExecutor, s : Settings) = new InitialTokensRequest
 }

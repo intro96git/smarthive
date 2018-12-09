@@ -15,7 +15,7 @@ object Request {
 
   private[client] val ContentTypeJson = ContentType(MediaType.applicationWithOpenCharset(JsonSubType), HttpCharsets.`UTF-8`)
 
-  def apply(reqUri: Uri.Path, querystring: List[Querystrings.Querystring] = List.empty, reqEntity: String = "")(implicit authorizer: RequestExecutor, settings: Settings) =
+  def apply(reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty, reqEntity: String = "")(implicit authorizer: RequestExecutor, settings: Settings) =
     new Request with AuthorizedRequest {
       val uri = reqUri
       val query = querystring
@@ -30,7 +30,7 @@ abstract class Request(implicit val exec: RequestExecutor, val settings: Setting
   private lazy val _serverRoot = settings.EcobeeServerRoot
 
   val uri: Uri.Path
-  val query: List[Querystrings.Querystring]
+  val query: List[Querystrings.Entry]
   val entity: Option[String]
 
   def createRequest = {
@@ -46,13 +46,24 @@ abstract class Request(implicit val exec: RequestExecutor, val settings: Setting
     ).withEntity(computedEntity)
   }
 
-  def getAuthCodeQs = exec.getAuthCode map { (("code", _)) }
+  def getAuthCodeQs : Option[Querystrings.Entry] = exec.getAuthCode map { (("code", _)) }
+
+  def getRefreshTokenQs : Querystrings.Entry = {
+    val token = exec.getRefreshToken.getOrElse("")
+    (("refresh_token", token))
+  }
 }
+
+
+// ---------------------
 
 
 trait AuthorizedRequest extends Request {
   abstract override def createRequest = super.createRequest.addHeader(exec.generateAuthorizationHeader)
 }
+
+
+// ---------------------
 
 
 trait PostRequest extends Request {
