@@ -38,5 +38,5 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
 
 
 object PinService extends EcobeeJsonService[PinRequest,PinResponse] {
-  def execute[R[_]](implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[HttpResponse, PinResponse]] = execute(new PinRequest())
+  def execute[R[_]](implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, PinResponse]] = execute(new PinRequest())
 }

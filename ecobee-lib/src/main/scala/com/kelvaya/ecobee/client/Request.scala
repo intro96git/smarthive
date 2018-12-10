@@ -23,16 +23,34 @@ object Request {
     }
 }
 
-
-abstract class Request(implicit val exec: RequestExecutor, val settings: Settings) {
+/** Ecobee API HTTP GET Request
+  *
+  * Used within an [[com.kelvaya.ecobee.client.service.EcobeeService]]
+  *
+  * @note All subclasses must implement [[#uri]], [[#query]], and [[#entity]].
+  * This base class does not add authorization headers.  For that, you must mix-in [[AuthorizedRequest]].
+  * For HTTP POST requests, mix-in [[PostRequest]].
+  *
+  * @param exec (implicit) The `RequestExecutor` responsible for sending the HTTP request
+  * @param settings (implicit) Application settings
+  */
+abstract class Request(implicit val exec : RequestExecutor, val settings : Settings) {
   import Request._
 
   private lazy val _serverRoot = settings.EcobeeServerRoot
 
+
+  /** The service endpoint */
   val uri: Uri.Path
+
+  /** The querystring parameters to be included in the request */
   val query: List[Querystrings.Entry]
+
+  /** The request body (if any) */
   val entity: Option[String]
 
+
+  /** Creates a new Akka HTTP request to encapsulate the request to the Ecobee API */
   def createRequest = {
     val computedQuery = {
       val q1 = if (this.entity.isDefined) Querystrings.JsonFormat :: Nil else Nil
@@ -46,8 +64,11 @@ abstract class Request(implicit val exec: RequestExecutor, val settings: Setting
     ).withEntity(computedEntity)
   }
 
+  /** Returns the authorization code querystring parameter used during initial authorization */
   def getAuthCodeQs : Option[Querystrings.Entry] = exec.getAuthCode map { (("code", _)) }
 
+
+  /** Returns the refresh token querystring parameter used during token refreshes */
   def getRefreshTokenQs : Querystrings.Entry = {
     val token = exec.getRefreshToken.getOrElse("")
     (("refresh_token", token))
@@ -58,6 +79,7 @@ abstract class Request(implicit val exec: RequestExecutor, val settings: Setting
 // ---------------------
 
 
+/** A mix-in trait which includes the authorization header in a [[Request]] */
 trait AuthorizedRequest extends Request {
   abstract override def createRequest = super.createRequest.addHeader(exec.generateAuthorizationHeader)
 }
@@ -66,6 +88,7 @@ trait AuthorizedRequest extends Request {
 // ---------------------
 
 
+/** A mix-in trait to make the [[Request]] an HTTP POST */
 trait PostRequest extends Request {
   abstract override def createRequest = super.createRequest.withMethod(HttpMethods.POST)
 }

@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.headers.Authorization
 import spray.json.JsonFormat
+import com.kelvaya.ecobee.client.service.ServiceError
 
 
 trait RequestExecutor {
@@ -14,5 +15,5 @@ trait RequestExecutor {
   def getAuthCode: Option[String]
   def getAccessToken: Option[String]
   def getRefreshToken: Option[String]
-  def executeRequest[T[_] : Realizer,S : JsonFormat](req : HttpRequest) : T[Either[HttpResponse,S]]
+  def executeRequest[T[_] : Realizer,S : JsonFormat](req : HttpRequest) : T[Either[ServiceError,S]]
 }

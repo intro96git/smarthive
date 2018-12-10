@@ -16,31 +16,49 @@ import akka.http.scaladsl.model.HttpRequest
 
 
 
-trait EcobeeRequest[T <: Request] {
-  def createRequest(implicit authorizer: RequestExecutor, settings: Settings): T
-}
-
-// ---------------------
-
 object EcobeeResponse {
   implicit object HttpResponse extends EcobeeResponse[HttpResponse]
 }
+
+/** Response from the Ecobee API to an HTTP Request
+  *
+  * Used within an [[EcobeeService]]
+  */
 trait EcobeeResponse[T]
 
 // ---------------------
 
+
+/** Web service supported by the Ecobee Thermostat API
+  *
+  * @tparam T The `Request` used to query the API
+  * @tparam S The response type from the API
+  *
+  * @define T T
+  * @define S S
+  */
 abstract class EcobeeService[T <: Request, S] {
-  def execute[R[_] : Realizer](req: T)(implicit client : Client) : R[Either[HttpResponse,S]]
+
+  /** Execute the given request, returning either a [[ServiceError]] or a response of type $S.
+    *
+    * @param req The $T used to query the API
+    * @param client (implicit) The API client
+    * @tparam R The container object holding the return value (in the `Realizer` type-class)
+    */
+  def execute[R[_] : Realizer](req: T)(implicit client : Client) : R[Either[ServiceError,S]]
 }
 
 // ---------------------
 
+
+/** JSON Web service supported by the Ecobee Thermostat API
+  *
+  * @tparam T The `Request` used to query the API
+  * @tparam S The JSON response type from the API
+  *
+  * @define T T
+  * @define S S
+  */
 abstract class EcobeeJsonService[T <: Request, S : JsonFormat] extends EcobeeService[T,S] {
-  final def execute[R[_] : Realizer](req: T)(implicit client : Client) : R[Either[HttpResponse,S]] = client.executeRequest(req.createRequest)
-}
-
-// ---------------------
-
-abstract class EcobeeHttpResponseService[T <: Request,R[_]] extends EcobeeService[T, HttpResponse] {
-  final def execute[R[_] : Realizer](req: T)(implicit client : Client) : R[Either[HttpResponse,HttpResponse]] = ???
+  final def execute[R[_] : Realizer](req: T)(implicit client : Client) : R[Either[ServiceError,S]] = client.executeRequest(req.createRequest)
 }

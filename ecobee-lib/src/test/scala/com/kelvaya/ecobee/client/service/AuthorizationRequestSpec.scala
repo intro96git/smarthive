@@ -13,6 +13,7 @@ import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.AdditionalFormats
 import spray.json.DefaultJsonProtocol
+import akka.http.scaladsl.model.StatusCodes
 
 
 class AuthorizationRequestSpec extends BaseTestSpec
@@ -84,5 +85,37 @@ with AdditionalFormats {
       "refresh_token": "${RefreshToken}",
       "scope": "smartWrite"
       }""".parseJson
+  }
+
+
+  they must "handle error statuses" in {
+    val TestError = ServiceError("not_supported", "test error message", "http://example.org/testme")
+    TestError.toJson shouldBe """{
+      "error" : "not_supported",
+      "error_description" : "test error message",
+      "error_uri" : "http://example.org/testme"
+      }""".parseJson
+
+    Map(
+    "access_denied" -> StatusCodes.Found,
+    "invalid_request" -> StatusCodes.BadRequest,
+    "invalid_client"  -> StatusCodes.Unauthorized,
+    "invalid_grant" -> StatusCodes.BadRequest,
+    "unauthorized_client"-> StatusCodes.BadRequest,
+    "unsupported_grant_type" -> StatusCodes.BadRequest,
+    "invalid_scope" -> StatusCodes.BadRequest,
+    "not_supported" -> StatusCodes.BadRequest,
+    "account_locked" -> StatusCodes.Unauthorized,
+    "account_disabled"-> StatusCodes.Unauthorized,
+    "authorization_pending"-> StatusCodes.Unauthorized,
+    "slow_down"-> StatusCodes.Unauthorized
+    ).map {
+      case (e,s) => ServiceError(e, "", "").statusCode shouldBe s
+    }
+
+    val bad = ServiceError("bad_error", "", "")
+    intercept[NoSuchElementException] {
+      bad.statusCode
+    }
   }
 }

@@ -10,6 +10,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
 import akka.stream.ActorMaterializer
 import spray.json.JsonFormat
+import com.kelvaya.ecobee.client.service.ServiceError
 
 final class Client @Inject() (implicit exec: RequestExecutor, settings: Settings, system: ActorSystem) {
   private implicit val _materializer = ActorMaterializer()

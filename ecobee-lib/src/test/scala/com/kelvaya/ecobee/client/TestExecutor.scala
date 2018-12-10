@@ -14,6 +14,7 @@ import spray.json.JsObject
 import akka.http.scaladsl.model.StatusCodes
 import com.google.inject.Provider
 import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.service.ServiceError
 
 
 /** May be overkill?  At least, the executeRequest method may be overkill.  Do we ever really care to have actual
@@ -29,9 +30,9 @@ class TestExecutor(responses : Map[HttpRequest, JsObject])(implicit settings : S
   def getAuthCode: Option[String] = Some(AuthCode)
   def getRefreshToken: Option[String] = Some(RefreshToken)
 
-  def executeRequest[T[_], S](req: HttpRequest)(implicit realizer: Realizer[T], formatter : JsonFormat[S]): T[Either[HttpResponse,S]] = {
+  def executeRequest[T[_], S](req: HttpRequest)(implicit realizer: Realizer[T], formatter : JsonFormat[S]): T[Either[ServiceError,S]] = {
     val fixedReq = req.withUri(settings.EcobeeServerRoot)
     val resp = responses.get(fixedReq).map { json => Right(formatter.read(json))}
-    realizer.pure(resp.getOrElse(Left(HttpResponse(StatusCodes.NotFound))))
+    realizer.pure(resp.getOrElse(Left(ServiceError("not_supported", "HTTP method not supported for this request.", req.uri.toString))))
   }
 }

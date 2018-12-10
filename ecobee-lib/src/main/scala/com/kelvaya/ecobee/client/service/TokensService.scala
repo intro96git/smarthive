@@ -43,7 +43,7 @@ case class TokensResponse(access_token : String, token_type : TokenType, expires
 
 trait TokensService[T <: TokensRequest] extends EcobeeJsonService[T,TokensResponse] {
 
-  def execute[R[_]](implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings) : R[Either[HttpResponse, TokensResponse]] =
+  def execute[R[_]](implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings) : R[Either[ServiceError, TokensResponse]] =
     this.execute(this.newTokenRequest)
 
   protected def newTokenRequest(implicit e : RequestExecutor, s : Settings) : T
