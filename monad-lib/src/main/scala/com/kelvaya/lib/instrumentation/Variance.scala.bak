@@ -1,0 +1,44 @@
+package com.kelvaya.lib.instrumentation
+
+object Variance {
+
+
+  class PetCarrier[T] {
+
+    val pet : Option[T] = None
+
+    def gimmeMyPet() : T
+    def lockItUp(pet : T) : Unit
+  }
+
+  class Animal
+  class Dog extends Animal
+  class Poodle extends Dog
+  class Elephant extends Animal
+
+
+  def pickupMyDog(carrier : PetCarrier[Dog]) = {
+    // Yey!  My dog is back!
+    val myDog = carrier.gimmeMyPet()
+  }
+
+//  pickupMyDog(new PetCarrier[Animal] { val pet = Some(new Elephant) }) // !!!!! you won't be finding a dog in there!
+  pickupMyDog(new PetCarrier[Dog]{ val pet = Some(new Poodle) }) // This is fine.  co-variance fun!
+
+ // ================================================================
+
+  def sendDogToVet(carrier : PetCarrier[Dog]) = {
+
+    // Poor doggie!
+    val myPoorDog = new Poodle
+    carrier.lockItUp(myPoorDog)
+  }
+
+
+  sendDogToVet(new PetCarrier[Dog]) // Hell yeah, a dog carrier can of course hold a poodle
+
+  // Ummm, maybe?  It could be a snake carrier.  It could be an elephant carrier.  Who knows?  It's a carrier
+  // for an animal with absolutely no way to tell what type of animal it can actually hold.
+//  sendDogToVet(new PetCarrier[Animal])
+
+}

@@ -1,30 +1,9 @@
 package com.kelvaya.lib.instrumentation
 
-object Instrumented {
-}
+import scala.reflect._
 
-
-
-trait Instrumented[+T] {
-  type Arg
-  type Return
-
-  def probe(arg : Arg)(implicit probe : Prober) : Executed[Return]
-  def probeWith(prober : Prober, arg : Arg) : Executed[Return] = this.probe(arg)(prober)
-
-  def map[F1 <: Operation : Instrumentor](mapOp : F1) : Instrumented[F1] = {
-//    val mapFn = mapOp(instrumentor)
-    ???
-  }
-
-  def flatMap[F1 <: Operation : Instrumentor](fn : F1) : Instrumented[F1] = {
-//    ev.track(fn(e))
-    ???
-  }
-
-  def foreach(fn : T => Any) : Unit = {
-//    fn(e)
-    ()
-  }
-
+class Instrumented[F : Instrumentor](x : F) {
+  def map[F1: Instrumentor](mapOp : F => F1) : Instrumented[F1] = new Instrumented(mapOp(x))
+  def flatMap[F1: Instrumentor](fn : F => Instrumented[F1]) : Instrumented[F1] = fn(x)
+  def foreach(fn : F => Any) : Unit = { fn(x); () }
 }
