@@ -43,7 +43,7 @@ with AdditionalFormats {
   }
 
 
-  def realize[T[_],S](v : T[S])(implicit r : Realizer[T]) = r.realize(v)
+//  def realize[T[_],S](v : T[S])(implicit r : Realizer[T]) = r.realize(v)
 
   def createTestExecutor(reqResp : Map[HttpRequest,JsObject])(implicit settings : Settings) : RequestExecutor = new TestExecutor(reqResp)
 
