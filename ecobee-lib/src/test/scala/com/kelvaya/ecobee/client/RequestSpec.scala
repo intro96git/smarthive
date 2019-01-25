@@ -13,7 +13,7 @@ import akka.http.scaladsl.model.headers
 class RequestSpec extends BaseTestSpec {
 
   implicit lazy val settings = this.injector.instance[Settings]
-  implicit lazy val authFactory = this.createExecutor(Map.empty)
+  implicit lazy val authFactory = this.createTestExecutor(Map.empty)
 
   "All requests" must "include a JSON HTTP header" in {
     val req = Request(Uri.Path("/test-uri")).createRequest

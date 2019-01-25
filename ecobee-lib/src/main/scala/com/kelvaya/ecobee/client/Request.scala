@@ -15,7 +15,16 @@ object Request {
 
   private[client] val ContentTypeJson = ContentType(MediaType.applicationWithOpenCharset(JsonSubType), HttpCharsets.`UTF-8`)
 
-  def apply(reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty, reqEntity: String = "")(implicit authorizer: RequestExecutor, settings: Settings) =
+  /** Create a new [[AuthorizedRequest]] at the given URI.
+    *
+    * @param reqUri The URI of the HTTP request
+    * @param querystring A list of querystrings to add to the request.  Defaults to an empty list.
+    * @param reqEntity The body of the HTTP request.  Defaults to an empty string.
+    * @param authorizer (implicit) The `RequestExecutor` responsible for executing the HTTP request
+    * @param settings (implicit) The application settings
+    */
+  def apply(reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty, reqEntity: String = "")
+  (implicit authorizer: RequestExecutor, settings: Settings) =
     new Request with AuthorizedRequest {
       val uri = reqUri
       val query = querystring

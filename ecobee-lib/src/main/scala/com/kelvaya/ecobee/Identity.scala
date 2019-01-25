@@ -2,6 +2,7 @@ package com.kelvaya.ecobee
 
 import com.kelvaya.ecobee.client.Realizer
 
+/** Identity Monad */
 final class Identity[A](a : A) {
   def get = a
   def flatMap[B](f : (A) ⇒ Identity[B]) = f(a)

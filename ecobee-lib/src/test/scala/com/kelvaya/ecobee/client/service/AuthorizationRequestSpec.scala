@@ -16,25 +16,24 @@ import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.model.StatusCodes
 
 
-class AuthorizationRequestSpec extends BaseTestSpec
-with SprayJsonSupport
-with DefaultJsonProtocol
-with AdditionalFormats {
+class AuthorizationRequestSpec extends BaseTestSpec {
 
   implicit lazy val settings = this.injector.instance[Settings]
-  implicit lazy val exec = this.createExecutor(Map.empty)
+  implicit lazy val exec = this.createTestExecutor(Map.empty)
   implicit lazy val client = new Client
 
   "Services" must "include support for registering a new application PIN" in {
     val pinReq = new PinRequest()
     PinService.execute(pinReq)
 
+    // Confirm generated HTTP request is validly structured
     val req: HttpRequest = pinReq.createRequest
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.Empty
     req.uri.path shouldBe Uri.Path("/authorize")
     req.uri.query() should contain theSameElementsAs(Seq(("response_type","ecobeePin"),("client_id",this.ClientId),("scope","smartWrite")))
 
+    // Confirm expected response is validly structured
     val TestResponse = PinResponse(Pin, PinExpiration, AuthCode, PinScope.SmartWrite, PinInterval)
     TestResponse.toJson shouldBe s"""{
       "ecobeePin": "${Pin}",
@@ -50,12 +49,14 @@ with AdditionalFormats {
     val initTokenReq = new InitialTokensRequest()
     InitialTokensService.execute(initTokenReq)
 
+    // Confirm generated HTTP request is validly structured
     val req: HttpRequest = initTokenReq.createRequest
     req.method shouldBe HttpMethods.POST
     req.entity shouldBe HttpEntity.Empty
     req.uri.path shouldBe Uri.Path("/token")
     req.uri.query() should contain theSameElementsAs(Seq(("grant_type","ecobeePin"),("code",this.AuthCode),("client_id",this.ClientId)))
 
+    // Confirm expected response is validly structured
     val TestResponse = TokensResponse(InitAccessToken, TokenType.Bearer, InitTokenExpiration, InitRefreshToken, PinScope.SmartWrite)
     TestResponse.toJson shouldBe s"""{
       "access_token": "${InitAccessToken}",
@@ -71,12 +72,14 @@ with AdditionalFormats {
     val tokenReq = new RefreshTokensRequest()
     RefreshTokensService.execute(tokenReq)
 
+    // Confirm generated HTTP request is validly structured
     val req: HttpRequest = tokenReq.createRequest
     req.method shouldBe HttpMethods.POST
     req.entity shouldBe HttpEntity.Empty
     req.uri.path shouldBe Uri.Path("/token")
     req.uri.query() should contain theSameElementsAs(Seq(("grant_type","refresh_token"),("refresh_token",this.RefreshToken),("client_id",this.ClientId)))
 
+    // Confirm expected response is validly structured
     val TestResponse = TokensResponse(AccessToken, TokenType.Bearer, TokenExpiration, RefreshToken, PinScope.SmartWrite)
     TestResponse.toJson shouldBe s"""{
       "access_token": "${AccessToken}",
