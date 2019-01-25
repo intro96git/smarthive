@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.headers.Authorization
 import spray.json.JsonFormat
 import com.kelvaya.ecobee.client.service.ServiceError
+import com.kelvaya.util.Realizer
 
 
 /** Executes HTTP requests to the Ecobee API */

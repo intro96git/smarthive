@@ -7,7 +7,7 @@ import com.kelvaya.ecobee.config.Settings
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.HttpResponse
-import com.kelvaya.ecobee.client.Realizer
+import com.kelvaya.util.Realizer
 import com.kelvaya.ecobee.client.Client
 
 import scala.language.higherKinds

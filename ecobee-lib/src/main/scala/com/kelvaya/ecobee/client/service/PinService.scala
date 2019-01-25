@@ -2,7 +2,7 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.Querystrings._
-import com.kelvaya.ecobee.client.Realizer
+import com.kelvaya.util.Realizer
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.config.Settings

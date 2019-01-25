@@ -15,6 +15,7 @@ import akka.http.scaladsl.model.StatusCodes
 import com.google.inject.Provider
 import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.client.service.ServiceError
+import com.kelvaya.util.Realizer
 
 
 /** May be overkill?  At least, the executeRequest method may be overkill.  Do we ever really care to have actual

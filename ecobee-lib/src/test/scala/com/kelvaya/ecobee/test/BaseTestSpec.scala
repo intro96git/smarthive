@@ -1,8 +1,8 @@
 package com.kelvaya.ecobee.test
 
-import com.kelvaya.ecobee.Identity
+import com.kelvaya.util.Identity
 import com.kelvaya.ecobee.client.TestExecutor
-import com.kelvaya.ecobee.client.Realizer
+import com.kelvaya.util.Realizer
 import com.kelvaya.ecobee.client.RequestExecutor
 
 import scala.concurrent.Await

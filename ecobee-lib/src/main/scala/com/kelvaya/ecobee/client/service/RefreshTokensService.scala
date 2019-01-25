@@ -3,7 +3,7 @@ package com.kelvaya.ecobee.client.service
 import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.PostRequest
-import com.kelvaya.ecobee.client.Realizer
+import com.kelvaya.util.Realizer
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.config.Settings
