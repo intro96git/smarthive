@@ -13,19 +13,20 @@ import scala.language.higherKinds
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import akka.event.LoggingBus
 
 object ThermostatSummaryRequest {
-  implicit def ThermostatSummaryRequestFormat(implicit e : RequestExecutor, s : Settings) = DefaultJsonProtocol.jsonFormat1(ThermostatSummaryRequest.apply)
+  implicit def ThermostatSummaryRequestFormat(implicit e : RequestExecutor, s : Settings) : JsonFormat[ThermostatSummaryRequest] = ???
 
   private val Endpoint = Uri.Path("/thermostatSummary")
-  private lazy val Format = implicitly[JsonFormat[Selection]]
+  private def getFormat(implicit lb : LoggingBus) = Select.getFormat
 }
 
-case class ThermostatSummaryRequest(selection : Selection)(implicit e : RequestExecutor, s : Settings) extends Request {
+case class ThermostatSummaryRequest(selection : Select)(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends Request {
   import ThermostatSummaryRequest._
 
   val entity: Option[String] = None
-  val query: List[Querystrings.Entry] = (("selection", Format.write(selection).compactPrint)) :: Nil
+  val query: List[Querystrings.Entry] = (("selection", getFormat.write(selection).compactPrint)) :: Nil
   val uri: Uri.Path = ThermostatSummaryRequest.Endpoint
 
 }
@@ -43,6 +44,6 @@ case class ThermostatSummaryResponse(revisionList : Seq[CSV], thermostatCount : 
 
 
 object ThermostatSummaryService extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
-  def execute[R[_]](selection : Selection)(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, ThermostatSummaryResponse]] =
+  def execute[R[_]](selection : Select)(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings, lb : LoggingBus): R[Either[ServiceError, ThermostatSummaryResponse]] =
     execute(new ThermostatSummaryRequest(selection))
 }

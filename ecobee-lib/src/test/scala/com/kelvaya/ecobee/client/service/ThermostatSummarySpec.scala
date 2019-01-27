@@ -19,7 +19,7 @@ class ThermostatSummarySpec extends BaseTestSpec {
 
   "The thermostat summary service" must "serialize requests correctly" in {
 
-    val selection = Selection()
+    val selection : Select = ???
     ThermostatSummaryService.execute(selection)
 
     val thermReq = new ThermostatSummaryRequest(selection)
@@ -28,8 +28,9 @@ class ThermostatSummarySpec extends BaseTestSpec {
     val req: HttpRequest = thermReq.createRequest
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.Empty
-    req.uri.path shouldBe Uri.Path("/authorize")
-    req.uri.query() should contain theSameElementsAs(Seq(("response_type","ecobeePin"),("client_id",this.ClientId),("scope","smartWrite")))
+    req.uri.path shouldBe Uri.Path("/thermostatSummary")
+    pending
+    //req.uri.query() should contain theSameElementsAs(Seq(("selection","")))
   }
 
 

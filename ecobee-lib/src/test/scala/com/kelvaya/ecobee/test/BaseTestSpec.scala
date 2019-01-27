@@ -25,6 +25,7 @@ import spray.json.AdditionalFormats
 import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.model.HttpRequest
 import com.kelvaya.ecobee.config.Settings
+import akka.event.LoggingBus
 
 trait BaseTestSpec extends FlatSpec
 with Matchers
@@ -35,15 +36,13 @@ with DefaultJsonProtocol
 with AdditionalFormats {
 
   implicit val actorSys = ActorSystem("ecobee-lib-test-suite")
+  implicit val loggingBus = actorSys.eventStream
   implicit val injector: ScalaInjector = TestDependencies.injector
 
   implicit object TestRealizer extends Realizer[Identity] {
     def realize[S](v : Identity[S]) : S = v.get
     def pure[S](v: S): Identity[S] = new Identity(v)
   }
-
-
-//  def realize[T[_],S](v : T[S])(implicit r : Realizer[T]) = r.realize(v)
 
   def createTestExecutor(reqResp : Map[HttpRequest,JsObject])(implicit settings : Settings) : RequestExecutor = new TestExecutor(reqResp)
 
