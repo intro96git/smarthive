@@ -19,30 +19,47 @@ class ThermostatSummarySpec extends BaseTestSpec {
 
   "The thermostat summary service" must "serialize requests correctly" in {
 
-    val selection : Select = ???
-    ThermostatSummaryService.execute(selection)
+    val service = new ThermostatSummaryService()
+    service.execute(SelectType.Thermostats, true)
 
-    val thermReq = new ThermostatSummaryRequest(selection)
-    ThermostatSummaryService.execute(thermReq)
+    val thermReq = new ThermostatSummaryRequest(SelectType.Thermostats, true)
+    service.execute(thermReq)
+
+    val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeEquipmentStatus":true}""".parseJson
 
     val req: HttpRequest = thermReq.createRequest
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.Empty
     req.uri.path shouldBe Uri.Path("/thermostatSummary")
-    pending
-    //req.uri.query() should contain theSameElementsAs(Seq(("selection","")))
+    val qsSelection = req.uri.query().get("selection")
+    qsSelection.value.parseJson shouldBe expectedSelectionQs
+
+    req.uri.query().size shouldBe 1
   }
 
 
   it must "deserialize revision list responses correctly" in {
-    val TestResponse = ThermostatSummaryResponse(??? : Seq[CSV], thermostatCount=1, ??? : Seq[CSV], ??? : Status)
-    TestResponse.toJson shouldBe s"""{
-      "ecobeePin": "${Pin}",
-      "code": "${AuthCode}",
-      "scope": "smartWrite",
-      "expires_in": ${PinExpiration},
-      "interval": ${PinInterval}
+
+    val csvResponse = Seq(
+      RevisionListItem("id1", Some("name1"), true, "therm1123", "alert1123", "runtime1123", "interval1123"),
+      RevisionListItem("id2", Some("name2"), true, "therm2345", "alert2345", "runtime2345", "interval2345")
+    )
+
+    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=2, None, Status(200, "OK"))
+    val serialized = """{
+      "revisionList" : [
+        "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
+        "id2:name2:true:therm2345:alert2345:runtime2345:interval2345"
+      ],
+      "thermostatCount" : 2,
+      "status" : {
+        "code" : 200,
+        "message" : "OK"
+      }
       }""".parseJson
+
+    serialized.convertTo[ThermostatSummaryResponse] shouldBe deserialized
+    deserialized.toJson shouldBe serialized
   }
 
   it must "deserialize equipment status list responses correctly" in (pending)

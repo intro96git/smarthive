@@ -2,20 +2,23 @@ package com.kelvaya.ecobee.client.service
 
 import akka.event.Logging
 import akka.event.LoggingBus
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 
-object EquipmentStatusList {
+object EquipmentStatusListItem {
 
   /** Return new [[EquipmentStatusList]] from the given [[CSV]].
     *
     * @note The CSV must contain exactly 2 values to be accepted.
     */
-  def apply(csv : CSV)(implicit logBus : LoggingBus) : EquipmentStatusList = {
-    val lov = csv.value.split(CSV.Delimter)
+  def fromCSV(csv : CSV)(implicit logBus : LoggingBus) : EquipmentStatusListItem = {
+    val lov = csv.value.split(CSV.Delimiter)
     if (lov.size != 2) throw new IllegalArgumentException(s"Equipment status lists expect 2 values.  ${csv} contains ${lov.size}.")
-    EquipmentStatusList(thermoId         = lov(0),
+    EquipmentStatusListItem(thermoId         = lov(0),
                         equipment        = parseEquipment(lov(1))
     )
   }
+
 
   private def parseEquipment(equip : String)(implicit logBus : LoggingBus) = {
     val (good,bad) = equip.split(",").partition(s => Equipment.values.exists(_.toString == s))
@@ -28,12 +31,25 @@ object EquipmentStatusList {
 
     (good map Equipment.withName).toIterable
   }
+
+
+  /** JSON serialization for [[EquipmentStatusListItem]] */
+  implicit def equipStatusListItemFormatter(implicit lb : LoggingBus) : RootJsonFormat[EquipmentStatusListItem] = new RootJsonFormat[EquipmentStatusListItem] {
+    def read(json: JsValue): EquipmentStatusListItem = {
+      json match {
+        case j : JsString => fromCSV(CSV(j.value))
+        case _ => throw new DeserializationException("${json} is not a valid Equipment Status entry")
+      }
+    }
+
+    def write(obj: EquipmentStatusListItem): JsValue = {
+      val csvVals = Seq(obj.thermoId, obj.equipment.mkString(","))
+      CSV(csvVals).toJson
+    }
+  }
 }
 
-/*
- * Thermostat Identifier   String   The thermostat identifier.
-Equipment Status   String   If no equipment is currently running no data is returned. Possible values are: heatPump, heatPump2, heatPump3, compCool1, compCool2, auxHeat1, auxHeat2, auxHeat3, fan, humidifier, dehumidifier, ventilator, economizer, compHotWater, auxHotWater.
- */
+
 
 /** Status of equipment as reported by Ecobee API for a specific thermostat
   *
@@ -43,7 +59,7 @@ Equipment Status   String   If no equipment is currently running no data is retu
   * @param thermoId The thermostat identifier.
   * @param equipment Equipment currently running
   */
-case class EquipmentStatusList(
+case class EquipmentStatusListItem(
     thermoId :  String,
     equipment : Iterable[Equipment.Value]
 )

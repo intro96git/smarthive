@@ -10,40 +10,51 @@ import com.kelvaya.util.Realizer
 
 import scala.language.higherKinds
 
+import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import akka.event.LoggingBus
 
 object ThermostatSummaryRequest {
-  implicit def ThermostatSummaryRequestFormat(implicit e : RequestExecutor, s : Settings) : JsonFormat[ThermostatSummaryRequest] = ???
-
   private val Endpoint = Uri.Path("/thermostatSummary")
-  private def getFormat(implicit lb : LoggingBus) = Select.getFormat
+
+  private def getJson(st : SelectType, es : Boolean)(implicit lb : LoggingBus) = {
+    Select(selectType = st, includeEquipmentStatus = es).toJson.compactPrint
+  }
 }
 
-case class ThermostatSummaryRequest(selection : Select)(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends Request {
+
+case class ThermostatSummaryRequest(selectType : SelectType, includeEquipStatus : Boolean = false)
+(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends Request {
   import ThermostatSummaryRequest._
 
   val entity: Option[String] = None
-  val query: List[Querystrings.Entry] = (("selection", getFormat.write(selection).compactPrint)) :: Nil
+  val query: List[Querystrings.Entry] = (("selection", getJson(selectType, includeEquipStatus))) :: Nil
   val uri: Uri.Path = ThermostatSummaryRequest.Endpoint
 
 }
 
 
 // ############################################################
+// ############################################################
 
 object ThermostatSummaryResponse {
-  implicit val ThermostatSummaryResponseFormat = DefaultJsonProtocol.jsonFormat4(ThermostatSummaryResponse.apply)
+  implicit def getResponseFormat(implicit lb : LoggingBus) = DefaultJsonProtocol.jsonFormat4(ThermostatSummaryResponse.apply)
 }
-case class ThermostatSummaryResponse(revisionList : Seq[CSV], thermostatCount : Int, statusList : Seq[CSV], status : Status)
+
+case class ThermostatSummaryResponse(
+    revisionList :    Seq[RevisionListItem],
+    thermostatCount : Int,
+    statusList :      Option[Seq[EquipmentStatusListItem]],
+    status :          Status
+)
 
 
 // ############################################################
+// ############################################################
 
 
-object ThermostatSummaryService extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
-  def execute[R[_]](selection : Select)(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings, lb : LoggingBus): R[Either[ServiceError, ThermostatSummaryResponse]] =
-    execute(new ThermostatSummaryRequest(selection))
+class ThermostatSummaryService(implicit lb : LoggingBus) extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
+  def execute[R[_]](selectType : SelectType, includeEquipStatus : Boolean = false)(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, ThermostatSummaryResponse]] =
+    execute(new ThermostatSummaryRequest(selectType, includeEquipStatus))
 }

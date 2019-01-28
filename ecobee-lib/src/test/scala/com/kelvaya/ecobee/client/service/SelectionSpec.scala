@@ -40,6 +40,27 @@ class SelectionSpec extends BaseTestSpec {
         "includeAudio" : true,
         "includeEnergy" : true
       }""".parseJson
+
+
+    val select2 = Select(SelectType.Registered("test"), includeAlerts = true)
+
+    val expected2 = """{
+      "selectionType" : "registered",
+      "selectionMatch" : "test",
+      "includeAlerts" : true
+      }""".parseJson
+
+    select2.toJson shouldBe expected2
+
+    val select3 = Select(SelectType.ManagementSet("testms"))
+
+    val expected3 = """{
+      "selectionType" : "managementSet",
+      "selectionMatch" : "testms"
+      }""".parseJson
+
+    select3.toJson shouldBe expected3
+
   }
 
 
@@ -190,6 +211,7 @@ class SelectionSpec extends BaseTestSpec {
     actual shouldBe expected
     actual shouldBe alsoExpected
   }
+
 
 
   it must "properly handle all values for SelectionType" in {

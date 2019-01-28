@@ -19,8 +19,7 @@ private[client] class SelectFormat(implicit lb : LoggingBus) extends RootJsonFor
   }
 
   def write(obj : Select) : JsValue = {
-    JsObject(
-      Map(
+    val fullMap = Map(
         "selectionType" -> JsString(obj.selectType.id.toString),
         "selectionMatch" -> JsString(obj.selectType.selectionMatch),
         "includeRuntime" -> JsBoolean(obj.includeRuntime),
@@ -48,7 +47,14 @@ private[client] class SelectFormat(implicit lb : LoggingBus) extends RootJsonFor
         "includeAudio" -> JsBoolean(obj.includeAudio),
         "includeEnergy" -> JsBoolean(obj.includeEnergy)
       )
-    )
+
+    // NB: Remove any "false" values from map to make requests more concise
+    val filteredMap = fullMap.filter {
+      case ((_,v : JsBoolean)) => v.value
+      case _ => true
+    }
+
+    JsObject(filteredMap)
   }
 
 
