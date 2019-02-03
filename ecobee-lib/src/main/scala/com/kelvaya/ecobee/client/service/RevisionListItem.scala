@@ -14,7 +14,7 @@ object RevisionListItem {
     RevisionListItem(
       thermoId         = lov(0),
       thermoName       = if (lov(1).isEmpty()) None else Some(lov(1)),
-      connected        = lov(2).toLowerCase() == "true",
+      connected        = lov(2).toBoolean,
       thermoRevision   = lov(3),
       alertsRevision   = lov(4),
       runtimeRevision  = lov(5),
@@ -27,8 +27,11 @@ object RevisionListItem {
   implicit object RevisionListItemFormatter extends RootJsonFormat[RevisionListItem] {
     def read(json: JsValue): RevisionListItem = {
       json match {
-        case j : JsString => fromCSV(CSV(j.value))
-        case _ => throw new DeserializationException("${json} is not a valid Revision List")
+        case j : JsString => {
+          try fromCSV(CSV(j.value))
+          catch { case ex : Throwable => deserializationError(s"${json} is not a valid Revision List", ex) }
+        }
+        case _ => throw new DeserializationException(s"${json} is not a valid Revision List")
       }
     }
 
