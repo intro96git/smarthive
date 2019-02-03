@@ -62,6 +62,32 @@ class ThermostatSummarySpec extends BaseTestSpec {
     deserialized.toJson shouldBe serialized
   }
 
+  it must "deserialize equipment status list responses correctly" in {
+    val csvResponse = Seq(
+      RevisionListItem("id1", Some("name1"), true, "therm1123", "alert1123", "runtime1123", "interval1123"),
+    )
+    val equipResponse = Seq(
+      EquipmentStatusListItem("id1", Seq(Equipment.AC1, Equipment.Fan))
+    )
+
+    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=1, Some(equipResponse), Status(200, "OK"))
+    val serialized = """{
+    "revisionList" : [
+      "id1:name1:true:therm1123:alert1123:runtime1123:interval1123"
+    ],
+    "thermostatCount" : 1,
+    "status" : {
+      "code" : 200,
+      "message" : "OK"
+    },
+    "statusList" : [
+      "id1:compCool1,fan"
+    ]
+    }""".parseJson
+
+    serialized.convertTo[ThermostatSummaryResponse] shouldBe deserialized
+    deserialized.toJson shouldBe serialized
+  }
 
   it must "refuse to parse poorly-formed responses" in {
 
@@ -159,6 +185,59 @@ class ThermostatSummarySpec extends BaseTestSpec {
       }
     }""".parseJson
 
+    val serialized10 = """{
+    "revisionList" : [
+      "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
+      "id2:name2:false:therm2345:alert2345:runtime2345:interval2345"
+    ],
+    "thermostatCount" : 2,
+    "status" : {
+        "code" : 200,
+        "message" : ""
+      },
+    "statusList" : "helloworld"
+    }""".parseJson
+
+    val serialized11 = """{
+    "revisionList" : [
+      "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
+      "id2:name2:false:therm2345:alert2345:runtime2345:interval2345"
+    ],
+    "thermostatCount" : 2,
+    "status" : {
+        "code" : 200,
+        "message" : ""
+      },
+    "statusList" : [ "" ]
+    }""".parseJson
+
+    val serialized12 = """{
+    "revisionList" : [
+      "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
+      "id2:name2:false:therm2345:alert2345:runtime2345:interval2345"
+    ],
+    "thermostatCount" : 2,
+    "status" : {
+        "code" : 200,
+        "message" : ""
+      },
+    "statusList" : [ "abc" ]
+    }""".parseJson
+
+    val serialized13 = """{
+    "revisionList" : [
+      "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
+      "id2:name2:false:therm2345:alert2345:runtime2345:interval2345"
+    ],
+    "thermostatCount" : 2,
+    "status" : {
+        "code" : 200,
+        "message" : ""
+      },
+    "statusList" : [ ":compCool1" ]
+    }""".parseJson
+
+
     intercept[DeserializationException] { serialized1.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized2.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized3.convertTo[ThermostatSummaryResponse] }
@@ -168,7 +247,9 @@ class ThermostatSummarySpec extends BaseTestSpec {
     intercept[DeserializationException] { serialized7.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized8.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized9.convertTo[ThermostatSummaryResponse] }
+    intercept[DeserializationException] { serialized10.convertTo[ThermostatSummaryResponse] }
+    intercept[DeserializationException] { serialized11.convertTo[ThermostatSummaryResponse] }
+    intercept[DeserializationException] { serialized12.convertTo[ThermostatSummaryResponse] }
+    intercept[DeserializationException] { serialized13.convertTo[ThermostatSummaryResponse] }
   }
-
-  it must "deserialize equipment status list responses correctly" in (pending)
 }

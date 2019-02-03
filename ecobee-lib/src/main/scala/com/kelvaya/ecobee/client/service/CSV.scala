@@ -6,7 +6,7 @@ import spray.json.JsValue
 import spray.json.RootJsonFormat
 
 object CSV {
-  val Delimiter = ':'
+  val Delimiter = ":"
 
   def apply(vals : Iterable[String]) : CSV = CSV(vals.mkString(Delimiter.toString))
 

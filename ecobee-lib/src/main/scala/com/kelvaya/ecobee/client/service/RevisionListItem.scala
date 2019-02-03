@@ -9,7 +9,7 @@ object RevisionListItem {
     * @note The CSV must contain exactly 7 values to be accepted.
     */
   def fromCSV(csv : CSV) : RevisionListItem = {
-    val lov = csv.value.split(CSV.Delimiter)
+    val lov = csv.value.split(CSV.Delimiter, 7)
     if (lov.size != 7) throw new IllegalArgumentException(s"Revision lists expect 7 values.  ${csv} only contains ${lov.size}.")
     RevisionListItem(
       thermoId         = lov(0),

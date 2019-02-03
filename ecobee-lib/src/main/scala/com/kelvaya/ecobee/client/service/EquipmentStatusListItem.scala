@@ -12,10 +12,11 @@ object EquipmentStatusListItem {
     * @note The CSV must contain exactly 2 values to be accepted.
     */
   def fromCSV(csv : CSV)(implicit logBus : LoggingBus) : EquipmentStatusListItem = {
-    val lov = csv.value.split(CSV.Delimiter)
+    val lov = csv.value.split(CSV.Delimiter, 2)
     if (lov.size != 2) throw new IllegalArgumentException(s"Equipment status lists expect 2 values.  ${csv} contains ${lov.size}.")
-    EquipmentStatusListItem(thermoId         = lov(0),
-                        equipment        = parseEquipment(lov(1))
+    EquipmentStatusListItem(
+      thermoId  = if (lov(0).size > 0) lov(0) else throw new IllegalArgumentException("Bad equipment status item; thermostats cannot have a blank ID"),
+      equipment = parseEquipment(lov(1))
     )
   }
 
@@ -37,8 +38,13 @@ object EquipmentStatusListItem {
   implicit def equipStatusListItemFormatter(implicit lb : LoggingBus) : RootJsonFormat[EquipmentStatusListItem] = new RootJsonFormat[EquipmentStatusListItem] {
     def read(json: JsValue): EquipmentStatusListItem = {
       json match {
-        case j : JsString => fromCSV(CSV(j.value))
-        case _ => throw new DeserializationException("${json} is not a valid Equipment Status entry")
+        case j : JsString => {
+          try fromCSV(CSV(j.value))
+          catch {
+            case e : Throwable => deserializationError(s"${json} is not a valid Equipment Status entry", e)
+          }
+        }
+        case _ => deserializationError(s"${json} is not a valid Equipment Status entry")
       }
     }
 
