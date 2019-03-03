@@ -15,8 +15,10 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.2.1",
   "com.typesafe" % "config" % "1.3.3",
   
-  "org.slf4j" % "slf4j-api" % "1.7.25",
+  Slf4j,
   
+  JodaTime,
+  JodaConvert,
   ScalaTime,
 
   "com.typesafe.akka" %% "akka-http-testkit"    % akkaHttpVersion % Test,

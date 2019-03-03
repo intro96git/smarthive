@@ -1,0 +1,18 @@
+package com.kelvaya.ecobee.client
+
+import spray.json.DefaultJsonProtocol
+import com.kelvaya.util.Time.FullDate
+import com.kelvaya.util.SprayImplicits
+
+
+/** Weather and forcasts for the [[Thermostat thermostat's]] [[Location]].
+ *  timestamp   String   yes   no   The time stamp in UTC of the weather forecast.
+weatherStation   String   yes   no   The weather station identifier.
+forecasts   WeatherForecast[]   yes   no   The list of latest weather station forecasts.
+ */
+case class Weather(timestamp : FullDate, weatherStation : String, forecasts : Seq[WeatherForecast])
+
+object Weather extends SprayImplicits {
+  implicit val WeatherFormat = DefaultJsonProtocol.jsonFormat3(Weather.apply)
+
+}
