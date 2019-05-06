@@ -15,12 +15,15 @@ import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.TokenType
 import spray.json.DefaultJsonProtocol
 import spray.json.JsonFormat
+import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.PostRequest
+import spray.json.JsObject
+import akka.http.scaladsl.marshalling.EmptyValue
 
-abstract class TokensRequest(implicit e : RequestExecutor, s : Settings) extends PostRequest {
+abstract class TokensRequest(implicit e : RequestExecutor, s : Settings) extends PostRequest[String] {
   import Querystrings._
 
-  val entity: Option[String] = None
+  val entity = None
   val query: List[Entry] = this.grantTypeQs :: ClientId :: (this.authTokenQs map { _ :: Nil } getOrElse Nil)
   val uri = Uri.Path("/token")
 

@@ -37,7 +37,7 @@ trait EcobeeResponse[T]
   * @define T T
   * @define S S
   */
-abstract class EcobeeService[T <: Request, S] {
+abstract class EcobeeService[T <: Request[_], S] {
 
   /** Execute the given request, returning either a [[ServiceError]] or a response of type $S.
     *
@@ -59,6 +59,6 @@ abstract class EcobeeService[T <: Request, S] {
   * @define T T
   * @define S S
   */
-abstract class EcobeeJsonService[T <: Request, S : JsonFormat] extends EcobeeService[T,S] {
+abstract class EcobeeJsonService[T <: Request[_], S : JsonFormat] extends EcobeeService[T,S] {
   final def execute[R[_] : Realizer](req: T)(implicit client : Client) : R[Either[ServiceError,S]] = client.executeRequest(req.createRequest)
 }

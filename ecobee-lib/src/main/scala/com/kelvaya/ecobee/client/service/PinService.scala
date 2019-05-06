@@ -18,10 +18,10 @@ import akka.http.scaladsl.model.Uri
 object PinRequest {
   val Endpoint = Uri.Path("/authorize")
 }
-class PinRequest(implicit exec: RequestExecutor, settings: Settings) extends Request {
+
+class PinRequest(implicit exec: RequestExecutor, settings: Settings) extends RequestNoEntity {
   val uri = PinRequest.Endpoint
   val query = ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil
-  val entity = None
 }
 
 

@@ -1,21 +1,21 @@
 package com.kelvaya.ecobee.client.service
 
+import com.kelvaya.ecobee.client.Client
+import com.kelvaya.ecobee.client.Page
 import com.kelvaya.ecobee.client.Querystrings
-import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
+import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.Status
+import com.kelvaya.ecobee.client.Thermostat
 import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.util.Realizer
+
+import scala.language.higherKinds
 
 import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import com.kelvaya.util.Realizer
-import com.kelvaya.ecobee.client.Client
-
-import scala.language.higherKinds
-import com.kelvaya.ecobee.client.Page
-import com.kelvaya.ecobee.client.Thermostat
 
 object ThermostatRequest {
   private val Endpoint = Uri.Path("/thermostat")
@@ -23,12 +23,11 @@ object ThermostatRequest {
 
 
 case class ThermostatRequest(selection : Select, page : Option[Int])
-(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends Request {
+(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends RequestNoEntity {
   import ThermostatRequest._
 
   val pageQs : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
 
-  val entity: Option[String] = None
   val query: List[Querystrings.Entry] =  {
     val list = collection.mutable.ListBuffer((("selection", selection.toJson.compactPrint)))
     if (pageQs.isDefined) list += pageQs.get

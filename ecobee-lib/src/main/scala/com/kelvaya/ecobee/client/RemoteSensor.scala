@@ -6,4 +6,10 @@ object RemoteSensor {
   implicit val RemoteSensorFormat = DefaultJsonProtocol.jsonFormat0(RemoteSensor.apply)
 }
 
+
+
+/** Sensor connected to a [[Thermostat]]
+  *
+  * @see com.kelvaya.ecobee.client.Climate.RemoteSensor
+  */
 case class RemoteSensor()

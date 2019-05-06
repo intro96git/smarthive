@@ -2,6 +2,7 @@ package com.kelvaya.ecobee.client
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import com.kelvaya.ecobee.client.service.EquipmentStatusListItem
 
 object Thermostat {
   implicit object Format extends RootJsonFormat[Thermostat] {
@@ -43,8 +44,8 @@ case class Thermostat(
     events :               Array[Event],
     program :              Program,
     houseDetails :         HouseDetails,
-    oemCfg :               ThermostatOemCfg,
-    equipmentStatus :      String,
+//    oemCfg :               ThermostatOemCfg, -- NB: Specs missing from Ecobee docs
+    equipmentStatus :      EquipmentStatusListItem,
     notificationSettings : NotificationSettings,
     privacy :              ThermostatPrivacy,
     version :              Version,

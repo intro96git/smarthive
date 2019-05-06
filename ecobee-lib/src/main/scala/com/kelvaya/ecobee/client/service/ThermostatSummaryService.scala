@@ -14,6 +14,7 @@ import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import com.kelvaya.ecobee.client.RequestNoEntity
 
 object ThermostatSummaryRequest {
   private val Endpoint = Uri.Path("/thermostatSummary")
@@ -25,10 +26,9 @@ object ThermostatSummaryRequest {
 
 
 case class ThermostatSummaryRequest(selectType : SelectType, includeEquipStatus : Boolean = false)
-(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends Request {
+(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends RequestNoEntity {
   import ThermostatSummaryRequest._
 
-  val entity: Option[String] = None
   val query: List[Querystrings.Entry] = (("selection", getJson(selectType, includeEquipStatus))) :: Nil
   val uri: Uri.Path = ThermostatSummaryRequest.Endpoint
 
