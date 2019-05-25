@@ -2,21 +2,18 @@ package com.kelvaya.ecobee.client
 
 import com.kelvaya.ecobee.config.Settings
 
+import scala.concurrent.Future
+
+import akka.http.scaladsl.marshalling._
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.model.HttpCharsets
+import akka.http.scaladsl.model.HttpEntity
+import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpMethods
-import spray.json.JsObject
-import scala.util.Right
-import spray.json.JsonWriter
-import spray.json.RootJsonWriter
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.marshalling._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import monix.eval.Task
 
 object Request {
   private val JsonSubType = "json"
@@ -31,31 +28,36 @@ object Request {
     * @param authorizer (implicit) The `RequestExecutor` responsible for executing the HTTP request
     * @param settings (implicit) The application settings
     */
-  def apply[T : ToEntityMarshaller](reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty, reqEntity: T)
-  (implicit authorizer: RequestExecutor, settings: Settings, ec : ExecutionContext) : Request[T] =
-    new Request[T] with AuthorizedRequest[T] {
-      val uri = reqUri
-      val query = querystring
-      val entity = Some(reqEntity)
-    }
+  def apply[T : ToEntityMarshaller](reqUri: Uri.Path,  querystring: List[Querystrings.Entry], reqEntity: T)
+  (implicit authorizer: RequestExecutor, settings: Settings) : Request[T] = apply(reqUri, querystring, Some(reqEntity))
 
   /** Create a new [[AuthorizedRequest]] at the given URI with an empty request body.
     *
     * @param reqUri The URI of the HTTP request
     * @param querystring A list of querystrings to add to the request.  Defaults to an empty list.
-    * @param reqEntity The body of the HTTP request.
     * @param authorizer (implicit) The `RequestExecutor` responsible for executing the HTTP request
     * @param settings (implicit) The application settings
     */
   def apply(reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty)
-  (implicit authorizer: RequestExecutor, settings: Settings, ec : ExecutionContext) : Request[String] = apply(reqUri, querystring, "")
+  (implicit authorizer: RequestExecutor, settings: Settings) : Request[String] = apply(reqUri, querystring, None)
+
+
+
+  private def apply[T : ToEntityMarshaller](reqUri: Uri.Path, querystring: List[Querystrings.Entry], reqEntity : Option[T])
+  (implicit authorizer: RequestExecutor, settings: Settings) =
+    new Request[T] with AuthorizedRequest[T] {
+      val uri = reqUri
+      val query = querystring
+      val entity = reqEntity
+    }
+
 }
 
 /** Ecobee API HTTP GET Request
   *
   * Used within an [[com.kelvaya.ecobee.client.service.EcobeeService]]
   *
-  * @note All subclasses must implement [[#uri]], [[#query]], [[#entity]], and [[#jsonBody]].
+  * @note All subclasses must implement [[#uri]], [[#query]], and [[#entity]].
   * This base class does not add authorization headers.  For that, you must mix-in [[AuthorizedRequest]].
   * For HTTP POST requests, mix-in [[PostRequest]].
   *
@@ -66,7 +68,6 @@ abstract class Request[T : ToEntityMarshaller](implicit val exec : RequestExecut
   import Request._
 
   private lazy val _serverRoot = settings.EcobeeServerRoot
-  protected implicit val ec = exec.ec
 
 
   /** The service endpoint */
@@ -81,17 +82,19 @@ abstract class Request[T : ToEntityMarshaller](implicit val exec : RequestExecut
 
   /** Creates a new Akka HTTP request to encapsulate the request to the Ecobee API */
   def createRequest = {
-    val computedQuery = {
-      val q1 = if (this.entity.isDefined) Querystrings.JsonFormat :: Nil else Nil
-      val q2 = (if (this.query.size == 0) Nil else this.query) ++ q1
-      if (q2.isEmpty) Uri.Query(None) else Uri.Query(q2.toSeq: _*)
-    }
-    val computedEntity = this.entity.map(Marshal(_).to[MessageEntity]).getOrElse(Future.successful(HttpEntity.Empty))
+    Task.deferFutureAction { implicit s ⇒
+      val computedQuery = {
+        val q1 = (if (this.query.size == 0) Nil else this.query) ++ (Querystrings.JsonFormat :: Nil)
+        if (q1.isEmpty) Uri.Query(None) else Uri.Query(q1.toSeq : _*)
+      }
 
-    computedEntity.map { e =>
-      HttpRequest(
-        uri = _serverRoot.withPath(_serverRoot.path ++ uri).withQuery(computedQuery)
-      ).withEntity(e)
+      val computedEntity = this.entity.map(Marshal(_).to[MessageEntity]).getOrElse(Future.successful(HttpEntity.empty(ContentTypeJson)))
+
+      computedEntity.map { e ⇒
+        HttpRequest(
+          uri = _serverRoot.withPath(_serverRoot.path ++ uri).withQuery(computedQuery)
+        ).withEntity(e)
+      }
     }
   }
 

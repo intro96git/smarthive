@@ -1,21 +1,19 @@
 package com.kelvaya.ecobee.client
 
+import com.kelvaya.ecobee.client.service.ServiceError
+import com.kelvaya.util.Realizer
+
+import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.headers.Authorization
+import monix.eval.Task
 import spray.json.JsonFormat
-import com.kelvaya.ecobee.client.service.ServiceError
-import com.kelvaya.util.Realizer
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 
 /** Executes HTTP requests to the Ecobee API */
 trait RequestExecutor {
-
-  val ec : ExecutionContext
 
   /** Return a new [[Authorization]] HTTP header */
   def generateAuthorizationHeader: Authorization
@@ -45,5 +43,5 @@ trait RequestExecutor {
     *
     * @define S S
     */
-  def executeRequest[T[_] : Realizer,S : JsonFormat](req : Future[HttpRequest]) : T[Either[ServiceError,S]]
+  def executeRequest[T[_] : Realizer,S : JsonFormat](req : Task[HttpRequest]) : T[Either[ServiceError,S]]
 }

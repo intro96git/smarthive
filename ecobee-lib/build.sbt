@@ -15,6 +15,8 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.2.1",
   "com.typesafe" % "config" % "1.3.3",
   
+  Monix,
+  
   Slf4j,
   
   JodaTime,

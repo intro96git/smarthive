@@ -5,16 +5,13 @@ import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.test.BaseTestSpec
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.Uri
-import spray.json._
-import spray.json.AdditionalFormats
-import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.model.StatusCodes
-
+import akka.http.scaladsl.model.Uri
+import monix.execution.Scheduler.Implicits.global
+import spray.json._
 
 class AuthorizationRequestSpec extends BaseTestSpec {
 
@@ -27,11 +24,11 @@ class AuthorizationRequestSpec extends BaseTestSpec {
     PinService.execute(pinReq)
 
     // Confirm generated HTTP request is validly structured
-    val req: HttpRequest = pinReq.createRequest
+    val req: HttpRequest = pinReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
     req.method shouldBe HttpMethods.GET
-    req.entity shouldBe HttpEntity.Empty
+    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/authorize")
-    req.uri.query() should contain theSameElementsAs(Seq(("response_type","ecobeePin"),("client_id",this.ClientId),("scope","smartWrite")))
+    req.uri.query() should contain theSameElementsAs(Seq(("format","json"),("response_type","ecobeePin"),("client_id",this.ClientId),("scope","smartWrite")))
 
     // Confirm expected response is validly structured
     val TestResponse = PinResponse(Pin, PinExpiration, AuthCode, PinScope.SmartWrite, PinInterval)
@@ -50,11 +47,11 @@ class AuthorizationRequestSpec extends BaseTestSpec {
     InitialTokensService.execute(initTokenReq)
 
     // Confirm generated HTTP request is validly structured
-    val req: HttpRequest = initTokenReq.createRequest
+    val req: HttpRequest = initTokenReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
     req.method shouldBe HttpMethods.POST
-    req.entity shouldBe HttpEntity.Empty
+    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/token")
-    req.uri.query() should contain theSameElementsAs(Seq(("grant_type","ecobeePin"),("code",this.AuthCode),("client_id",this.ClientId)))
+    req.uri.query() should contain theSameElementsAs(Seq(("format","json"),("grant_type","ecobeePin"),("code",this.AuthCode),("client_id",this.ClientId)))
 
     // Confirm expected response is validly structured
     val TestResponse = TokensResponse(InitAccessToken, TokenType.Bearer, InitTokenExpiration, InitRefreshToken, PinScope.SmartWrite)
@@ -73,11 +70,11 @@ class AuthorizationRequestSpec extends BaseTestSpec {
     RefreshTokensService.execute(tokenReq)
 
     // Confirm generated HTTP request is validly structured
-    val req: HttpRequest = tokenReq.createRequest
+    val req: HttpRequest = tokenReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
     req.method shouldBe HttpMethods.POST
-    req.entity shouldBe HttpEntity.Empty
+    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/token")
-    req.uri.query() should contain theSameElementsAs(Seq(("grant_type","refresh_token"),("refresh_token",this.RefreshToken),("client_id",this.ClientId)))
+    req.uri.query() should contain theSameElementsAs(Seq(("format","json"),("grant_type","refresh_token"),("refresh_token",this.RefreshToken),("client_id",this.ClientId)))
 
     // Confirm expected response is validly structured
     val TestResponse = TokensResponse(AccessToken, TokenType.Bearer, TokenExpiration, RefreshToken, PinScope.SmartWrite)

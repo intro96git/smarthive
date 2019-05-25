@@ -1,6 +1,7 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.Client
+import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.test.BaseTestSpec
@@ -27,14 +28,16 @@ class ThermostatSummarySpec extends BaseTestSpec {
 
     val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeEquipmentStatus":true}""".parseJson
 
-    val req: HttpRequest = thermReq.createRequest
+    import monix.execution.Scheduler.Implicits.global
+
+    val req: HttpRequest = thermReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
     req.method shouldBe HttpMethods.GET
-    req.entity shouldBe HttpEntity.Empty
+    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/thermostatSummary")
     val qsSelection = req.uri.query().get("selection")
     qsSelection.value.parseJson shouldBe expectedSelectionQs
 
-    req.uri.query().size shouldBe 1
+    req.uri.query().size shouldBe 2
   }
 
 
