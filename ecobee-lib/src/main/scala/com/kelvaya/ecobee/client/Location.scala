@@ -1,6 +1,7 @@
 package com.kelvaya.ecobee.client
 
-import spray.json.DefaultJsonProtocol
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 import org.joda.time.DateTimeZone
 import com.kelvaya.util.SprayImplicits
 import akka.event.LoggingBus

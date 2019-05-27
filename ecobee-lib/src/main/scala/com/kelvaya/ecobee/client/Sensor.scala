@@ -3,6 +3,7 @@ package com.kelvaya.ecobee.client
 import com.kelvaya.util.enum.JsonStringEnum
 import spray.json.DefaultJsonProtocol
 import com.kelvaya.util.SprayImplicits
+import spray.json.DefaultJsonProtocol._
 
 /** A sensor connected to a [[Thermostat]]
   *

@@ -4,7 +4,8 @@ import com.kelvaya.util.SprayImplicits
 import com.kelvaya.util.enum.JsonIntEnum
 import com.kelvaya.util.enum.JsonStringEnum
 
-import spray.json.DefaultJsonProtocol
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 
 
 /** Details about a house where a [[Thermostat]] is located */
@@ -36,7 +37,7 @@ object HouseDetails extends SprayImplicits {
     val Unknown = Val("0")
   }
 
-  
+
   type WindowEfficiency = WindowEfficiency.Entry
   object WindowEfficiency extends JsonIntEnum {
     /** R value of 0.8 */

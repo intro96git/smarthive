@@ -3,7 +3,8 @@ package com.kelvaya.ecobee.client
 import com.kelvaya.util.SprayImplicits
 import com.kelvaya.util.Time.FullDate
 
-import spray.json.DefaultJsonProtocol
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 
 object Electricity extends SprayImplicits {
 

@@ -4,7 +4,7 @@ import com.kelvaya.util.enum.JsonStringEnum
 import com.kelvaya.util.SprayImplicits
 import com.kelvaya.util.Time
 
-
+import spray.json.DefaultJsonProtocol._
 
 /** An alert generated either by a thermostat or user which requires user attention
   *
