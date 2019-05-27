@@ -4,6 +4,7 @@ import com.kelvaya.ecobee.config.Settings
 
 import scala.concurrent.Future
 
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ContentType
@@ -27,8 +28,10 @@ object Request {
     * @param reqEntity The body of the HTTP request.
     * @param authorizer (implicit) The `RequestExecutor` responsible for executing the HTTP request
     * @param settings (implicit) The application settings
+    *
+    * @tparam T Request entity type, which must be an `ApiObject`
     */
-  def apply[T : ToEntityMarshaller](reqUri: Uri.Path,  querystring: List[Querystrings.Entry], reqEntity: T)
+  def apply[T <: ApiObject : ToEntityMarshaller](reqUri: Uri.Path,  querystring: List[Querystrings.Entry], reqEntity: T)
   (implicit authorizer: RequestExecutor, settings: Settings) : Request[T] = apply(reqUri, querystring, Some(reqEntity))
 
   /** Create a new [[AuthorizedRequest]] at the given URI with an empty request body.
@@ -39,11 +42,11 @@ object Request {
     * @param settings (implicit) The application settings
     */
   def apply(reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty)
-  (implicit authorizer: RequestExecutor, settings: Settings) : Request[String] = apply(reqUri, querystring, None)
+  (implicit authorizer: RequestExecutor, settings: Settings) : Request[ParameterlessApi] = apply(reqUri, querystring, None)
 
 
 
-  private def apply[T : ToEntityMarshaller](reqUri: Uri.Path, querystring: List[Querystrings.Entry], reqEntity : Option[T])
+  private def apply[T <: ApiObject : ToEntityMarshaller](reqUri: Uri.Path, querystring: List[Querystrings.Entry], reqEntity : Option[T])
   (implicit authorizer: RequestExecutor, settings: Settings) =
     new Request[T] with AuthorizedRequest[T] {
       val uri = reqUri
@@ -63,8 +66,10 @@ object Request {
   *
   * @param exec (implicit) The `RequestExecutor` responsible for sending the HTTP request
   * @param settings (implicit) Application settings
+  *
+  * @tparam T Request entity type, which must be an `ApiObject`
   */
-abstract class Request[T : ToEntityMarshaller](implicit val exec : RequestExecutor, val settings : Settings) {
+abstract class Request[T <: ApiObject : ToEntityMarshaller](implicit val exec : RequestExecutor, val settings : Settings) {
   import Request._
 
   private lazy val _serverRoot = settings.EcobeeServerRoot
@@ -113,13 +118,17 @@ abstract class Request[T : ToEntityMarshaller](implicit val exec : RequestExecut
 // ---------------------
 
 
-abstract class RequestNoEntity(implicit exec : RequestExecutor, settings : Settings) extends Request[String] {
-  val entity : Option[String] = None
+/** [[Request]] with no entity
+  *
+  * @inheritdoc
+  */
+abstract class RequestNoEntity(implicit exec : RequestExecutor, settings : Settings) extends Request[ParameterlessApi] {
+  val entity : Option[ParameterlessApi] = None
 }
 
 
 /** A mix-in trait which includes the authorization header in a [[Request]] */
-trait AuthorizedRequest[T] extends Request[T] {
+trait AuthorizedRequest[T <: ApiObject] extends Request[T] {
   abstract override def createRequest = super.createRequest.map(_.addHeader(exec.generateAuthorizationHeader))
 }
 
@@ -127,8 +136,11 @@ trait AuthorizedRequest[T] extends Request[T] {
 // ---------------------
 
 
-/** A mix-in trait to make the [[Request]] an HTTP POST */
-trait PostRequest[T] extends Request[T] {
+/** A mix-in trait to make the [[Request]] an HTTP POST
+  *
+  * @tparam T Request entity type, which must be an `WriteableApiObject`
+  */
+trait PostRequest[T <: WriteableApiObject] extends Request[T] {
   abstract override def createRequest = {
     val req = super.createRequest
     req.map(_.withMethod(HttpMethods.POST))

@@ -18,5 +18,8 @@ object Management {
   * @param showAlertIdt Whether to show management alerts on the thermostat.
   * @param showAlertWeb Whether to show management alerts in the web portal.
   */
-case class Management(administrativeContact : String, billingContact : String, name : String, phone : String,
-                      email : String, web : String, showAlertIdt : Boolean, showAlertWeb : Boolean)
+case class Management(
+    administrativeContact : Option[String] = None, billingContact : Option[String] = None,
+    name : Option[String] = None, phone : Option[String] = None, email : Option[String] = None,
+    web : Option[String] = None, showAlertIdt : Option[Boolean] = None, showAlertWeb : Option[Boolean] = None
+) extends ReadonlyApiObject

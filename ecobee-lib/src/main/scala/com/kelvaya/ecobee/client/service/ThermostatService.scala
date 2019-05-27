@@ -23,7 +23,7 @@ object ThermostatRequest {
 
 
 case class ThermostatRequest(selection : Select, page : Option[Int])
-(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends RequestNoEntity {
+(implicit e : RequestExecutor, s : Settings) extends RequestNoEntity {
   import ThermostatRequest._
 
   val pageQs : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
@@ -42,7 +42,7 @@ case class ThermostatRequest(selection : Select, page : Option[Int])
 // ############################################################
 
 object ThermostatResponse {
-  implicit def getResponseFormat(implicit lb : LoggingBus) = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
+  implicit val ResponseFormat = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
 }
 
 case class ThermostatResponse(
@@ -55,7 +55,7 @@ case class ThermostatResponse(
 // ############################################################
 // ############################################################
 
-class ThermostatService(implicit lb : LoggingBus) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
+class ThermostatService extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
   def execute[R[_]](selection : Select, page : Option[Int] = None)(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, ThermostatResponse]] =
     execute(new ThermostatRequest(selection, page))
 }

@@ -7,7 +7,7 @@ import spray.json.DefaultJsonProtocol._
   *
   *  @see Audio
   */
-case class VoiceEngine(name : String, enabled : Boolean)
+case class VoiceEngine(name : Option[String], enabled : Option[Boolean]) extends ReadonlyApiObject
 
 object VoiceEngine {
   implicit val VoiceEngineFormat = DefaultJsonProtocol.jsonFormat2(VoiceEngine.apply)

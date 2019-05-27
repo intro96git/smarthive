@@ -26,23 +26,23 @@ import spray.json.DefaultJsonProtocol._
   * @param notificationType The type of Alert or reminder
   */
 case class Alert(
-    acknowledgeRef :       String,
-    date :                 Time.DateOnly,
-    time :                 Time.TimeOnly,
-    severity :             Alert.Severity,
+    acknowledgeRef :       Option[String],
+    date :                 Option[Time.DateOnly],
+    time :                 Option[Time.TimeOnly],
+    severity :             Option[Alert.Severity],
     text :                 String,
-    alertNumber :          Alert.Number,
-    alertType :            Alert.Type,
-    isOperatorAlert :      Boolean,
-    reminder :             Boolean,
-    showIdt :              Boolean,
-    showWeb :              Boolean,
-    sendEmail :            Boolean,
-    acknowledgement :      Alert.Ack,
-    remindMeLater :        Boolean,
-    thermostatIdentifier : String,
-    notificationType :     Alert.NotificationType
-)
+    alertNumber :          Option[Alert.Number],
+    alertType :            Option[Alert.Type],
+    isOperatorAlert :      Option[Boolean],
+    reminder :             Option[Boolean],
+    showIdt :              Option[Boolean],
+    showWeb :              Option[Boolean],
+    sendEmail :            Option[Boolean],
+    acknowledgement :      Option[Alert.Ack],
+    remindMeLater :        Option[Boolean],
+    thermostatIdentifier : Option[String],
+    notificationType :     Option[Alert.NotificationType]
+) extends ReadonlyApiObject
 
 
 object Alert extends SprayImplicits {

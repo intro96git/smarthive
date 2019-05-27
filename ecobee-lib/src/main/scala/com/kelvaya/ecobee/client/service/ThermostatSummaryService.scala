@@ -19,14 +19,14 @@ import com.kelvaya.ecobee.client.RequestNoEntity
 object ThermostatSummaryRequest {
   private val Endpoint = Uri.Path("/thermostatSummary")
 
-  private def getJson(st : SelectType, es : Boolean)(implicit lb : LoggingBus) = {
+  private def getJson(st : SelectType, es : Boolean) = {
     Select(selectType = st, includeEquipmentStatus = es).toJson.compactPrint
   }
 }
 
 
 case class ThermostatSummaryRequest(selectType : SelectType, includeEquipStatus : Boolean = false)
-(implicit e : RequestExecutor, s : Settings, lb : LoggingBus) extends RequestNoEntity {
+(implicit e : RequestExecutor, s : Settings) extends RequestNoEntity {
   import ThermostatSummaryRequest._
 
   val query: List[Querystrings.Entry] = (("selection", getJson(selectType, includeEquipStatus))) :: Nil

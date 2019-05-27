@@ -9,4 +9,4 @@ object Status {
 }
 
 /** Status returned by the Ecobee API for a request */
-case class Status(code : Int, message : String)
+case class Status(code : Option[Int], message : Option[String]) extends ReadonlyApiObject

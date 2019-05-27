@@ -25,23 +25,23 @@ import com.kelvaya.util.SprayImplicits
   * @param sky The cloud cover condition.
   */
 case class WeatherForecast(
-    weatherSymbol :    WeatherForecast.WeatherIcon,
-    dateTime :         String,
-    condition :        String,
-    temperature :      Int,
-    pressure :         Int,
-    relativeHumidity : Int,
-    dewpoint :         Int,
-    visibility :       Int,
-    windSpeed :        Int,
-    windGust :         Int,
-    windDirection :    String,
-    windBearing :      Int,
-    pop :              Int,
-    tempHigh :         Int,
-    tempLow :          Int,
-    sky :              WeatherForecast.CloudCover
-)
+    weatherSymbol :    Option[WeatherForecast.WeatherIcon],
+    dateTime :         Option[String],
+    condition :        Option[String],
+    temperature :      Option[Int],
+    pressure :         Option[Int],
+    relativeHumidity : Option[Int],
+    dewpoint :         Option[Int],
+    visibility :       Option[Int],
+    windSpeed :        Option[Int],
+    windGust :         Option[Int],
+    windDirection :    Option[String],
+    windBearing :      Option[Int],
+    pop :              Option[Int],
+    tempHigh :         Option[Int],
+    tempLow :          Option[Int],
+    sky :              Option[WeatherForecast.CloudCover]
+) extends ReadonlyApiObject
 
 
 object WeatherForecast extends SprayImplicits {

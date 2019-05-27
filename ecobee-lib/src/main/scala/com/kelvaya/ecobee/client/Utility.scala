@@ -10,10 +10,10 @@ object Utility {
 
 /** The Utility associated with the [[Thermostat]]
   *
-  *  @param name The Utility company name.
+  * @param name The Utility company name.
   * @param phone The Utility company contact phone number.
   * @param email The Utility company email address.
   * @param web The Utility company web site.
   *
   */
-case class Utility(name : String, phone : String, email : String, web : String)
+case class Utility(name : Option[String], phone : Option[String], email : Option[String], web : Option[String]) extends ReadonlyApiObject

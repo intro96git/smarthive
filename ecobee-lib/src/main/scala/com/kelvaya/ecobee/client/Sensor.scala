@@ -23,9 +23,23 @@ import spray.json.DefaultJsonProtocol._
   * @param multiplier The multiplier value used in sensors (1000x value).
   * @param states A list of possible sensor states
   */
-case class Sensor(name : String, manufacturer : String, model : String, zone : Int, sensorId : Int, `type` : Sensor.SensorType.Entry,
-    usage : Sensor.SensorUsage.Entry, numberOfBits : Int, bconstant : Int, thermistorSize : Int, tempCorrection : Int, gain : Int,
-    maxVoltage : Int, multiplier : Int, states : Seq[Sensor.State])
+case class Sensor(
+    name :           Option[String]                   = None,
+    manufacturer :   Option[String]                   = None,
+    model :          Option[String]                   = None,
+    zone :           Option[Int]                      = None,
+    sensorId :       Option[Int]                      = None,
+    `type` :         Option[Sensor.SensorType.Entry]  = None,
+    usage :          Option[Sensor.SensorUsage.Entry] = None,
+    numberOfBits :   Option[Int]                      = None,
+    bconstant :      Option[Int]                      = None,
+    thermistorSize : Option[Int]                      = None,
+    tempCorrection : Option[Int]                      = None,
+    gain :           Option[Int]                      = None,
+    maxVoltage :     Option[Int]                      = None,
+    multiplier :     Option[Int]                      = None,
+    states :         Option[Seq[Sensor.State]]        = None
+) extends ReadonlyApiObject
 
 
 object Sensor extends SprayImplicits {
@@ -42,7 +56,7 @@ object Sensor extends SprayImplicits {
     * @param actions The list of StateAction objects associated with the sensor.
     *
     */
-  case class State(maxValue : Int, minValue : Int, `type` : StateType.Entry, actions : Seq[Action])
+  case class State(maxValue : Option[Int], minValue : Option[Int], `type` : Option[StateType.Entry], actions : Option[Seq[Action]]) extends ReadonlyApiObject
 
   /** An action to take when a sensor is triggered through a [[State]]
     *
@@ -57,9 +71,9 @@ object Sensor extends SprayImplicits {
     * @param activateRelay The user defined relay to be activated if the type is `ActivateRelay`.
     * @param activateRelayOpen Select if relay is to be open or closed when activated if the type is `ActivateRelay`.
     */
-  case class Action(`type` : ActionType.Entry, sendAlert : Boolean, sendUpdate : Boolean, activationDelay : Int,
-      deactivationDelay : Int, minActionDuration : Int, heatAdjustTemp : Int, coolAdjustTemp : Int,
-      activateRelay : String, activateRelayOpen : Boolean)
+  case class Action(`type` : Option[ActionType.Entry], sendAlert : Option[Boolean], sendUpdate : Option[Boolean], activationDelay : Option[Int],
+      deactivationDelay : Option[Int], minActionDuration : Option[Int], heatAdjustTemp : Option[Int], coolAdjustTemp : Option[Int],
+      activateRelay : Option[String], activateRelayOpen : Option[Boolean]) extends ReadonlyApiObject
 
 
   /** The type of [[Sensor]]. */

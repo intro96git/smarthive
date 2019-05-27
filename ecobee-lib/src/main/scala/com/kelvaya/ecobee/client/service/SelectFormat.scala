@@ -5,12 +5,11 @@ import com.kelvaya.ecobee.client._
 import akka.event.Logging
 import akka.event.LoggingBus
 import spray.json._
-
+import spray.json.DefaultJsonProtocol._
+import com.kelvaya.util.SprayImplicits
 
 /** JSON formatter for the [[Select]] object **/
-private[client] class SelectFormat(implicit lb : LoggingBus) extends RootJsonFormat[Select] {
-
-  lazy val log = Logging(lb, this.getClass)
+private[client] class SelectFormat extends RootJsonFormat[Select] with SprayImplicits {
 
   def read(json : JsValue) : Select = json match {
     case j : JsObject ⇒ readJson(j)
@@ -62,37 +61,35 @@ private[client] class SelectFormat(implicit lb : LoggingBus) extends RootJsonFor
 
 
   private def readJson(json : JsObject) : Select = {
+
     val ms = new MutableSelection()
 
-    json.fields.map {
-      case (("selectionType", s : JsString))                ⇒ ms.selectionType = Some(s.value)
-      case (("selectionMatch", s : JsString))               ⇒ ms.selectionMatch = Some(s.value)
-      case (("includeRuntime", b : JsBoolean))              ⇒ ms.includeRuntime = b.value
-      case (("includeExtendedRuntime", b : JsBoolean))      ⇒ ms.includeExtendedRuntime = b.value
-      case (("includeElectricity", b : JsBoolean))          ⇒ ms.includeElectricity = b.value
-      case (("includeSettings", b : JsBoolean))             ⇒ ms.includeSettings = b.value
-      case (("includeLocation", b : JsBoolean))             ⇒ ms.includeLocation = b.value
-      case (("includeProgram", b : JsBoolean))              ⇒ ms.includeProgram = b.value
-      case (("includeEvents", b : JsBoolean))               ⇒ ms.includeEvents = b.value
-      case (("includeDevice", b : JsBoolean))               ⇒ ms.includeDevice = b.value
-      case (("includeTechnician", b : JsBoolean))           ⇒ ms.includeTechnician = b.value
-      case (("includeUtility", b : JsBoolean))              ⇒ ms.includeUtility = b.value
-      case (("includeManagement", b : JsBoolean))           ⇒ ms.includeManagement = b.value
-      case (("includeAlerts", b : JsBoolean))               ⇒ ms.includeAlerts = b.value
-      case (("includeReminders", b : JsBoolean))            ⇒ ms.includeReminders = b.value
-      case (("includeWeather", b : JsBoolean))              ⇒ ms.includeWeather = b.value
-      case (("includeHouseDetails", b : JsBoolean))         ⇒ ms.includeHouseDetails = b.value
-      case (("includeOemCfg", b : JsBoolean))               ⇒ ms.includeOemCfg = b.value
-      case (("includeEquipmentStatus", b : JsBoolean))      ⇒ ms.includeEquipmentStatus = b.value
-      case (("includeNotificationSettings", b : JsBoolean)) ⇒ ms.includeNotificationSettings = b.value
-      case (("includePrivacy", b : JsBoolean))              ⇒ ms.includePrivacy = b.value
-      case (("includeVersion", b : JsBoolean))              ⇒ ms.includeVersion = b.value
-      case (("includeSecuritySettings", b : JsBoolean))     ⇒ ms.includeSecuritySettings = b.value
-      case (("includeSensors", b : JsBoolean))              ⇒ ms.includeSensors = b.value
-      case (("includeAudio", b : JsBoolean))                ⇒ ms.includeAudio = b.value
-      case (("includeEnergy", b : JsBoolean))               ⇒ ms.includeEnergy = b.value
-      case ((other, otherJson))                             ⇒ log.warning(s"Unexpected value found when parsing Select JSON object: '${other}' : ${otherJson}")
-    }
+    findOptional[String](json, "selectionType") foreach { v => ms.selectionType = Some(v) }
+    findOptional[String](json, "selectionMatch") foreach { v => ms.selectionMatch = Some(v) }
+    findOptional[Boolean](json, "includeRuntime") foreach { ms.includeRuntime = _ }
+    findOptional[Boolean](json, "includeExtendedRuntime") foreach { ms.includeExtendedRuntime = _ }
+    findOptional[Boolean](json, "includeElectricity") foreach { ms.includeElectricity = _ }
+    findOptional[Boolean](json, "includeSettings") foreach { ms.includeSettings = _ }
+    findOptional[Boolean](json, "includeLocation") foreach { ms.includeLocation = _ }
+    findOptional[Boolean](json, "includeProgram") foreach { ms.includeProgram = _ }
+    findOptional[Boolean](json, "includeEvents") foreach { ms.includeEvents = _ }
+    findOptional[Boolean](json, "includeDevice") foreach { ms.includeDevice = _ }
+    findOptional[Boolean](json, "includeTechnician") foreach { ms.includeTechnician = _ }
+    findOptional[Boolean](json, "includeUtility") foreach { ms.includeUtility = _ }
+    findOptional[Boolean](json, "includeManagement") foreach { ms.includeManagement = _ }
+    findOptional[Boolean](json, "includeAlerts") foreach { ms.includeAlerts = _ }
+    findOptional[Boolean](json, "includeReminders") foreach { ms.includeReminders = _ }
+    findOptional[Boolean](json, "includeWeather") foreach { ms.includeWeather = _ }
+    findOptional[Boolean](json, "includeHouseDetails") foreach { ms.includeHouseDetails = _ }
+    findOptional[Boolean](json, "includeOemCfg") foreach { ms.includeOemCfg = _ }
+    findOptional[Boolean](json, "includeEquipmentStatus") foreach { ms.includeEquipmentStatus = _ }
+    findOptional[Boolean](json, "includeNotificationSettings") foreach { ms.includeNotificationSettings = _ }
+    findOptional[Boolean](json, "includePrivacy") foreach { ms.includePrivacy = _ }
+    findOptional[Boolean](json, "includeVersion") foreach { ms.includeVersion = _ }
+    findOptional[Boolean](json, "includeSecuritySettings") foreach { ms.includeSecuritySettings = _ }
+    findOptional[Boolean](json, "includeSensors") foreach { ms.includeSensors = _ }
+    findOptional[Boolean](json, "includeAudio") foreach { ms.includeAudio = _ }
+    findOptional[Boolean](json, "includeEnergy") foreach { ms.includeEnergy = _ }
 
     if (ms.selectionMatch.isEmpty || ms.selectionType.isEmpty)
       throw new DeserializationException(s"${json} is not a valid Select; missing selectionMatch and/or selectionType.")

@@ -35,113 +35,111 @@ import com.kelvaya.util.Time.TimeOnly
   * @param holdClimateRef Used for display purposes to indicate what climate (if any) is being used for the hold.
   */
 case class Event(
-    `type` :                 Event.EventType.Entry,
-    name :                   String,
-    running :                Boolean,
-    startDate :              DateOnly,
-    startTime :              TimeOnly,
-    endDate :                DateOnly,
-    endTime :                TimeOnly,
-    isOccupied :             Boolean,
-    isCoolOff :              Boolean,
-    isHeatOff :              Boolean,
-    coolHoldTemp :           Option[Int], // NB: wire up w/ "isTemperatureAbsolute" in JSON
-    heatHoldTemp :           Option[Int], // NB: wire up w/ "isTemperatureAbsolute" in JSON
-    fan :                    Event.FanMode.Entry,
-    vent :                   VentilatorMode.Entry,
-    ventilatorMinOnTime :    Int,
-    isOptional :             Boolean,
-    coolRelativeTemp :       Option[Int], // NB: wire up w/ "isTemperatureRelative" in JSON
-    heatRelativeTemp :       Option[Int], // NB: wire up w/ "isTemperatureRelative" in JSON
-    dutyCyclePercentage :    Int,
-    fanMinOnTime :           Int,
-    occupiedSensorActive :   Boolean,
-    unoccupiedSensorActive : Boolean,
-//    drRampUpTemp :           Integer,
-//    drRampUpTime :           Integer,
-    linkRef :                String,
-    holdClimateRef :         String
-)
+    `type` :                 Option[Event.EventType.Entry] = None,
+    name :                   Option[String] = None,
+    running :                Option[Boolean] = None,
+    startDate :              Option[DateOnly] = None,
+    startTime :              Option[TimeOnly] = None,
+    endDate :                Option[DateOnly] = None,
+    endTime :                Option[TimeOnly] = None,
+    isOccupied :             Option[Boolean] = None,
+    isCoolOff :              Option[Boolean] = None,
+    isHeatOff :              Option[Boolean] = None,
+    coolHoldTemp :           Option[Int] = None,
+    heatHoldTemp :           Option[Int] = None,
+    fan :                    Option[Event.FanMode.Entry] = None,
+    vent :                   Option[VentilatorMode.Entry] = None,
+    ventilatorMinOnTime :    Option[Int] = None,
+    isOptional :             Option[Boolean] = None,
+    coolRelativeTemp :       Option[Int] = None,
+    heatRelativeTemp :       Option[Int] = None,
+    dutyCyclePercentage :    Option[Int] = None,
+    fanMinOnTime :           Option[Int] = None,
+    occupiedSensorActive :   Option[Boolean] = None,
+    unoccupiedSensorActive : Option[Boolean] = None,
+//    drRampUpTemp :           Option[Integer] = None,
+//    drRampUpTime :           Option[Integer] = None,
+    linkRef :                Option[String] = None,
+    holdClimateRef :         Option[String] = None
+) extends ReadonlyApiObject
 
 
 object Event extends SprayImplicits {
   implicit object EventFormat extends RootJsonFormat[Event] {
     def read(json: JsValue): Event = json match {
-      case o : JsObject => Event(
-        `type` = o.fields("type").convertTo[EventType.Entry],
-        name = o.fields("name").convertTo[String],
-        running = o.fields("running").convertTo[Boolean],
-        startDate = o.fields("startDate").convertTo[DateOnly],
-        startTime = o.fields("startTime").convertTo[TimeOnly],
-        endDate =  o.fields("endDate").convertTo[DateOnly],
-        endTime = o.fields("endTime").convertTo[TimeOnly],
-        isOccupied = o.fields("isOccupied").convertTo[Boolean],
-        isCoolOff = o.fields("isCoolOff").convertTo[Boolean],
-        isHeatOff = o.fields("isHeatOff").convertTo[Boolean],
-        coolHoldTemp = if (o.fields("isTemperatureAbsolute").convertTo[Boolean]) Some(o.fields("coolHoldTemp").convertTo[Int]) else None,
-        heatHoldTemp = if (o.fields("isTemperatureAbsolute").convertTo[Boolean]) Some(o.fields("heatHoldTemp").convertTo[Int]) else None,
-        fan = o.fields("fan").convertTo[FanMode.Entry],
-        vent = o.fields("vent").convertTo[VentilatorMode.Entry],
-        ventilatorMinOnTime = o.fields("ventilatorMinOnTime").convertTo[Int],
-        isOptional = o.fields("isOptional").convertTo[Boolean],
-        coolRelativeTemp = if (o.fields("isTemperatureRelative").convertTo[Boolean]) Some(o.fields("coolRelativeTemp").convertTo[Int]) else None,
-        heatRelativeTemp = if (o.fields("isTemperatureRelative").convertTo[Boolean]) Some(o.fields("heatRelativeTemp").convertTo[Int]) else None,
-        dutyCyclePercentage = o.fields("dutyCyclePercentage").convertTo[Int],
-        fanMinOnTime = o.fields("fanMinOnTime").convertTo[Int],
-        occupiedSensorActive = o.fields("occupiedSensorActive").convertTo[Boolean],
-        unoccupiedSensorActive = o.fields("unoccupiedSensorActive").convertTo[Boolean],
-        linkRef = o.fields("linkRef").convertTo[String],
-        holdClimateRef = o.fields("holdClimateRef").convertTo[String]
-      )
-      case _ => deserializationError(s"${json} is not an Event")
+      case o : JsObject => {
+        Event(
+          `type`                 = findOptional[EventType.Entry](o, "type"),
+          name                   = findOptional[String](o, "name"),
+          running                = findOptional[Boolean](o, "running"),
+          startDate              = findOptional[DateOnly](o, "startDate"),
+          startTime              = findOptional[TimeOnly](o, "startTime"),
+          endDate                = findOptional[DateOnly](o, "endDate"),
+          endTime                = findOptional[TimeOnly](o, "endTime"),
+          isOccupied             = findOptional[Boolean](o, "isOccupied"),
+          isCoolOff              = findOptional[Boolean](o, "isCoolOff"),
+          isHeatOff              = findOptional[Boolean](o, "isHeatOff"),
+          coolHoldTemp           = if (findOptional[Boolean](o, "isTemperatureAbsolute").getOrElse(false)) findOptional[Int](o, "coolHoldTemp") else None,
+          heatHoldTemp           = if (findOptional[Boolean](o, "isTemperatureAbsolute").getOrElse(false)) findOptional[Int](o, "heatHoldTemp") else None,
+          fan                    = findOptional[FanMode.Entry](o, "fan"),
+          vent                   = findOptional[VentilatorMode.Entry](o, "vent"),
+          ventilatorMinOnTime    = findOptional[Int](o, "ventilatorMinOnTime"),
+          isOptional             = findOptional[Boolean](o, "isOptional"),
+          coolRelativeTemp       = if (findOptional[Boolean](o, "isTemperatureRelative").getOrElse(false)) findOptional[Int](o, "coolRelativeTemp") else None,
+          heatRelativeTemp       = if (findOptional[Boolean](o, "isTemperatureRelative").getOrElse(false)) findOptional[Int](o, "heatRelativeTemp") else None,
+          dutyCyclePercentage    = findOptional[Int](o, "dutyCyclePercentage"),
+          fanMinOnTime           = findOptional[Int](o, "fanMinOnTime"),
+          occupiedSensorActive   = findOptional[Boolean](o, "occupiedSensorActive"),
+          unoccupiedSensorActive = findOptional[Boolean](o, "unoccupiedSensorActive"),
+          linkRef                = findOptional[String](o, "linkRef"),
+          holdClimateRef         = findOptional[String](o, "holdClimateRef")
+        )
+      }
+      case _ ⇒ deserializationError(s"${json} is not an Event")
     }
 
 
 
     def write(obj: Event): JsValue = {
 
-      val (holdTemps,isTemperatureAbsolute) =
-        if (obj.coolHoldTemp.isDefined && obj.heatHoldTemp.isDefined) {
-          ((s""""coolHoldTemp" : ${obj.coolHoldTemp.get.toJson},
-          "heatHoldTemp" : ${obj.heatHoldTemp.get.toJson},""",
-          true))
-        }
-        else (("",false))
+      val jsObj = scala.collection.mutable.Map.empty[String,JsValue]
+      obj.`type` foreach { v => jsObj += (("type", v.toJson)) }
+      obj.name foreach { v => jsObj += (("name", v.toJson)) }
+      obj.running foreach { v => jsObj += (("running", v.toJson)) }
+      obj.startDate foreach { v => jsObj += (("startDate", v.toJson)) }
+      obj.startTime foreach { v => jsObj += (("startTime", v.toJson)) }
+      obj.endDate foreach { v => jsObj += (("endDate", v.toJson)) }
+      obj.endTime foreach { v => jsObj += (("endTime", v.toJson)) }
+      obj.isOccupied foreach { v => jsObj += (("isOccupied", v.toJson)) }
+      obj.isCoolOff foreach { v => jsObj += (("isCoolOff", v.toJson)) }
+      obj.isHeatOff foreach { v => jsObj += (("isHeatOff", v.toJson)) }
+      obj.fan foreach { v => jsObj += (("fan", v.toJson)) }
+      obj.vent foreach { v => jsObj += (("vent", v.toJson)) }
+      obj.ventilatorMinOnTime foreach { v => jsObj += (("ventilatorMinOnTime", v.toJson)) }
+      obj.isOptional foreach { v => jsObj += (("isOptional", v.toJson)) }
+      obj.dutyCyclePercentage foreach { v => jsObj += (("dutyCyclePercentage", v.toJson)) }
+      obj.fanMinOnTime foreach { v => jsObj += (("fanMinOnTime", v.toJson)) }
+      obj.occupiedSensorActive foreach { v => jsObj += (("occupiedSensorActive", v.toJson)) }
+      obj.unoccupiedSensorActive foreach { v => jsObj += (("unoccupiedSensorActive", v.toJson)) }
+      obj.linkRef foreach { v => jsObj += (("linkRef", v.toJson)) }
+      obj.isOptional foreach { v => jsObj += (("isOptional", v.toJson)) }
+      obj.holdClimateRef foreach { v => jsObj += (("holdClimateRef", v.toJson)) }
 
-      val (relTemps,isTemperatureRelative) =
-        if (obj.coolRelativeTemp.isDefined && obj.heatRelativeTemp.isDefined) {
-          ((s""""coolRelativeTemp" : ${obj.coolRelativeTemp.get.toJson},
-          "heatRelativeTemp" : ${obj.heatRelativeTemp.get.toJson},""",
-          true))
-        }
-        else (("",false))
+      if (obj.coolHoldTemp.isDefined && obj.heatHoldTemp.isDefined) {
+        jsObj += (("coolHoldTemp", obj.coolHoldTemp.get.toJson))
+        jsObj += (("heatHoldTemp", obj.heatHoldTemp.get.toJson))
+        jsObj += (("isTemperatureAbsolute", true.toJson))
+      }
+      else jsObj += (("isTemperatureAbsolute", false.toJson))
 
-      s"""{
-        "type" : ${obj.`type`.toJson},
-        "name" : ${obj.name.toJson},
-        "running" : ${obj.running.toJson},
-        "startDate" : ${obj.startDate.toJson},
-        "startTime" : ${obj.startTime.toJson},
-        "endDate" :  ${obj.endDate.toJson},
-        "endTime" : ${obj.endTime.toJson},
-        "isOccupied" : ${obj.isOccupied.toJson},
-        "isCoolOff" : ${obj.isCoolOff.toJson},
-        "isHeatOff" : ${obj.isHeatOff.toJson},
-        ${holdTemps}
-        "isTemperatureAbsolute" : ${isTemperatureAbsolute},
-        "fan" : ${obj.fan.toJson},
-        "vent" : ${obj.vent.toJson},
-        "ventilatorMinOnTime" : ${obj.ventilatorMinOnTime.toJson},
-        "isOptional" : ${obj.isOptional.toJson},
-        ${relTemps}
-        "isTemperatureRelative" : ${isTemperatureRelative},
-        "dutyCyclePercentage" : ${obj.dutyCyclePercentage.toJson},
-        "fanMinOnTime" : ${obj.fanMinOnTime.toJson},
-        "occupiedSensorActive" : ${obj.occupiedSensorActive.toJson},
-        "unoccupiedSensorActive" : ${obj.unoccupiedSensorActive.toJson},
-        "linkRef" : ${obj.linkRef.toJson},
-        "holdClimateRef" : ${obj.holdClimateRef.toJson}
-        }""".parseJson
+      if (obj.coolRelativeTemp.isDefined && obj.heatRelativeTemp.isDefined) {
+        jsObj += (("coolRelativeTemp", obj.coolRelativeTemp.get.toJson))
+        jsObj += (("heatRelativeTemp", obj.heatRelativeTemp.get.toJson))
+        jsObj += (("isTemperatureRelative", true.toJson))
+      }
+      else jsObj += (("isTemperatureRelative", false.toJson))
+
+      JsObject(jsObj.toMap)
     }
   }
 

@@ -8,6 +8,17 @@ import akka.http.scaladsl.model.HttpResponse
 package object client {
   type ServiceResponse[T] = Either[HttpResponse,T]
 
+  /** Type used for API calls that have no [[ApiObject parameters]]. */
+  type ParameterlessApi = EmptyApiObject.type
+
+  /** Instance of the parameterless API object */
+  lazy val EmptyApiObject = new WriteableApiObject { }
+
+  /** JSON serializer for the parameterless API object */
+  implicit val EmptyApiObjectFormat : RootJsonFormat[ParameterlessApi] = DefaultJsonProtocol.jsonFormat0 { () =>
+    throw new NoSuchElementException("ParameterlessApi objects cannot be rendered to JSON")
+  }
+
   type PinScope = PinScope.Value
   object PinScope extends Enumeration {
     val SmartWrite = Value("smartWrite")

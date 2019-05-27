@@ -11,7 +11,8 @@ import com.kelvaya.util.SprayImplicits
 weatherStation   String   yes   no   The weather station identifier.
 forecasts   WeatherForecast[]   yes   no   The list of latest weather station forecasts.
  */
-case class Weather(timestamp : FullDate, weatherStation : String, forecasts : Seq[WeatherForecast])
+case class Weather(timestamp : Option[FullDate], weatherStation : Option[String], forecasts : Option[Seq[WeatherForecast]])
+extends ReadonlyApiObject
 
 object Weather extends SprayImplicits {
   implicit val WeatherFormat = DefaultJsonProtocol.jsonFormat3(Weather.apply)

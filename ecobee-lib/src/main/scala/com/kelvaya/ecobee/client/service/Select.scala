@@ -5,7 +5,7 @@ import spray.json.RootJsonFormat
 import spray.json.JsonFormat
 
 object Select {
-  private[client] implicit def getFormat(implicit lb : LoggingBus) : RootJsonFormat[Select] = new SelectFormat
+  private[client] implicit val Format : RootJsonFormat[Select] = new SelectFormat
 }
 
 

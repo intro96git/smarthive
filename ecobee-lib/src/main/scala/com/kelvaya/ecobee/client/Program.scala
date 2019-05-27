@@ -10,6 +10,7 @@ import spray.json._
   * @param currentClimateRef The currently active climate.
   */
 case class Program(schedule : ProgramSchedule, climates : Array[Climate], currentClimateRef : Climate.Ref)
+extends WriteableApiObject
 
 
 

@@ -1,27 +1,22 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Querystrings
-import com.kelvaya.ecobee.client.Request
-import com.kelvaya.ecobee.client.RequestExecutor
-import com.kelvaya.ecobee.config.Settings
-
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.HttpResponse
-import com.kelvaya.util.Realizer
 import com.kelvaya.ecobee.client.Client
+import com.kelvaya.ecobee.client.ParameterlessApi
+import com.kelvaya.ecobee.client.PinScope
+import com.kelvaya.ecobee.client.PostRequest
+import com.kelvaya.ecobee.client.RequestExecutor
+import com.kelvaya.ecobee.client.TokenType
+import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.util.Realizer
 
 import scala.language.higherKinds
-import com.kelvaya.ecobee.client.PinScope
-import com.kelvaya.ecobee.client.TokenType
-import spray.json.DefaultJsonProtocol
-import spray.json.JsonFormat
-import com.kelvaya.ecobee.client.RequestNoEntity
-import com.kelvaya.ecobee.client.PostRequest
-import spray.json.JsObject
-import akka.http.scaladsl.marshalling.EmptyValue
 
-abstract class TokensRequest(implicit e : RequestExecutor, s : Settings) extends PostRequest[String] {
-  import Querystrings._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.model.Uri
+import spray.json.DefaultJsonProtocol
+
+abstract class TokensRequest(implicit e : RequestExecutor, s : Settings) extends PostRequest[ParameterlessApi] {
+  import com.kelvaya.ecobee.client.Querystrings._
 
   val entity = None
   val query: List[Entry] = this.grantTypeQs :: ClientId :: (this.authTokenQs map { _ :: Nil } getOrElse Nil)

@@ -10,14 +10,14 @@ import spray.json.DefaultJsonProtocol._
 
 /** Details about a house where a [[Thermostat]] is located */
 case class HouseDetails(
-    style : HouseDetails.Style,
-    size :  Int,
-    numberOfFloors : Int,
-    numberOfRooms : Int,
-    numberOfOccupants : Int,
-    age : Int,
-    windowEfficiency : HouseDetails.WindowEfficiency
-)
+    style : Option[HouseDetails.Style] = None,
+    size :  Option[Int] = None,
+    numberOfFloors : Option[Int] = None,
+    numberOfRooms : Option[Int] = None,
+    numberOfOccupants : Option[Int] = None,
+    age : Option[Int] = None,
+    windowEfficiency : Option[HouseDetails.WindowEfficiency] = None
+) extends WriteableApiObject
 
 
 

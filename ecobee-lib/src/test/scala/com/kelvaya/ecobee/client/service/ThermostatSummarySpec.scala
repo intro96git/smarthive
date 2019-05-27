@@ -48,7 +48,7 @@ class ThermostatSummarySpec extends BaseTestSpec {
       RevisionListItem("id2", None, true, "therm2345", "alert2345", "runtime2345", "interval2345")
     )
 
-    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=2, None, Status(200, "OK"))
+    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=2, None, Status(Some(200), Some("OK")))
     val serialized = """{
       "revisionList" : [
         "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
@@ -73,7 +73,7 @@ class ThermostatSummarySpec extends BaseTestSpec {
       EquipmentStatusListItem("id1", Seq(Equipment.AC1, Equipment.Fan))
     )
 
-    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=1, Some(equipResponse), Status(200, "OK"))
+    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=1, Some(equipResponse), Status(Some(200), Some("OK")))
     val serialized = """{
     "revisionList" : [
       "id1:name1:true:therm1123:alert1123:runtime1123:interval1123"
@@ -154,27 +154,6 @@ class ThermostatSummarySpec extends BaseTestSpec {
         "message" : "OK"
       }
       }""".parseJson
-    val serialized7 = """{
-    "revisionList" : [
-      "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
-      "id2:name2:false:therm2345:alert2345:runtime2345:interval2345"
-    ],
-    "thermostatCount" : 2,
-    "status" : {
-      "code" : 200
-    }
-    }""".parseJson
-
-    val serialized8 = """{
-    "revisionList" : [
-      "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
-      "id2:name2:false:therm2345:alert2345:runtime2345:interval2345"
-    ],
-    "thermostatCount" : 2,
-    "status" : {
-      "message" : "OK"
-    }
-    }""".parseJson
 
     val serialized9 = """{
     "revisionList" : [
@@ -247,8 +226,6 @@ class ThermostatSummarySpec extends BaseTestSpec {
     intercept[DeserializationException] { serialized4.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized5.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized6.convertTo[ThermostatSummaryResponse] }
-    intercept[DeserializationException] { serialized7.convertTo[ThermostatSummaryResponse] }
-    intercept[DeserializationException] { serialized8.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized9.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized10.convertTo[ThermostatSummaryResponse] }
     intercept[DeserializationException] { serialized11.convertTo[ThermostatSummaryResponse] }

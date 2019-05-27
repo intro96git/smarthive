@@ -5,11 +5,8 @@ import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
 import com.kelvaya.util.Time.FullDate
 
-/** All settings that a Thermostat may use
+/** All settings that a Thermostat may use that can be modified in a POST request.
   *
-  * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
-  *
-  * @param hvacMode The current HVAC mode the thermostat is in.
   * @param lastServiceDate The last service date of the HVAC equipment.
   * @param serviceRemindMe Whether to send an alert when service is required again.
   * @param monthsBetweenService The user configured monthly interval between HVAC service reminders
@@ -22,18 +19,10 @@ import com.kelvaya.util.Time.FullDate
   * @param coldTempAlertEnabled Whether cold temperature alerts are enabled.
   * @param hotTempAlert The temperature at which a hot temp alert is triggered.
   * @param hotTempAlertEnabled Whether hot temperature alerts are enabled.
-  * @param coolStages The number of cool stages the connected HVAC equipment supports.
-  * @param heatStages The number of heat stages the connected HVAC equipment supports.
   * @param maxSetBack The maximum automated set point set back offset allowed in degrees.
   * @param maxSetForward The maximum automated set point set forward offset allowed in degrees.
   * @param quickSaveSetBack The set point set back offset, in degrees, configured for a quick save event.
   * @param quickSaveSetForward The set point set forward offset, in degrees, configured for a quick save event.
-  * @param hasHeatPump Whether the thermostat is controlling a heat pump.
-  * @param hasForcedAir Whether the thermostat is controlling a forced air furnace.
-  * @param hasBoiler Whether the thermostat is controlling a boiler.
-  * @param hasHumidifier Whether the thermostat is controlling a humidifier.
-  * @param hasErv Whether the thermostat is controlling an energy recovery ventilator.
-  * @param hasHrv Whether the thermostat is controlling a heat recovery ventilator.
   * @param condensationAvoid Whether the thermostat is in frost control mode.
   * @param useCelsius Whether the thermostat is configured to report in degrees Celcius.
   * @param useTimeFormat12 Whether the thermostat is using 12hr time format.
@@ -55,25 +44,16 @@ import com.kelvaya.util.Time.FullDate
   * @param heatCoolMinDelta The minimum temperature difference between the heat and cool values.
   * @param tempCorrection The amount to adjust the temperature reading in degrees F.
   * @param holdAction The default end time setting the thermostat applies to user temperature holds.
-  * @param heatPumpGroundWater Whether the Thermostat uses a geothermal / ground source heat pump.
-  * @param hasElectric Whether the thermostat is connected to an electric HVAC system.
-  * @param hasDehumidifier Whether the thermostat is connected to a dehumidifier. If true or dehumidifyOvercoolOffset > 0 then allow setting dehumidifierMode and dehumidifierLevel.
   * @param dehumidifierMode The dehumidifier mode.If set to off then the dehumidifier will not run, nor will the AC overcool run.
   * @param dehumidifierLevel The dehumidification set point in percentage.
   * @param dehumidifyWithAC Whether the thermostat should use AC overcool to dehumidify. When set to true a postive integer value must be supplied for dehumidifyOvercoolOffset.
   * @param dehumidifyOvercoolOffset Whether the thermostat should use AC overcool to dehumidify and what that temperature offset should be. A value of 0 means this feature is disabled. Value represents the value in F to subract from the current set point. Values should be in the range 0 - 50 and be divisible by 5.
   * @param autoHeatCoolFeatureEnabled If enabled, allows the Thermostat to be put in HVACAuto mode.
   * @param wifiOfflineAlert Whether the alert for when wifi is offline is enabled.
-  * @param heatMinTemp The minimum heat set point allowed by the thermostat firmware.
-  * @param heatMaxTemp The maximum heat set point allowed by the thermostat firmware.
-  * @param coolMinTemp The minimum cool set point allowed by the thermostat firmware.
-  * @param coolMaxTemp The maximum cool set point allowed by the thermostat firmware.
   * @param heatRangeHigh The maximum heat set point configured by the user's preferences.
   * @param heatRangeLow The minimum heat set point configured by the user's preferences.
   * @param coolRangeHigh The maximum cool set point configured by the user's preferences.
   * @param coolRangeLow The minimum heat set point configured by the user's preferences.
-  * @param userAccessCode The user access code value for this thermostat.
-  * @param userAccessSetting The integer representation of the user access settings.
   * @param auxRuntimeAlert The temperature at which an auxHeat temperature alert is triggered.
   * @param auxOutdoorTempAlert The temperature at which an auxOutdoor temperature alert is triggered.
   * @param auxMaxOutdoorTemp The maximum outdoor temperature above which aux heat will not run.
@@ -109,9 +89,7 @@ import com.kelvaya.util.Time.FullDate
   * @param autoAway When set to true if no occupancy motion detected thermostat will go into indefinite away hold, until either the user presses resume schedule or motion is detected.
   * @param smartCirculation When set to true if a larger than normal delta is found between sensors the fan will be engaged for 15min/hour.
   * @param followMeComfort When set to true if a sensor has detected presense for more than 10 minutes then include that sensor in temp average. If no activity has been seen on a sensor for more than 1 hour then remove this sensor from temperature average.
-  * @param ventilatorType The type of ventilator present for the Thermostat.
   * @param isVentilatorTimerOn This Boolean field represents whether the ventilator timer is on or off. The default value is false. If set to true the ventilatorOffDateTime is set to now() + 20 minutes. If set to false the ventilatorOffDateTime is set to it's default value.
-  * @param ventilatorOffDateTime This read-only field represents the Date and Time the ventilator will run until.
   * @param hasUVFilter This Boolean field represents whether the HVAC system has a UV filter.
   * @param coolingLockout This field represents whether to permit the cooling to operate when the Outdoor temeperature is under a specific threshold, currently 55F. The default value is false.
   * @param ventilatorFreeCooling Whether to use the ventilator to dehumidify when climate or calendar event indicates the owner is home.
@@ -120,8 +98,10 @@ import com.kelvaya.util.Time.FullDate
   * @param groupRef The unique reference to the group this thermostat belongs to.
   * @param groupName The name of the the group this thermostat belongs to.
   * @param groupSetting The setting value for the group this thermostat belongs to.
+  *
+  * @see ThermostatSettings
   */
-case class ThermostatSettings(
+case class ThermostatSettingsModification(
     hvacMode :                            Option[HVACMode.Entry] = None,
     lastServiceDate :                     Option[FullDate] = None,
     serviceRemindMe :                     Option[Boolean] = None,
@@ -135,18 +115,10 @@ case class ThermostatSettings(
     coldTempAlertEnabled :                Option[Boolean] = None,
     hotTempAlert :                        Option[Int] = None,
     hotTempAlertEnabled :                 Option[Boolean] = None,
-    coolStages :                          Option[Int] = None,
-    heatStages :                          Option[Int] = None,
     maxSetBack :                          Option[Int] = None,
     maxSetForward :                       Option[Int] = None,
     quickSaveSetBack :                    Option[Int] = None,
     quickSaveSetForward :                 Option[Int] = None,
-    hasHeatPump :                         Option[Boolean] = None,
-    hasForcedAir :                        Option[Boolean] = None,
-    hasBoiler :                           Option[Boolean] = None,
-    hasHumidifier :                       Option[Boolean] = None,
-    hasErv :                              Option[Boolean] = None,
-    hasHrv :                              Option[Boolean] = None,
     condensationAvoid :                   Option[Boolean] = None,
     useCelsius :                          Option[Boolean] = None,
     useTimeFormat12 :                     Option[Boolean] = None,
@@ -168,25 +140,16 @@ case class ThermostatSettings(
     heatCoolMinDelta :                    Option[Int] = None,
     tempCorrection :                      Option[Int] = None,
     holdAction :                          Option[HoldAction.Entry] = None,
-    heatPumpGroundWater :                 Option[Boolean] = None,
-    hasElectric :                         Option[Boolean] = None,
-    hasDehumidifier :                     Option[Boolean] = None,
     dehumidifierMode :                    Option[DehumidifierMode.Entry] = None,
     dehumidifierLevel :                   Option[Int] = None,
     dehumidifyWithAC :                    Option[Boolean] = None,
     dehumidifyOvercoolOffset :            Option[Int] = None,
     autoHeatCoolFeatureEnabled :          Option[Boolean] = None,
     wifiOfflineAlert :                    Option[Boolean] = None,
-    heatMinTemp :                         Option[Int] = None,
-    heatMaxTemp :                         Option[Int] = None,
-    coolMinTemp :                         Option[Int] = None,
-    coolMaxTemp :                         Option[Int] = None,
     heatRangeHigh :                       Option[Int] = None,
     heatRangeLow :                        Option[Int] = None,
     coolRangeHigh :                       Option[Int] = None,
     coolRangeLow :                        Option[Int] = None,
-    userAccessCode :                      Option[String] = None,
-    userAccessSetting :                   Option[Int] = None,
     auxRuntimeAlert :                     Option[Int] = None,
     auxOutdoorTempAlert :                 Option[Int] = None,
     auxMaxOutdoorTemp :                   Option[Int] = None,
@@ -222,9 +185,7 @@ case class ThermostatSettings(
     autoAway :                            Option[Boolean] = None,
     smartCirculation :                    Option[Boolean] = None,
     followMeComfort :                     Option[Boolean] = None,
-    ventilatorType :                      Option[VentilatorType.Entry] = None,
     isVentilatorTimerOn :                 Option[Boolean] = None,
-    ventilatorOffDateTime :               Option[FullDate] = None,
     hasUVFilter :                         Option[Boolean] = None,
     coolingLockout :                      Option[Boolean] = None,
     ventilatorFreeCooling :               Option[Boolean] = None,
@@ -233,34 +194,17 @@ case class ThermostatSettings(
     groupRef :                            Option[String] = None,
     groupName :                           Option[String] = None,
     groupSetting :                        Option[Int] = None
-) extends ApiObject {
-  def asWriteable = ThermostatSettingsModification(
-    hvacMode, lastServiceDate, serviceRemindMe, monthsBetweenService, remindMeDate, vent, ventilatorMinOnTime, serviceRemindTechnician,
-    eiLocation, coldTempAlert, coldTempAlertEnabled, hotTempAlert, hotTempAlertEnabled, maxSetBack, maxSetForward, quickSaveSetBack,
-    quickSaveSetForward, condensationAvoid, useCelsius, useTimeFormat12, locale, humidity, humidifierMode, backlightOnIntensity, backlightSleepIntensity,
-    backlightOffTime, compressorProtectionMinTime, compressorProtectionMinTemp, stage1HeatingDifferentialTemp, stage1CoolingDifferentialTemp,
-    stage1HeatingDissipationTime, stage1CoolingDissipationTime, heatPumpReversalOnCool, fanControlRequired, fanMinOnTime, heatCoolMinDelta,
-    tempCorrection, holdAction, dehumidifierMode, dehumidifierLevel, dehumidifyWithAC, dehumidifyOvercoolOffset, autoHeatCoolFeatureEnabled,
-    wifiOfflineAlert, heatRangeHigh, heatRangeLow, coolRangeHigh, coolRangeLow, auxRuntimeAlert, auxOutdoorTempAlert, auxMaxOutdoorTemp,
-    auxRuntimeAlertNotify, auxOutdoorTempAlertNotify, auxRuntimeAlertNotifyTechnician, auxOutdoorTempAlertNotifyTechnician, disablePreHeating,
-    disablePreCooling, installerCodeRequired, drAccept, isRentalProperty, useZoneController, randomStartDelayCool, randomStartDelayHeat,
-    humidityHighAlert, humidityLowAlert, disableHeatPumpAlerts, disableAlertsOnIdt, humidityAlertNotify, humidityAlertNotifyTechnician,
-    tempAlertNotify, tempAlertNotifyTechnician, monthlyElectricityBillLimit, enableElectricityBillAlert, enableProjectedElectricityBillAlert,
-    electricityBillingDayOfMonth, electricityBillCycleMonths, electricityBillStartMonth, ventilatorMinOnTimeHome, ventilatorMinOnTimeAway,
-    backlightOffDuringSleep, autoAway, smartCirculation, followMeComfort, isVentilatorTimerOn, hasUVFilter, coolingLockout, ventilatorFreeCooling,
-    dehumidifyWhenHeating, ventilatorDehumidify, groupRef, groupName, groupSetting
-  )
-}
+) extends WriteableApiObject
 
 
-object ThermostatSettings {
+object ThermostatSettingsModification {
 
   import SprayImplicits._
 
-  implicit object ThermostatSettingsFormat extends RootJsonFormat[ThermostatSettings] {
-    def read(json : JsValue) : ThermostatSettings = json match {
+  implicit object ThermostatSettingsFormat extends RootJsonFormat[ThermostatSettingsModification] {
+    def read(json : JsValue) : ThermostatSettingsModification = json match {
       case obj : JsObject ⇒ {
-        ThermostatSettings(
+        ThermostatSettingsModification(
           hvacMode                            = findOptional[HVACMode.Entry](obj, "hvacMode"),
           lastServiceDate                     = findOptional[FullDate](obj, "lastServiceDate"),
           serviceRemindMe                     = findOptional[Boolean](obj, "serviceRemindMe"),
@@ -274,18 +218,10 @@ object ThermostatSettings {
           coldTempAlertEnabled                = findOptional[Boolean](obj, "coldTempAlertEnabled"),
           hotTempAlert                        = findOptional[Int](obj, "hotTempAlert"),
           hotTempAlertEnabled                 = findOptional[Boolean](obj, "hotTempAlertEnabled"),
-          coolStages                          = findOptional[Int](obj, "coolStages"),
-          heatStages                          = findOptional[Int](obj, "heatStages"),
           maxSetBack                          = findOptional[Int](obj, "maxSetBack"),
           maxSetForward                       = findOptional[Int](obj, "maxSetForward"),
           quickSaveSetBack                    = findOptional[Int](obj, "quickSaveSetBack"),
           quickSaveSetForward                 = findOptional[Int](obj, "quickSaveSetForward"),
-          hasHeatPump                         = findOptional[Boolean](obj, "hasHeatPump"),
-          hasForcedAir                        = findOptional[Boolean](obj, "hasForcedAir"),
-          hasBoiler                           = findOptional[Boolean](obj, "hasBoiler"),
-          hasHumidifier                       = findOptional[Boolean](obj, "hasHumidifier"),
-          hasErv                              = findOptional[Boolean](obj, "hasErv"),
-          hasHrv                              = findOptional[Boolean](obj, "hasHrv"),
           condensationAvoid                   = findOptional[Boolean](obj, "condensationAvoid"),
           useCelsius                          = findOptional[Boolean](obj, "useCelsius"),
           useTimeFormat12                     = findOptional[Boolean](obj, "useTimeFormat12"),
@@ -307,25 +243,16 @@ object ThermostatSettings {
           heatCoolMinDelta                    = findOptional[Int](obj, "heatCoolMinDelta"),
           tempCorrection                      = findOptional[Int](obj, "tempCorrection"),
           holdAction                          = findOptional[HoldAction.Entry](obj, "holdAction"),
-          heatPumpGroundWater                 = findOptional[Boolean](obj, "heatPumpGroundWater"),
-          hasElectric                         = findOptional[Boolean](obj, "hasElectric"),
-          hasDehumidifier                     = findOptional[Boolean](obj, "hasDehumidifier"),
           dehumidifierMode                    = findOptional[DehumidifierMode.Entry](obj, "dehumidifierMode"),
           dehumidifierLevel                   = findOptional[Int](obj, "dehumidifierLevel"),
           dehumidifyWithAC                    = findOptional[Boolean](obj, "dehumidifyWithAC"),
           dehumidifyOvercoolOffset            = findOptional[Int](obj, "dehumidifyOvercoolOffset"),
           autoHeatCoolFeatureEnabled          = findOptional[Boolean](obj, "autoHeatCoolFeatureEnabled"),
           wifiOfflineAlert                    = findOptional[Boolean](obj, "wifiOfflineAlert"),
-          heatMinTemp                         = findOptional[Int](obj, "heatMinTemp"),
-          heatMaxTemp                         = findOptional[Int](obj, "heatMaxTemp"),
-          coolMinTemp                         = findOptional[Int](obj, "coolMinTemp"),
-          coolMaxTemp                         = findOptional[Int](obj, "coolMaxTemp"),
           heatRangeHigh                       = findOptional[Int](obj, "heatRangeHigh"),
           heatRangeLow                        = findOptional[Int](obj, "heatRangeLow"),
           coolRangeHigh                       = findOptional[Int](obj, "coolRangeHigh"),
           coolRangeLow                        = findOptional[Int](obj, "coolRangeLow"),
-          userAccessCode                      = findOptional[String](obj, "userAccessCode"),
-          userAccessSetting                   = findOptional[Int](obj, "userAccessSetting"),
           auxRuntimeAlert                     = findOptional[Int](obj, "auxRuntimeAlert"),
           auxOutdoorTempAlert                 = findOptional[Int](obj, "auxOutdoorTempAlert"),
           auxMaxOutdoorTemp                   = findOptional[Int](obj, "auxMaxOutdoorTemp"),
@@ -361,9 +288,7 @@ object ThermostatSettings {
           autoAway                            = findOptional[Boolean](obj, "autoAway"),
           smartCirculation                    = findOptional[Boolean](obj, "smartCirculation"),
           followMeComfort                     = findOptional[Boolean](obj, "followMeComfort"),
-          ventilatorType                      = findOptional[VentilatorType.Entry](obj, "ventilatorType"),
           isVentilatorTimerOn                 = findOptional[Boolean](obj, "isVentilatorTimerOn"),
-          ventilatorOffDateTime               = findOptional[FullDate](obj, "ventilatorOffDateTime"),
           hasUVFilter                         = findOptional[Boolean](obj, "hasUVFilter"),
           coolingLockout                      = findOptional[Boolean](obj, "coolingLockout"),
           ventilatorFreeCooling               = findOptional[Boolean](obj, "ventilatorFreeCooling"),
@@ -377,7 +302,7 @@ object ThermostatSettings {
       case _ ⇒ deserializationError(s"Invalid thermostat settings message received: ${json}")
     }
 
-    def write(obj : ThermostatSettings) : JsValue = {
+    def write(obj : ThermostatSettingsModification) : JsValue = {
       val m = scala.collection.mutable.Map.empty[String, JsValue]
 
       obj.hvacMode.foreach { v ⇒ m += (("hvacMode", v.toJson)) }
@@ -393,18 +318,10 @@ object ThermostatSettings {
       obj.coldTempAlertEnabled.foreach { v ⇒ m += (("coldTempAlertEnabled", v.toJson)) }
       obj.hotTempAlert.foreach { v ⇒ m += (("hotTempAlert", v.toJson)) }
       obj.hotTempAlertEnabled.foreach { v ⇒ m += (("hotTempAlertEnabled", v.toJson)) }
-      obj.coolStages.foreach { v ⇒ m += (("coolStages", v.toJson)) }
-      obj.heatStages.foreach { v ⇒ m += (("heatStages", v.toJson)) }
       obj.maxSetBack.foreach { v ⇒ m += (("maxSetBack", v.toJson)) }
       obj.maxSetForward.foreach { v ⇒ m += (("maxSetForward", v.toJson)) }
       obj.quickSaveSetBack.foreach { v ⇒ m += (("quickSaveSetBack", v.toJson)) }
       obj.quickSaveSetForward.foreach { v ⇒ m += (("quickSaveSetForward", v.toJson)) }
-      obj.hasHeatPump.foreach { v ⇒ m += (("hasHeatPump", v.toJson)) }
-      obj.hasForcedAir.foreach { v ⇒ m += (("hasForcedAir", v.toJson)) }
-      obj.hasBoiler.foreach { v ⇒ m += (("hasBoiler", v.toJson)) }
-      obj.hasHumidifier.foreach { v ⇒ m += (("hasHumidifier", v.toJson)) }
-      obj.hasErv.foreach { v ⇒ m += (("hasErv", v.toJson)) }
-      obj.hasHrv.foreach { v ⇒ m += (("hasHrv", v.toJson)) }
       obj.condensationAvoid.foreach { v ⇒ m += (("condensationAvoid", v.toJson)) }
       obj.useCelsius.foreach { v ⇒ m += (("useCelsius", v.toJson)) }
       obj.useTimeFormat12.foreach { v ⇒ m += (("useTimeFormat12", v.toJson)) }
@@ -426,25 +343,16 @@ object ThermostatSettings {
       obj.heatCoolMinDelta.foreach { v ⇒ m += (("heatCoolMinDelta", v.toJson)) }
       obj.tempCorrection.foreach { v ⇒ m += (("tempCorrection", v.toJson)) }
       obj.holdAction.foreach { v ⇒ m += (("holdAction", v.toJson)) }
-      obj.heatPumpGroundWater.foreach { v ⇒ m += (("heatPumpGroundWater", v.toJson)) }
-      obj.hasElectric.foreach { v ⇒ m += (("hasElectric", v.toJson)) }
-      obj.hasDehumidifier.foreach { v ⇒ m += (("hasDehumidifier", v.toJson)) }
       obj.dehumidifierMode.foreach { v ⇒ m += (("dehumidifierMode", v.toJson)) }
       obj.dehumidifierLevel.foreach { v ⇒ m += (("dehumidifierLevel", v.toJson)) }
       obj.dehumidifyWithAC.foreach { v ⇒ m += (("dehumidifyWithAC", v.toJson)) }
       obj.dehumidifyOvercoolOffset.foreach { v ⇒ m += (("dehumidifyOvercoolOffset", v.toJson)) }
       obj.autoHeatCoolFeatureEnabled.foreach { v ⇒ m += (("autoHeatCoolFeatureEnabled", v.toJson)) }
       obj.wifiOfflineAlert.foreach { v ⇒ m += (("wifiOfflineAlert", v.toJson)) }
-      obj.heatMinTemp.foreach { v ⇒ m += (("heatMinTemp", v.toJson)) }
-      obj.heatMaxTemp.foreach { v ⇒ m += (("heatMaxTemp", v.toJson)) }
-      obj.coolMinTemp.foreach { v ⇒ m += (("coolMinTemp", v.toJson)) }
-      obj.coolMaxTemp.foreach { v ⇒ m += (("coolMaxTemp", v.toJson)) }
       obj.heatRangeHigh.foreach { v ⇒ m += (("heatRangeHigh", v.toJson)) }
       obj.heatRangeLow.foreach { v ⇒ m += (("heatRangeLow", v.toJson)) }
       obj.coolRangeHigh.foreach { v ⇒ m += (("coolRangeHigh", v.toJson)) }
       obj.coolRangeLow.foreach { v ⇒ m += (("coolRangeLow", v.toJson)) }
-      obj.userAccessCode.foreach { v ⇒ m += (("userAccessCode", v.toJson)) }
-      obj.userAccessSetting.foreach { v ⇒ m += (("userAccessSetting", v.toJson)) }
       obj.auxRuntimeAlert.foreach { v ⇒ m += (("auxRuntimeAlert", v.toJson)) }
       obj.auxOutdoorTempAlert.foreach { v ⇒ m += (("auxOutdoorTempAlert", v.toJson)) }
       obj.auxMaxOutdoorTemp.foreach { v ⇒ m += (("auxMaxOutdoorTemp", v.toJson)) }
@@ -480,9 +388,7 @@ object ThermostatSettings {
       obj.autoAway.foreach { v ⇒ m += (("autoAway", v.toJson)) }
       obj.smartCirculation.foreach { v ⇒ m += (("smartCirculation", v.toJson)) }
       obj.followMeComfort.foreach { v ⇒ m += (("followMeComfort", v.toJson)) }
-      obj.ventilatorType.foreach { v ⇒ m += (("ventilatorType", v.toJson)) }
       obj.isVentilatorTimerOn.foreach { v ⇒ m += (("isVentilatorTimerOn", v.toJson)) }
-      obj.ventilatorOffDateTime.foreach { v ⇒ m += (("ventilatorOffDateTime", v.toJson)) }
       obj.hasUVFilter.foreach { v ⇒ m += (("hasUVFilter", v.toJson)) }
       obj.coolingLockout.foreach { v ⇒ m += (("coolingLockout", v.toJson)) }
       obj.ventilatorFreeCooling.foreach { v ⇒ m += (("ventilatorFreeCooling", v.toJson)) }
