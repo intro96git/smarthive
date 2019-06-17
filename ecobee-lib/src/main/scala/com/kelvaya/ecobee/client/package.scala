@@ -4,8 +4,18 @@ import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 import spray.json._
 import akka.http.scaladsl.model.HttpResponse
+import com.kelvaya.util.enum.JsonEnum
 
 package object client {
+
+  JsonEnum.registerEnums(AlertType,AlertAck,AlertNotificationType,AlertSeverity,AlertNumber,Climate.Owner, Climate.Type,
+      DehumidifierMode, Device.OutputType, DRAccept, ExtendedRuntime.RuntimeHVACMode, Event.EventType, Event.FanMode, HoldAction, HouseDetails.Style,
+      HouseDetails.WindowEfficiency, HumidifierMode, HVACMode, NotificationSettings.EquipmentType, NotificationSettings.GeneralType,
+      NotificationSettings.LimitType, RemoteSensor.Type, Sensor.SensorType, Sensor.SensorUsage, Sensor.StateType, Sensor.ActionType,
+      SensorCapability.Type, VentilatorMode, VentilatorType, WeatherForecast.WeatherIcon, WeatherForecast.CloudCover)
+
+  // #######################
+
   type ServiceResponse[T] = Either[HttpResponse,T]
 
   /** Type used for API calls that have no [[ApiObject parameters]]. */

@@ -22,14 +22,14 @@ object Technician {
   *
   */
 case class Technician(
-    contractorRef : Option[String],
-    name :          Option[String],
-    phone :         Option[String],
-    streetAddress : Option[String],
-    city :          Option[String],
-    provinceState : Option[String],
-    country :       Option[String],
-    postalCode :    Option[String],
-    email :         Option[String],
-    web :           Option[String],
+    contractorRef : String,
+    name :          String,
+    phone :         String,
+    streetAddress : String,
+    city :          String,
+    provinceState : String,
+    country :       String,
+    postalCode :    String,
+    email :         String,
+    web :           String
 ) extends ReadonlyApiObject

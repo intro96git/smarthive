@@ -1,9 +1,12 @@
 package com.kelvaya.ecobee.client
 
-import spray.json.DefaultJsonProtocol
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 
 object Version {
-  implicit val VersionFormat = DefaultJsonProtocol.jsonFormat0(Version.apply)
+  implicit val VersionFormat = DefaultJsonProtocol.jsonFormat1(Version.apply)
 }
 
-case class Version()
+
+/** The thermostat firmware version number */
+case class Version(thermostatFirmwareVersion : String) extends ReadonlyApiObject

@@ -19,10 +19,13 @@ import spray.json.DefaultJsonProtocol._
 
 object ThermostatRequest {
   private val Endpoint = Uri.Path("/thermostat")
+
+  def apply(selection : Select)(implicit e : RequestExecutor, s : Settings) : ThermostatRequest = ThermostatRequest(selection, None)
+  def apply(selection : Select, page : Int)(implicit e : RequestExecutor, s : Settings) : ThermostatRequest = ThermostatRequest(selection, Some(page))
 }
 
 
-case class ThermostatRequest(selection : Select, page : Option[Int])
+case class ThermostatRequest(selection : Select, page : Option[Int] = None)
 (implicit e : RequestExecutor, s : Settings) extends RequestNoEntity {
   import ThermostatRequest._
 
@@ -42,7 +45,7 @@ case class ThermostatRequest(selection : Select, page : Option[Int])
 // ############################################################
 
 object ThermostatResponse {
-  implicit val ResponseFormat = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
+  implicit def responseFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
 }
 
 case class ThermostatResponse(
@@ -55,7 +58,11 @@ case class ThermostatResponse(
 // ############################################################
 // ############################################################
 
-class ThermostatService extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
-  def execute[R[_]](selection : Select, page : Option[Int] = None)(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, ThermostatResponse]] =
-    execute(new ThermostatRequest(selection, page))
+class ThermostatService private (_select : Select, _page : Option[Int])(implicit  ev : LoggingBus) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
+
+  def this(selection : Select)(implicit  ev : LoggingBus) = this(selection, None)
+  def this(selection : Select, page : Int)(implicit  ev : LoggingBus) = this(selection, Some(page))
+
+  def execute[R[_]]()(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, ThermostatResponse]] =
+    execute(ThermostatRequest(_select, _page))
 }

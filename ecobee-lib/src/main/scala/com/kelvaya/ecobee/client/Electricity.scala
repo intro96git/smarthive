@@ -19,8 +19,8 @@ object Electricity extends SprayImplicits {
     * @param cost The last three daily electricity cost reads from the device in cents with a three decimal place precision.
     * @param consumption The last three daily electricity consumption reads from the device in KWh with a three decimal place precision.
     */
-  case class Device(name : Option[String], tiers : Option[Seq[Tier]], lastUpdate : Option[FullDate],
-      cost : Option[Seq[String]], consumption : Option[Seq[String]])
+  case class Device(name : String, tiers : Seq[Tier], lastUpdate : FullDate,
+      cost : Seq[String], consumption : Seq[String])
   extends ReadonlyApiObject
 
   /** Electricity pricing tier
@@ -29,7 +29,7 @@ object Electricity extends SprayImplicits {
     * @param consumption The last daily consumption reading collected. The reading format and precision is to three decimal places in kWh.
     * @param cost The daily cumulative tier cost in dollars if defined by the Utility
     */
-  case class Tier(name : Option[String], consumption : Option[String], cost : Option[String]) extends ReadonlyApiObject
+  case class Tier(name : String, consumption : String, cost : String) extends ReadonlyApiObject
 
 }
 
@@ -37,4 +37,4 @@ object Electricity extends SprayImplicits {
   *
   * @param devices Readings from an electricity tier
   */
-case class Electricity(devices : Option[Seq[Electricity.Device]]) extends ReadonlyApiObject
+case class Electricity(devices : Seq[Electricity.Device]) extends ReadonlyApiObject

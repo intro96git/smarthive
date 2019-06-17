@@ -3,6 +3,7 @@ package com.kelvaya.ecobee.client
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
+import com.kelvaya.util.Time.DateOnly
 import com.kelvaya.util.Time.FullDate
 
 /** All settings that a Thermostat may use
@@ -123,10 +124,10 @@ import com.kelvaya.util.Time.FullDate
   */
 case class ThermostatSettings(
     hvacMode :                            Option[HVACMode.Entry] = None,
-    lastServiceDate :                     Option[FullDate] = None,
+    lastServiceDate :                     Option[DateOnly] = None,
     serviceRemindMe :                     Option[Boolean] = None,
     monthsBetweenService :                Option[Int] = None,
-    remindMeDate :                        Option[FullDate] = None,
+    remindMeDate :                        Option[DateOnly] = None,
     vent :                                Option[VentilatorMode.Entry] = None,
     ventilatorMinOnTime :                 Option[Int] = None,
     serviceRemindTechnician :             Option[Boolean] = None,
@@ -262,10 +263,10 @@ object ThermostatSettings {
       case obj : JsObject ⇒ {
         ThermostatSettings(
           hvacMode                            = findOptional[HVACMode.Entry](obj, "hvacMode"),
-          lastServiceDate                     = findOptional[FullDate](obj, "lastServiceDate"),
+          lastServiceDate                     = findOptional[DateOnly](obj, "lastServiceDate"),
           serviceRemindMe                     = findOptional[Boolean](obj, "serviceRemindMe"),
           monthsBetweenService                = findOptional[Int](obj, "obj.monthsBetweenService"),
-          remindMeDate                        = findOptional[FullDate](obj, "remindMeDate"),
+          remindMeDate                        = findOptional[DateOnly](obj, "remindMeDate"),
           vent                                = findOptional[VentilatorMode.Entry](obj, "vent"),
           ventilatorMinOnTime                 = findOptional[Int](obj, "ventilatorMinOnTime"),
           serviceRemindTechnician             = findOptional[Boolean](obj, "serviceRemindTechnician"),

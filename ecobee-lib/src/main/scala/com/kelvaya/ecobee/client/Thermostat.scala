@@ -3,23 +3,14 @@ package com.kelvaya.ecobee.client
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 import com.kelvaya.ecobee.client.service.EquipmentStatusListItem
-
-object Thermostat {
-  implicit object Format extends RootJsonFormat[Thermostat] {
-    def read(json: JsValue): Thermostat = {
-      ???
-    }
-
-    def write(obj: Thermostat): JsValue = {
-      ???
-    }
-  }
-}
+import com.kelvaya.util.SprayImplicits
+import akka.event.LoggingBus
+import com.kelvaya.util.Time.FullDate
 
 
 /** Ecobee thermostat
   *
-  * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+  * @note This can be used in GET requests only.  Use [[ThermostatModification]] to create an instance valid for writing in POST operations.
   *
   * @param identifier The unique thermostat serial number.
   * @param name A user defined name for a thermostat.
@@ -48,51 +39,46 @@ object Thermostat {
   * @param houseDetails The information about the house the thermostat is installed in.
   * @param equipmentStatus The status of all running equipment controlled by this Thermostat.
   * @param notificationSettings  The configuration for Alert and Reminders for the Thermostat.
-  * @param privacy The privacy settings for the Thermostat.
   * @param version The firmware version information for the Thermostat
   * @param securitySettings The security settings for the Thermostat.
   * @param remoteSensors The list of `RemoteSensor` objects for the Thermostat.
   */
 case class Thermostat(
     identifier :           String,
-    name :                 Option[String] = None,
-    thermostatRev :        Option[String] = None,
-    isRegistered :         Option[Boolean] = None,
-    modelNumber :          Option[String] = None,
-    brand :                Option[String] = None,
-    features :             Option[String] = None,
-    lastModified :         Option[String] = None,
-    thermostatTime :       Option[String] = None,
-    utcTime :              Option[String] = None,
-    audio :                Option[Audio] = None,
-    alerts :               Option[Array[Alert]] = None,
-//    reminders :            Option[Array[ThermostatReminder2]] = None, -- NB: Specs missing from Ecobee docs
-    settings :             Option[ThermostatSettings] = None,
-    runtime :              Option[ThermostatRuntime] = None,
-    extendedRuntime :      Option[ExtendedRuntime] = None,
-    electricity :          Option[Electricity] = None,
-    devices :              Option[Array[Device]] = None,
-    location :             Option[Location] = None,
-//    energy :               Option[Energy] = None,  -- NB: Specs missing from Ecobee docs
-    technician :           Option[Technician] = None,
-    utility :              Option[Utility] = None,
-    management :           Option[Management] = None,
-    weather :              Option[Weather] = None,
-    events :               Option[Array[Event]] = None,
-    program :              Option[Program] = None,
-    houseDetails :         Option[HouseDetails] = None,
-//    oemCfg :               Option[ThermostatOemCfg] = None, -- NB: Specs missing from Ecobee docs
-    equipmentStatus :      Option[EquipmentStatusListItem] = None,
-    notificationSettings : Option[NotificationSettings] = None,
-    privacy :              Option[ThermostatPrivacy] = None,
-    version :              Option[Version] = None,
-    securitySettings :     Option[SecuritySettings] = None,
-    remoteSensors :        Option[Array[RemoteSensor]] = None
-) extends ApiObject {
-  def asWriteable =
-    ThermostatModification(identifier, name, audio, settings, location, program,
-        houseDetails, notificationSettings, privacy, securitySettings)
-}
+    name :                 String,
+    thermostatRev :        String,
+    isRegistered :         Boolean,
+    modelNumber :          String,
+    brand :                String,
+    features :             String,
+    lastModified :         FullDate,
+    thermostatTime :       FullDate,
+    utcTime :              FullDate,
+    audio :                Audio,
+    alerts :               Array[Alert],
+//    reminders :            Option[Array[ThermostatReminder2], -- NB: Specs missing from Ecobee docs
+    settings :             ThermostatSettings,
+    runtime :              ThermostatRuntime,
+    extendedRuntime :      ExtendedRuntime,
+    electricity :          Electricity,
+    devices :              Array[Device],
+    location :             Location,
+//    energy :               Energy,  -- NB: Specs missing from Ecobee docs
+    technician :           Technician,
+    utility :              Utility,
+    management :           Management,
+    weather :              Weather,
+    events :               Array[Event],
+    houseDetails :         HouseDetails,
+    program :              Program,
+    equipmentStatus :      EquipmentStatusListItem,
+    notificationSettings : NotificationSettings,
+    version :              Version,
+    securitySettings :     SecuritySettings,
+//    oemCfg :               ThermostatOemCfg, -- NB: Specs missing from Ecobee docs
+//    privacy :              ThermostatPrivacy, -- NB: Specs missing from Ecobee docs
+    remoteSensors :        Array[RemoteSensor]
+) extends ReadonlyApiObject
 
 
 /** Ecobee thermostat which can be used in POST modification requests
@@ -105,7 +91,6 @@ case class Thermostat(
   * @param program The `Program` object for the thermostat
   * @param houseDetails The information about the house the thermostat is installed in.
   * @param notificationSettings  The configuration for Alert and Reminders for the Thermostat.
-  * @param privacy The privacy settings for the Thermostat.
   * @param securitySettings The security settings for the Thermostat.
   *
   * @see Thermostat
@@ -121,6 +106,57 @@ case class ThermostatModification(
     houseDetails : Option[HouseDetails] = None,
     //    oemCfg :               Option[ThermostatOemCfg] = None, -- NB: Specs missing from Ecobee docs
     notificationSettings : Option[NotificationSettings] = None,
-    privacy :              Option[ThermostatPrivacy]    = None,
+//    privacy :              Option[ThermostatPrivacy]    = None, -- NB: Specs missing from Ecobee docs
     securitySettings :     Option[SecuritySettings]     = None
 ) extends WriteableApiObject
+
+
+
+object Thermostat extends SprayImplicits {
+  implicit def thermostatFormat(implicit ev : LoggingBus) = new RootJsonFormat[Thermostat] {
+    def read(json: JsValue): Thermostat = json match {
+      case o : JsObject =>
+      Thermostat(
+        identifier = find[String](o, "identifier"),
+        name = find[String](o, "name"),
+        thermostatRev = find[String](o, "thermostatRev"),
+        isRegistered = find[Boolean](o, "isRegistered"),
+        modelNumber = find[String](o, "modelNumber"),
+        brand = find[String](o, "brand"),
+        features = find[String](o, "features"),
+        lastModified = find[FullDate](o, "lastModified"),
+        thermostatTime = find[FullDate](o, "thermostatTime"),
+        utcTime = find[FullDate](o, "utcTime"),
+        audio = find[Audio](o, "audio"),
+        alerts = find[Array[Alert]](o, "alerts"),
+        settings = find[ThermostatSettings](o, "settings"),
+        runtime = find[ThermostatRuntime](o, "runtime"),
+        extendedRuntime = find[ExtendedRuntime](o, "extendedRuntime"),
+        electricity = find[Electricity](o, "electricity"),
+        devices = find[Array[Device]](o, "devices"),
+        location = find[Location](o, "location"),
+        technician = find[Technician](o, "technician"),
+        utility = find[Utility](o, "utility"),
+        management = find[Management](o, "management"),
+        weather = find[Weather](o, "weather"),
+        events = find[Array[Event]](o, "events"),
+        houseDetails = find[HouseDetails](o, "houseDetails"),
+        program = find[Program](o, "program"),
+        equipmentStatus = find[EquipmentStatusListItem](o, "equipmentStatus"),
+        notificationSettings = find[NotificationSettings](o, "notificationSettings"),
+        version = find[Version](o, "version"),
+        securitySettings = find[SecuritySettings](o, "securitySettings"),
+        remoteSensors = find[Array[RemoteSensor]](o, "remoteSensors")
+      )
+      case _ => deserializationError(s"$json is not a valid Thermostat payload")
+    }
+
+    def write(obj: Thermostat): JsValue = serializationError("Thermostat is a read-only object and cannot be serialized.")
+  }
+}
+
+
+
+object ThermostatModification {
+  implicit def thermostatModificationFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat9(ThermostatModification.apply)
+}

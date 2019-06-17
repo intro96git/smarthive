@@ -21,9 +21,9 @@ object Device extends SprayImplicits {
     * @param activationTime Time to activate relay - in seconds.
     * @param deactivationTime Time to deactivate relay - in seconds.
     */
-  case class Output(name : Option[String], zone : Option[Int], outputId : Option[Int], `type` : Option[OutputType.Entry],
-      sendUpdate : Option[Boolean], activateClosed : Option[Boolean], activationTime : Option[Int],
-      deactivationTime : Option[Int]) extends ReadonlyApiObject
+  case class Output(name : String, zone : Int, outputId : Int, `type` : OutputType.Entry,
+      sendUpdate : Boolean, activateClosed : Boolean, activationTime : Int,
+      deactivationTime : Int) extends ReadonlyApiObject
 
 
   /** A type of [[Output]] */
@@ -56,5 +56,5 @@ object Device extends SprayImplicits {
   * @param sensors The list of Sensor Objects associated with the device
   * @param outputs Ths list of Output Objects associated with the device
   */
-case class Device(deviceId : Option[Int], name : Option[String], sensors : Option[Seq[Sensor]], outputs : Option[Seq[Device.Output]])
+case class Device(deviceId : Int, name : String, sensors : Seq[Sensor], outputs : Seq[Device.Output])
 extends ReadonlyApiObject

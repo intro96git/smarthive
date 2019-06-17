@@ -11,7 +11,7 @@ import org.slf4j.Logger
   *
   *  May be used for weather queries.
   *
-  * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+  * @note This can be used in GET requests only.  Use [[LocationModification]] to create an instance valid for writing in POST operations.
   *
   * @param timeZoneOffsetMinutes The timezone offset in minutes from UTC.
   * @param timeZone The timezone in which the thermostat resides.
@@ -25,24 +25,20 @@ import org.slf4j.Logger
   * @param mapCoordinates The lat/long geographic coordinates of the thermostat location.
   */
 case class Location(
-    timeZoneOffsetMinutes : Option[Int],
-    timeZone : Option[DateTimeZone],
-    isDaylightSaving : Option[Boolean],
-    streetAddress : Option[String],
-    city : Option[String],
-    provinceState : Option[String],
-    country : Option[String],
-    postalCode : Option[String],
-    phoneNumber : Option[String],
-    mapCoordinates : Option[String]
-  ) extends ApiObject {
-    def asWriteable: WriteableApiObject = {
-        ???
-      }
-  }
+  timeZoneOffsetMinutes : Int,
+  timeZone : DateTimeZone,
+  isDaylightSaving : Boolean,
+  streetAddress : String,
+  city : String,
+  provinceState : String,
+  country : String,
+  postalCode : String,
+  phoneNumber : String,
+  mapCoordinates : String
+) extends ReadonlyApiObject
 
 object Location extends SprayImplicits {
-  implicit def Format(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat10(Location.apply)
+  implicit def locationFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat10(Location.apply)
 }
 
 /** Physical location of [[Thermostat]] which can be used in POST modification requests.
@@ -73,5 +69,5 @@ case class LocationModification(
 
 
 object LocationModification extends SprayImplicits {
-  implicit def Format(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat9(LocationModification.apply)
+  implicit def locationModificationFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat9(LocationModification.apply)
 }

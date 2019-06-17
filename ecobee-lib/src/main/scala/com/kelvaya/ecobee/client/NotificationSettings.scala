@@ -50,7 +50,7 @@ object NotificationSettings extends SprayImplicits {
   case class Equipment(
     filterLastChanged : Option[Time.DateOnly] = None,
     filterLife : Option[FilterLife] = None,
-    remindMeDate : Option[Time.DateOnly] = None,
+    remindMeDate : Time.DateOnly,
     enabled : Option[Boolean] = None,
     `type` : EquipmentType,
     remindTechnician : Option[Boolean] = None
@@ -98,7 +98,7 @@ object NotificationSettings extends SprayImplicits {
     *
     * @param enabled Whether alerts/reminders are enabled for this notification type
     * @param type The type of notification
-    * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor assoicated with the thermostat.
+    * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor associated with the thermostat.
     */
   case class General(enabled : Option[Boolean] = None, `type` : GeneralType, remindTechnician : Option[Boolean] = None) extends ApiObject {
     def asWriteable = GeneralModification(enabled, remindTechnician)
@@ -143,13 +143,10 @@ object NotificationSettings extends SprayImplicits {
   /** An alert or reminder in [[NotificationSettings notification settings]] associated with a specific threshold
     *  which can be used in POST modification requests.
     *
-    * @param limit   Integer   no   no   The value of the limit to set. For temperatures the value is expressed as degrees Fahrenheit, multipled by 10. For humidity values are expressed as a percentage from 5 to 95. See here for more information.
-    * @param enabled   Boolean   no   no   Boolean value representing whether or n    emailAddresses : Option[Seq[String]],
-    emailNotificationsEnabled : Option[Boolean],
-    equipment : Option[Seq[NotificationSettings.Equipment]],
-    general : Option[Seq[NotificationSettings.General]],
-    limit : Option[Seq[NotificationSettings.Limit]]ot alerts/reminders are enabled for this notification type or not.
-    * @param remindTechnician   Boolean   no   no   Boolean value representing whether or not alerts/reminders should be sent to the technician/contractor associated with the thermostat.
+    * @param limit The value of the limit to set.
+    * @param enabled Whether alerts/reminders are enabled for this notification type.
+    * @param type The type of notification
+    * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor associated with the thermostat.
     *
     * @see Limit
     */
@@ -403,7 +400,7 @@ object NotificationSettings extends SprayImplicits {
           Equipment(
             filterLastChanged = findOptional[Time.DateOnly](o, "filterLastChanged"),
             filterLife        = FilterLife.parse(findOptional[Int](o, "filterLife"), findOptional[String](o, "filterLifeUnits")),
-            remindMeDate      = findOptional[Time.DateOnly](o, "remindMeDate"),
+            remindMeDate      = find[Time.DateOnly](o, "remindMeDate"),
             enabled           = findOptional[Boolean](o, "enabled"),
             `type`            = find[EquipmentType](o, "type"),
             remindTechnician  = findOptional[Boolean](o, "remindTechnician"),
@@ -419,8 +416,8 @@ object NotificationSettings extends SprayImplicits {
     def write(obj: Equipment): JsValue = {
       val map = scala.collection.mutable.Map.empty[String,JsValue]
       map += (("type", obj.`type`.toJson))
+      map += (("remindMeDate", obj.remindMeDate.toJson)) 
       obj.filterLastChanged foreach { v => map += (("filterLastChanged", v.toJson)) }
-      obj.remindMeDate foreach { v => map += (("remindMeDate", v.toJson)) }
       obj.enabled foreach { v => map += (("enabled", v.toJson)) }
       obj.remindTechnician foreach { v => map += (("remindTechnician", v.toJson)) }
       obj.filterLife foreach { v => map ++= FilterLife.toMap(v) }

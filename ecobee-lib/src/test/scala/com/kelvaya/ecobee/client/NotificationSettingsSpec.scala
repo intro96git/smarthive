@@ -7,6 +7,7 @@ import com.kelvaya.util.Time.DateOnly
 import org.joda.time.DateTime
 import org.joda.time.Period
 import com.kelvaya.ecobee.client.NotificationSettings.Limit._
+import com.kelvaya.util.Time
 
 class NotificationSettingsSpec extends BaseTestSpec {
 
@@ -24,7 +25,7 @@ class NotificationSettingsSpec extends BaseTestSpec {
   val equip1monthObj = NotificationSettings.Equipment(
           filterLastChanged = Some(new DateOnly(DateTime.parse("2010-05-06"))),
           filterLife        = Some(NotificationSettings.FilterLife(Period.months(1))),
-          remindMeDate      = Some(new DateOnly(DateTime.parse("2010-06-06"))),
+          remindMeDate      = new DateOnly(DateTime.parse("2010-06-06")),
           enabled           = Some(true),
           `type`            = NotificationSettings.EquipmentType.HVAC,
           remindTechnician  = Some(false)
@@ -32,7 +33,7 @@ class NotificationSettingsSpec extends BaseTestSpec {
   val equip1hourObj = NotificationSettings.Equipment(
           filterLastChanged = Some(new DateOnly(DateTime.parse("2010-05-06"))),
           filterLife        = Some(NotificationSettings.FilterLife(Period.hours(1))),
-          remindMeDate      = Some(new DateOnly(DateTime.parse("2010-06-06"))),
+          remindMeDate      = new DateOnly(DateTime.parse("2010-06-06")),
           enabled           = Some(false),
           `type`            = NotificationSettings.EquipmentType.AirFilter,
           remindTechnician  = Some(false)
@@ -91,12 +92,13 @@ class NotificationSettingsSpec extends BaseTestSpec {
     actual.toJson shouldBe expected.parseJson
 
     val expected2 = """{
-      "equipment" : [ {"type" : "airFilter"} ],
+      "equipment" : [ {"type" : "airFilter", "remindMeDate" : "2010-10-01"} ],
       "general" : [ { "type" : "temp" } ],
       "limit" : [ { "type" : "auxOutdoor" } ]
       }"""
     val actual2 = NotificationSettings(
-        equipment = Some(Seq(NotificationSettings.Equipment(`type` = NotificationSettings.EquipmentType.AirFilter))),
+        equipment = Some(Seq(NotificationSettings.Equipment(`type` = NotificationSettings.EquipmentType.AirFilter,
+            remindMeDate = new Time.DateOnly(DateTime.parse("2010-10-01"))))),
         general = Some(Seq(NotificationSettings.General(`type` = NotificationSettings.GeneralType.Temp))),
         limit = Some(Seq(NotificationSettings.Limit.AuxOutdoorLimit()))
     )
@@ -115,9 +117,10 @@ class NotificationSettingsSpec extends BaseTestSpec {
     val bad2 = """{ "general" : [ {} ]  }"""
     val expected2 = NotificationSettings(general = Some(Seq(NotificationSettings.General(`type` = NotificationSettings.GeneralType.Temp))))
 
-    val good3 = """{ "equipment" : [ { "type" : "uvLamp" } ]  }"""
+    val good3 = """{ "equipment" : [ { "type" : "uvLamp", "remindMeDate" : "2019-10-01" } ]  }"""
     val bad3 = """{ "equipment" : [ {} ]  }"""
-    val expected3 = NotificationSettings(equipment = Some(Seq(NotificationSettings.Equipment(`type` = NotificationSettings.EquipmentType.UVLamp))))
+    val expected3 = NotificationSettings(equipment = Some(Seq(NotificationSettings.Equipment(`type` = NotificationSettings.EquipmentType.UVLamp,
+        remindMeDate = new Time.DateOnly(DateTime.parse("2019-10-01"))))))
 
     good1.parseJson.convertTo[NotificationSettings] shouldBe expected1
     good2.parseJson.convertTo[NotificationSettings] shouldBe expected2

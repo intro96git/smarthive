@@ -19,7 +19,6 @@ object Management {
   * @param showAlertWeb Whether to show management alerts in the web portal.
   */
 case class Management(
-    administrativeContact : Option[String] = None, billingContact : Option[String] = None,
-    name : Option[String] = None, phone : Option[String] = None, email : Option[String] = None,
-    web : Option[String] = None, showAlertIdt : Option[Boolean] = None, showAlertWeb : Option[Boolean] = None
+    administrativeContact : String, billingContact : String, name : String, phone : String, email : String,
+    web : String, showAlertIdt : Boolean, showAlertWeb : Boolean
 ) extends ReadonlyApiObject

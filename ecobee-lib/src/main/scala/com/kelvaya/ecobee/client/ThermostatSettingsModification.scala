@@ -4,6 +4,7 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
 import com.kelvaya.util.Time.FullDate
+import com.kelvaya.util.Time.DateOnly
 
 /** All settings that a Thermostat may use that can be modified in a POST request.
   *
@@ -98,15 +99,15 @@ import com.kelvaya.util.Time.FullDate
   * @param groupRef The unique reference to the group this thermostat belongs to.
   * @param groupName The name of the the group this thermostat belongs to.
   * @param groupSetting The setting value for the group this thermostat belongs to.
-  *
+  *import com.kelvaya.util.Time.FullDate
   * @see ThermostatSettings
   */
 case class ThermostatSettingsModification(
     hvacMode :                            Option[HVACMode.Entry] = None,
-    lastServiceDate :                     Option[FullDate] = None,
+    lastServiceDate :                     Option[DateOnly] = None,
     serviceRemindMe :                     Option[Boolean] = None,
     monthsBetweenService :                Option[Int] = None,
-    remindMeDate :                        Option[FullDate] = None,
+    remindMeDate :                        Option[DateOnly] = None,
     vent :                                Option[VentilatorMode.Entry] = None,
     ventilatorMinOnTime :                 Option[Int] = None,
     serviceRemindTechnician :             Option[Boolean] = None,
@@ -206,10 +207,10 @@ object ThermostatSettingsModification {
       case obj : JsObject ⇒ {
         ThermostatSettingsModification(
           hvacMode                            = findOptional[HVACMode.Entry](obj, "hvacMode"),
-          lastServiceDate                     = findOptional[FullDate](obj, "lastServiceDate"),
+          lastServiceDate                     = findOptional[DateOnly](obj, "lastServiceDate"),
           serviceRemindMe                     = findOptional[Boolean](obj, "serviceRemindMe"),
           monthsBetweenService                = findOptional[Int](obj, "obj.monthsBetweenService"),
-          remindMeDate                        = findOptional[FullDate](obj, "remindMeDate"),
+          remindMeDate                        = findOptional[DateOnly](obj, "remindMeDate"),
           vent                                = findOptional[VentilatorMode.Entry](obj, "vent"),
           ventilatorMinOnTime                 = findOptional[Int](obj, "ventilatorMinOnTime"),
           serviceRemindTechnician             = findOptional[Boolean](obj, "serviceRemindTechnician"),

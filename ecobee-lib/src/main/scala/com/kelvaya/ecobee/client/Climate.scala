@@ -49,7 +49,16 @@ case class Climate(
 
 
 object Climate extends SprayImplicits {
-  implicit val ClimateRefFormat = DefaultJsonProtocol.jsonFormat1(Ref)
+  implicit object ClimateRefFormat extends JsonFormat[Ref] {
+    def read(json: JsValue): Ref = json match {
+      case s : JsString => Ref(s.value)
+      case _ => deserializationError(s"$json is not a valid Climate Ref")
+    }
+
+    def write(obj : Ref) : JsValue = JsString(obj.name)
+  }
+
+
   implicit val ClimateRemoteSensorFormat = DefaultJsonProtocol.jsonFormat2(RemoteSensor)
   implicit val ClimateFormat = DefaultJsonProtocol.jsonFormat14(Climate.apply)
 

@@ -16,4 +16,4 @@ object Utility {
   * @param web The Utility company web site.
   *
   */
-case class Utility(name : Option[String], phone : Option[String], email : Option[String], web : Option[String]) extends ReadonlyApiObject
+case class Utility(name : String, phone : String, email : String, web : String) extends ReadonlyApiObject

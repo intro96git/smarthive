@@ -112,7 +112,7 @@ object ProgramSchedule {
         case _ => deserializationError(s"${json} is not a valid Program Schedule Day")
       }
 
-      def write(obj: Day): JsValue = JsArray(obj.hours.map(_.name.toJson).toList)
+      def write(obj: Day): JsValue = JsArray(obj.hours.map(_.name.toJson).toVector)
     }
   }
 
