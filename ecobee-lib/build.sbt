@@ -26,5 +26,13 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit"    % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit"         % AkkaVersion     % Test,
   "com.typesafe.akka" %% "akka-stream-testkit"  % AkkaVersion     % Test,
-  ScalaTest
+  ScalaTest,
+  
+  ammonite(scalaBinaryVersion.value)
 )
+
+sourceGenerators in Test += Def.task {
+  val file = (sourceManaged in Test).value / "amm.scala"
+  IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
+  Seq(file)
+}.taskValue
