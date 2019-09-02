@@ -99,8 +99,8 @@ import com.kelvaya.util.Time.DateOnly
   * @param groupRef The unique reference to the group this thermostat belongs to.
   * @param groupName The name of the the group this thermostat belongs to.
   * @param groupSetting The setting value for the group this thermostat belongs to.
-  *import com.kelvaya.util.Time.FullDate
-  * @see ThermostatSettings
+  * 
+  * @see [[ThermostatSettings]]
   */
 case class ThermostatSettingsModification(
     hvacMode :                            Option[HVACMode.Entry] = None,

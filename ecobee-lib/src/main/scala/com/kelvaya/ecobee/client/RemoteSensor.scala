@@ -26,7 +26,7 @@ object RemoteSensor extends SprayImplicits {
   * @param inUse Whether the remote sensor is currently in use by a comfort setting.
   * @param capability The list capabilities for the sensor.
   *
-  * @see com.kelvaya.ecobee.client.Climate.RemoteSensor
+  * @see [[com.kelvaya.ecobee.client.Climate.RemoteSensor RemoteSensor]]
   */
 case class RemoteSensor(id : String, name : String, `type` : RemoteSensor.Type,
                         code : String, inUse : Boolean, capability : Seq[SensorCapability])

@@ -1,7 +1,7 @@
 ThisBuild / version         := "1.0.0-SNAPSHOT"
 ThisBuild / organization    := "com.kelvaya"
 ThisBuild / scalaVersion    := "2.12.7"
-
+ThisBuild / autoAPIMappings := true
 
 lazy val util = (project in file("util"))
 

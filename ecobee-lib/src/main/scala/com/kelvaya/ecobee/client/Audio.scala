@@ -5,7 +5,7 @@ import spray.json.DefaultJsonProtocol._
 
 /** Audio properties of the thermostat (Ecobee4 only)
   *
-  * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+  * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
   *
   * @param playbackVolume The volume level for audio playback. This includes volume of the voice assistant. A value between 0 and 100.
   * @param microphoneEnabled Turn microphone (privacy mode) on and off.
@@ -36,7 +36,7 @@ object Audio {
   * @param soundAlertVolume The volume level for alerts on the thermostat. A value between 0 and 10, with 0 meaning 'off'
   * @param soundTickVolume The volume level for key presses on the thermostat. A value between 0 and 10, with 0 meaning 'off'
   *
-  * @see Audio
+  * @see [[Audio]]
   */
 case class AudioModification(
     playbackVolume :    Option[Int] = None,

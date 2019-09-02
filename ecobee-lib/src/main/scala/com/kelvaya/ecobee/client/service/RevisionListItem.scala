@@ -4,7 +4,7 @@ import spray.json._
 
 object RevisionListItem {
 
-  /** Return new [[RevisionList]] from the given [[CSV]].
+  /** Return new [[RevisionListItem]] from the given [[CSV]].
     *
     * @note The CSV must contain exactly 7 values to be accepted.
     */
@@ -57,7 +57,7 @@ object RevisionListItem {
 /** Data revision as reported by Ecobee API for a specific thermostat
   *
   * This is normally instantiated from [[CSV]] data returned by the Ecobee API that is sent
-  * to the [[RevisionList$#apply]] method.
+  * to the [[RevisionListItem$#fromCSV]] method.
   *
   * @param thermoId The thermostat identifier.
   * @param thermoName The thermostat name, otherwise an empty field if one is not set.

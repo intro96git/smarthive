@@ -3,10 +3,7 @@ package com.kelvaya.ecobee.client
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
-/** Ecobee4 voice engine.
-  *
-  *  @see Audio
-  */
+/** Ecobee4 voice engine. */
 case class VoiceEngine(name : Option[String], enabled : Option[Boolean]) extends ReadonlyApiObject
 
 object VoiceEngine {

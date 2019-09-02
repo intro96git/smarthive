@@ -7,7 +7,7 @@ import spray.json.DefaultJsonProtocol._
 
 object EquipmentStatusListItem {
 
-  /** Return new [[EquipmentStatusList]] from the given [[CSV]].
+  /** Return new [[EquipmentStatusListItem]] from the given [[CSV]].
     *
     * @note The CSV must contain exactly 2 values to be accepted.
     */
@@ -60,7 +60,7 @@ object EquipmentStatusListItem {
 /** Status of equipment as reported by Ecobee API for a specific thermostat
   *
   * This is normally instantiated from [[CSV]] data returned by the Ecobee API that is sent
-  * to the [[EquipmentStatusList$#apply]] method.
+  * to the [[EquipmentStatusListItem$#fromCSV]] method.
   *
   * @param thermoId The thermostat identifier.
   * @param equipment Equipment currently running

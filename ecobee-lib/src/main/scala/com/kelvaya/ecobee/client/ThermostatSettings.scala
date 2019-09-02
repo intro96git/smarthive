@@ -8,7 +8,7 @@ import com.kelvaya.util.Time.FullDate
 
 /** All settings that a Thermostat may use
   *
-  * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+  * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
   *
   * @param hvacMode The current HVAC mode the thermostat is in.
   * @param lastServiceDate The last service date of the HVAC equipment.

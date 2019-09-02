@@ -36,7 +36,7 @@ object NotificationSettings extends SprayImplicits {
 
   /** A reminder or alert setting for a specific [[Thermostat]].
     *
-    * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+    * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
     *
     * @param filterLastChanged  The date the filter was last changed for this equipment
     * @param filterLife The value representing the life of the filter.
@@ -45,7 +45,7 @@ object NotificationSettings extends SprayImplicits {
     * @param type The type of notification
     * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor assoiciated with the thermostat.
     *
-    * @see EquipmentPostObject
+    * @see [[EquipmentModification]]
     */
   case class Equipment(
     filterLastChanged : Option[Time.DateOnly] = None,
@@ -67,7 +67,7 @@ object NotificationSettings extends SprayImplicits {
     * @param enabled Whether alerts/reminders are enabled for this notification type
     * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor assoiciated with the thermostat.
     *
-    * @see Equipment
+    * @see [[Equipment]]
     */
   case class EquipmentModification(
     filterLastChanged : Option[Time.DateOnly] = None,
@@ -94,7 +94,7 @@ object NotificationSettings extends SprayImplicits {
 
   /** A general alert or reminder in [[NotificationSettings notification settings]].
     *
-    * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+    * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
     *
     * @param enabled Whether alerts/reminders are enabled for this notification type
     * @param type The type of notification
@@ -110,7 +110,7 @@ object NotificationSettings extends SprayImplicits {
     * @param enabled   Boolean   no   no   Boolean value representing whether or not alerts/reminders are enabled for this notification type or not.
     * @param remindTechnician   Boolean   no   no   Boolean value representing whether or not alerts/reminders should be sent to the technician/contractor assoicated with the thermostat.
     *
-    * @see General
+    * @see [[General]]
     */
   case class GeneralModification(enabled : Option[Boolean] = None, remindTechnician : Option[Boolean] = None) extends WriteableApiObject
 
@@ -129,7 +129,7 @@ object NotificationSettings extends SprayImplicits {
 
   /** An alert or reminder in [[NotificationSettings notification settings]] associated with a specific threshold
     *
-    * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+    * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
     *
     * @param limit The value of the limit to set.
     * @param enabled Whether alerts/reminders are enabled for this notification type.
@@ -148,7 +148,7 @@ object NotificationSettings extends SprayImplicits {
     * @param type The type of notification
     * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor associated with the thermostat.
     *
-    * @see Limit
+    * @see [[Limit]]
     */
   sealed abstract class LimitModification private[NotificationSettings] (val limit : Option[Int] = None, val enabled : Option[Boolean] = None,
       val remindTechnician : Option[Boolean] = None) extends WriteableApiObject
@@ -159,7 +159,7 @@ object NotificationSettings extends SprayImplicits {
     /** An temperature alert or reminder in [[NotificationSettings notification settings]] associated with a specific threshold
       *  which can be used in POST modification requests.
       *
-      * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+      * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
       *
       * @param temperature The value of the temperature limit to set.
       * @param enabled Whether alerts/reminders are enabled for this notification type
@@ -180,7 +180,7 @@ object NotificationSettings extends SprayImplicits {
       * @param enabled Whether alerts/reminders are enabled for this notification type
       * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor associated with the thermostat.
       *
-      * @see TempLimit
+      * @see [[TempLimit]]
       */
     case class TempLimitModification(temperature : Option[Temperature] = None, override val enabled : Option[Boolean] = None,
         override val remindTechnician : Option[Boolean] = None)
@@ -189,7 +189,7 @@ object NotificationSettings extends SprayImplicits {
 
     /** An humidity alert or reminder in [[NotificationSettings notification settings]] associated with a specific threshold.
       *
-      * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+      * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
       *
       * @param humidity The value of the humidity limit to set, from 5 - 95.
       * @param enabled Whether alerts/reminders are enabled for this notification type
@@ -210,7 +210,7 @@ object NotificationSettings extends SprayImplicits {
       * @param enabled Whether alerts/reminders are enabled for this notification type
       * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor associated with the thermostat.
       *
-      * @see HumidityLimit
+      * @see [[HumidityLimit]]
       */
     case class HumidityLimitModification(humidity : Option[Int] = None, override val enabled : Option[Boolean] = None,
         override val remindTechnician : Option[Boolean] = None)
@@ -226,7 +226,7 @@ object NotificationSettings extends SprayImplicits {
 
     /** An auxiliary outdoor alert or reminder in [[NotificationSettings notification settings]] associated with a specific threshold.
       *
-      * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+      * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
       *
       * @param temperature The value of the temperature limit to set, from 32 - 79 degrees F (0 - 26 degrees C).
       * @param enabled Whether alerts/reminders are enabled for this notification type
@@ -247,7 +247,7 @@ object NotificationSettings extends SprayImplicits {
       * @param enabled Whether alerts/reminders are enabled for this notification type
       * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor associated with the thermostat.
       *
-      * @see AuxOutdoor
+      * @see [[AuxOutdoorLimit]]
       */
     case class AuxOutdoorLimitModification(temperature : Option[Temperature] = None, override val enabled : Option[Boolean] = None,
         override val remindTechnician : Option[Boolean] = None)
@@ -263,7 +263,7 @@ object NotificationSettings extends SprayImplicits {
 
     /** An auxiliary outdoor alert or reminder in [[NotificationSettings notification settings]] associated with a specific threshold.
       *
-      * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+      * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
       *
       * @param temperature The value of the temperature limit to set, from 32 - 79 degrees F (0 - 26 degrees C).
       * @param enabled Whether alerts/reminders are enabled for this notification type
@@ -282,7 +282,7 @@ object NotificationSettings extends SprayImplicits {
       * @param enabled Whether alerts/reminders are enabled for this notification type
       * @param remindTechnician Whether alerts/reminders should be sent to the technician/contractor associated with the thermostat.
       *
-      * @see AuxOutdoor
+      * @see [[AuxHeatLimit]]
       */
     case class AuxHeatLimitModification(temperature : Option[Temperature] = None, override val enabled : Option[Boolean] = None,
         override val remindTechnician : Option[Boolean] = None)

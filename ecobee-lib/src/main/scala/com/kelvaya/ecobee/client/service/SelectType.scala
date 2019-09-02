@@ -5,7 +5,7 @@ import spray.json._
 
 object SelectType {
 
-  /** Returns a [[SelectionType]] from the selectionType and selectionMatch strings.
+  /** Returns a [[SelectType]] from the selectionType and selectionMatch strings.
     *
     * These two strings normally come from the JSON representation of a `SelectionType`.
     */

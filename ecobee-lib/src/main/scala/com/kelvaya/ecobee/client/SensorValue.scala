@@ -47,7 +47,7 @@ object SensorValue {
     TemperatureValue(Temperature(parsedJson))
   }
   
-  /** [[SensorValue]] holding a [[Boolean]] */
+  /** [[SensorValue]] holding a `Boolean` */
   case class BooleanValue(value : Boolean) extends SensorValue { type T = Boolean }
   private def booleanValue(json : String) = {
     val value : Boolean = 
@@ -58,7 +58,7 @@ object SensorValue {
     BooleanValue(value)
   }
   
-  /** [[SensorValue]] holding an [[Int]] */
+  /** [[SensorValue]] holding an `Int` */
   case class IntValue(value : Int) extends SensorValue { type T = Int }
   private def intValue(json : String) = {
     val value : Int = 
@@ -70,7 +70,7 @@ object SensorValue {
     IntValue(value)
   }
   
-  /** [[SensorValue]] holding a [[String]] */
+  /** [[SensorValue]] holding a `String` */
   case class StringValue(value : String) extends SensorValue { type T = String }
   private def stringValue(json : String) = StringValue(json)
 }

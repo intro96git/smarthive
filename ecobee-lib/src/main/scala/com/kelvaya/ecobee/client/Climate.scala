@@ -10,7 +10,7 @@ import spray.json.DefaultJsonProtocol._
 
 /** A climate used by a [[Thermostat]] in a [[Program]].
   *
-  * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+  * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
   *
   * @param name The unique climate name
   * @param climateRef The unique climate identifier.
@@ -113,7 +113,7 @@ object Climate extends SprayImplicits {
   * @param ventilatorMinOnTime The minimum time, in minutes, to run the ventilator each hour.
   * @param owner The climate owner.
   * @param type The type of climate.
-  * @param colour The integer conversi  * @note This can be used in GET requests only.  Use the [[#asWritable]] method to grab an instance valid for writing in POST operations.
+  * @param colour The integer conversi  * @note This can be used in GET requests only.  Use the [[#asWriteable]] method to grab an instance valid for writing in POST operations.
   *
   * on of the HEX color value used object Climate extends SprayImplicits {
   implicit val ClimateRefFormat = DefaultJsonProtocol.jsonFormat1(Ref)
@@ -124,7 +124,7 @@ object Climate extends SprayImplicits {
   * @param heatTemp The heat temperature for this climate.
   * @param sensors The list of sensors in use for the specific climate.
   *
-  * @see Climate
+  * @see [[Climate]]
   */
 case class ClimateModification(
     name :                String,
