@@ -81,6 +81,7 @@ case class Thermostat(
 ) extends ReadonlyApiObject
 
 
+
 /** Ecobee thermostat which can be used in POST modification requests
   *
   * @param identifier The unique thermostat serial number.
@@ -93,21 +94,21 @@ case class Thermostat(
   * @param notificationSettings  The configuration for Alert and Reminders for the Thermostat.
   * @param securitySettings The security settings for the Thermostat.
   *
-  * @see Thermostat
+  * @see [[Thermostat]]
   */
 case class ThermostatModification(
     identifier : String,
-    name :       Option[String]             = None,
-    audio :      Option[Audio]              = None,
-    settings :   Option[ThermostatSettings] = None,
-    location :   Option[Location]           = None,
+    name :       Option[String]                         = None,
+    audio :      Option[AudioModification]              = None,
+    settings :   Option[ThermostatSettingsModification] = None,
+    location :   Option[LocationModification]           = None,
     //    energy :               Option[Energy] = None,  -- NB: Specs missing from Ecobee docs
     program :      Option[Program]      = None,
     houseDetails : Option[HouseDetails] = None,
     //    oemCfg :               Option[ThermostatOemCfg] = None, -- NB: Specs missing from Ecobee docs
     notificationSettings : Option[NotificationSettings] = None,
-//    privacy :              Option[ThermostatPrivacy]    = None, -- NB: Specs missing from Ecobee docs
-    securitySettings :     Option[SecuritySettings]     = None
+    //    privacy :              Option[ThermostatPrivacy]    = None, -- NB: Specs missing from Ecobee docs
+    securitySettings : Option[SecuritySettings] = None
 ) extends WriteableApiObject
 
 
