@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.util.enum.JsonRangeEnum
+import com.kelvaya.util.jsonenum.JsonRangeEnum
 
 
 /** Valid alert numbers found in [[Alert]] */

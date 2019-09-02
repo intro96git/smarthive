@@ -93,7 +93,8 @@ abstract class Request[T <: ApiObject : ToEntityMarshaller](implicit val exec : 
         if (q1.isEmpty) Uri.Query(None) else Uri.Query(q1.toSeq : _*)
       }
 
-      val computedEntity = this.entity.map(Marshal(_).to[MessageEntity]).getOrElse(Future.successful(HttpEntity.empty(ContentTypeJson)))
+      val computedEntity = this.entity.map(Marshal(_).to[MessageEntity].map(_.withContentType(ContentTypeJson)))
+        .getOrElse(Future.successful(HttpEntity.empty(ContentTypeJson)))
 
       computedEntity.map { e ⇒
         HttpRequest(
@@ -118,10 +119,7 @@ abstract class Request[T <: ApiObject : ToEntityMarshaller](implicit val exec : 
 // ---------------------
 
 
-/** [[Request]] with no entity
-  *
-  * @inheritdoc
-  */
+/** [[Request]] with no entity */
 abstract class RequestNoEntity(implicit exec : RequestExecutor, settings : Settings) extends Request[ParameterlessApi] {
   val entity : Option[ParameterlessApi] = None
 }

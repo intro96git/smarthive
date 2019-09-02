@@ -5,7 +5,7 @@ import com.kelvaya.util.Time
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
-import com.kelvaya.util.enum._
+import com.kelvaya.util.jsonenum._
 
 /** The extended runtime object contains the last three 5 minute interval values sent by the thermostat for the past 15 minutes of runtime.
   *

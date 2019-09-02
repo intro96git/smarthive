@@ -2,7 +2,7 @@ package com.kelvaya.ecobee.client
 
 import com.kelvaya.util.SprayImplicits
 import com.kelvaya.util.Time
-import com.kelvaya.util.enum.JsonStringEnum
+import com.kelvaya.util.jsonenum.JsonStringEnum
 
 import org.joda.time.Period
 
@@ -416,7 +416,7 @@ object NotificationSettings extends SprayImplicits {
     def write(obj: Equipment): JsValue = {
       val map = scala.collection.mutable.Map.empty[String,JsValue]
       map += (("type", obj.`type`.toJson))
-      map += (("remindMeDate", obj.remindMeDate.toJson)) 
+      map += (("remindMeDate", obj.remindMeDate.toJson))
       obj.filterLastChanged foreach { v => map += (("filterLastChanged", v.toJson)) }
       obj.enabled foreach { v => map += (("enabled", v.toJson)) }
       obj.remindTechnician foreach { v => map += (("remindTechnician", v.toJson)) }

@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.util.enum.JsonStringEnum
+import com.kelvaya.util.jsonenum.JsonStringEnum
 
 /** The type of ventilator present for the Thermostat. */
 object VentilatorType extends JsonStringEnum {

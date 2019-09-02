@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.util.enum.JsonStringEnum
+import com.kelvaya.util.jsonenum.JsonStringEnum
 
 /** The end time setting for temperature holds */
 object HoldAction extends JsonStringEnum {

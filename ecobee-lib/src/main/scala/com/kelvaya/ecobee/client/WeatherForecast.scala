@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.util.enum.JsonIntEnum
+import com.kelvaya.util.jsonenum.JsonIntEnum
 import spray.json.DefaultJsonProtocol._
 import spray.json.DefaultJsonProtocol
 import com.kelvaya.util.SprayImplicits

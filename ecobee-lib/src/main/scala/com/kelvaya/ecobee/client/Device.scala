@@ -2,7 +2,7 @@ package com.kelvaya.ecobee.client
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import com.kelvaya.util.enum.JsonStringEnum
+import com.kelvaya.util.jsonenum.JsonStringEnum
 import com.kelvaya.util.SprayImplicits
 
 object Device extends SprayImplicits {

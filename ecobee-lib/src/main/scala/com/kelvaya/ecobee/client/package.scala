@@ -4,7 +4,7 @@ import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 import spray.json._
 import akka.http.scaladsl.model.HttpResponse
-import com.kelvaya.util.enum.JsonEnum
+import com.kelvaya.util.jsonenum.JsonEnum
 
 package object client {
 

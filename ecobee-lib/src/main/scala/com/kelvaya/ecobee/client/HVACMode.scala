@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.util.enum.JsonStringEnum
+import com.kelvaya.util.jsonenum.JsonStringEnum
 
 /** The HVAC mode of the thermostat is in */
 object HVACMode extends JsonStringEnum {
