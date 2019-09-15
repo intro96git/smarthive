@@ -44,8 +44,8 @@ Vagrant.configure("2") do |config|
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
-  #config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_udp: true, nfs_version: 3
-  config.vm.synced_folder ".", "/vagrant", automount: true
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+  #config.vm.synced_folder "/srv/nfs/proj", "/vagrant", type: "nfs", nfs_export: false
 
 
   # Provider-specific configuration so you can fine-tune various
@@ -56,8 +56,14 @@ Vagrant.configure("2") do |config|
   #   # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
   #
+     
      # Customize the amount of memory on the VM:
-     vb.memory = "3072"
+     mem = `grep 'MemTotal' /proc/meminfo | sed -e 's/MemTotal://' -e 's/ kB//'`.to_i 
+     vb.memory = mem / 1024 / 4
+     
+     # Make sure we can use multiple cores
+     vb.cpus = 2
+     vb.customize ["modifyvm", :id, "--ioapic", "on"]
    end
   #
   # View the documentation for the provider you are using for more
