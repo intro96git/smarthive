@@ -9,3 +9,5 @@ target
 .vagrant
 /util/
 /.bashrc
+.bloop
+.metals
