@@ -10,25 +10,36 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.headers.Authorization
 import monix.eval.Task
 import spray.json.JsonFormat
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import akka.http.scaladsl.server.AuthorizationFailedRejection
+import cats.Monad
+import cats.data.OptionT
+import cats.data.EitherT
 
 
 /** Executes HTTP requests to the Ecobee API */
-trait RequestExecutor {
+trait RequestExecutor[M[_]] {
 
-  /** Return a new Akka `Authorization` HTTP header */
-  def generateAuthorizationHeader: Authorization
+  /** Return a new Akka `Authorization` OAuth Bearer Token HTTP header */
+  def generateAuthorizationHeader(implicit io : Monad[M]): EitherT[M,RequestError,Authorization] = {
+    val header = io.map(getAccessToken.value) {
+      _.map(t => Right[RequestError,Authorization](Authorization(OAuth2BearerToken(t))))
+       .getOrElse(Left[RequestError,Authorization](RequestError.MissingTokenError))
+    }
+    EitherT(header)
+  }
 
   /** Return the Ecobee application key used for authorization against the API */
   def getAppKey: String
 
   /** Return the Ecobee authorization code used for authorization against the API for this client */
-  def getAuthCode: Option[String]
+  def getAuthCode: OptionT[M,String]
 
   /** Return the current access token used for authorization against the API */
-  def getAccessToken: Option[String]
+  def getAccessToken: OptionT[M,String]
 
   /** Return the refresh token used to generate new authorization tokens for the API */
-  def getRefreshToken: Option[String]
+  def getRefreshToken: OptionT[M,String]
 
 
   /** Return the results of executing an HTTP request.
@@ -44,5 +55,10 @@ trait RequestExecutor {
     * @tparam S The return payload type (must be in the typeclass of `JsonFormat` used to deserialize it)
     *
     */
-  def executeRequest[T[_] : Realizer,S : JsonFormat](req : Task[HttpRequest]) : T[Either[ServiceError,S]]
+  def executeRequest[S : JsonFormat](req : EitherT[M,RequestError,Task[HttpRequest]]) : EitherT[M,ServiceError,S]
+}
+
+sealed trait RequestError
+object RequestError {
+  val MissingTokenError : RequestError = new RequestError {}
 }

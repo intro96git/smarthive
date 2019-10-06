@@ -12,7 +12,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream"          % AkkaVersion,
   AkkaSlf4j,
   
-  "net.codingwell" %% "scala-guice" % "4.2.1",
   "com.typesafe" % "config" % "1.3.3",
   
   Monix,

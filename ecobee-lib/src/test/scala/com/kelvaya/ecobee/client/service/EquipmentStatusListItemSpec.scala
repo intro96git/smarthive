@@ -6,6 +6,8 @@ import spray.json._
 
 class EquipmentStatusListItemSpec extends BaseTestSpec {
 
+  import deps.Implicits._
+
   "Equipment Status lists" must "require 2 attributes, but allow a equipment list" in {
     val serialized1 = "abc"
     val serialized2 = "abc:"

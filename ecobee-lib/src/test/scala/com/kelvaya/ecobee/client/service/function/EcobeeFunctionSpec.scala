@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service.function
 
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.service.Select
 import com.kelvaya.ecobee.client.service.SelectType
 import com.kelvaya.ecobee.client.service.ThermostatPostRequest
@@ -23,9 +22,7 @@ import com.kelvaya.ecobee.client.Event.FanMode
 
 class EcobeeFunctionSpec extends BaseTestSpec {
 
-  implicit lazy val settings = this.injector.instance[Settings]
-  implicit lazy val exec = this.createTestExecutor(Map.empty)
-  implicit lazy val client = new Client
+  import deps.Implicits._
   implicit val materializer = ActorMaterializer()
 
   val now = DateTime.parse("2014-03-22T10:23:44")

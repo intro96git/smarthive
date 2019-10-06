@@ -3,6 +3,7 @@ package com.kelvaya.ecobee.client
 import com.kelvaya.ecobee.config.Settings
 
 import scala.concurrent.Future
+import scala.language.higherKinds
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling._
@@ -15,6 +16,11 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.Uri
 import monix.eval.Task
+import cats.data.OptionT
+import cats.Monad
+import cats.data.EitherT
+import akka.http.scaladsl.model.headers.Authorization
+
 
 object Request {
   private val JsonSubType = "json"
@@ -26,31 +32,34 @@ object Request {
     * @param reqUri The URI of the HTTP request
     * @param querystring A list of querystrings to add to the request.  Defaults to an empty list.
     * @param reqEntity The body of the HTTP request.
-    * @param authorizer (implicit) The `RequestExecutor` responsible for executing the HTTP request
+    * @param exec (implicit) The `RequestExecutor` responsible for executing the HTTP request
     * @param settings (implicit) The application settings
     *
     * @tparam T Request entity type, which must be an `ApiObject`
+    * @tparam M The monad container type that will hold results
     */
-  def apply[T <: ApiObject : ToEntityMarshaller](reqUri: Uri.Path,  querystring: List[Querystrings.Entry], reqEntity: T)
-  (implicit authorizer: RequestExecutor, settings: Settings) : Request[T] = apply(reqUri, querystring, Some(reqEntity))
+  def apply[T <: ApiObject : ToEntityMarshaller,M[_] : Monad](reqUri: Uri.Path,  querystring: List[Querystrings.Entry], reqEntity: T)
+  (implicit exec: RequestExecutor[M], settings: Settings) : Request[M,T] = apply(reqUri, querystring, Some(reqEntity))
 
   /** Create a new [[AuthorizedRequest]] at the given URI with an empty request body.
     *
     * @param reqUri The URI of the HTTP request
     * @param querystring A list of querystrings to add to the request.  Defaults to an empty list.
-    * @param authorizer (implicit) The `RequestExecutor` responsible for executing the HTTP request
+    * @param exec (implicit) The `RequestExecutor` responsible for executing the HTTP request
     * @param settings (implicit) The application settings
+    *
+    * @tparam M The monad type to contain operation results
     */
-  def apply(reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty)
-  (implicit authorizer: RequestExecutor, settings: Settings) : Request[ParameterlessApi] = apply(reqUri, querystring, None)
+  def apply[M[_] : Monad](reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty)
+  (implicit exec: RequestExecutor[M], settings: Settings) : Request[M,ParameterlessApi] = apply(reqUri, querystring, None)
 
 
 
-  private def apply[T <: ApiObject : ToEntityMarshaller](reqUri: Uri.Path, querystring: List[Querystrings.Entry], reqEntity : Option[T])
-  (implicit authorizer: RequestExecutor, settings: Settings) =
-    new Request[T] with AuthorizedRequest[T] {
+  private def apply[T <: ApiObject : ToEntityMarshaller,M[_] : Monad](reqUri: Uri.Path, querystring: List[Querystrings.Entry], reqEntity : Option[T])
+  (implicit authorizer: RequestExecutor[M], settings: Settings) =
+    new Request[M,T] with AuthorizedRequest[M,T] {
       val uri = reqUri
-      val query = querystring
+      val query = this.containerClass.pure(querystring)
       val entity = reqEntity
     }
 
@@ -66,10 +75,12 @@ object Request {
   *
   * @param exec (implicit) The `RequestExecutor` responsible for sending the HTTP request
   * @param settings (implicit) Application settings
+  * @param containerClass Instance of class that brings type `M` into the Monad Typeclass, used to contain the results of Request queries and operations.
   *
   * @tparam T Request entity type, which must be an `ApiObject`
+  * @tparam M The monad container type that will hold results
   */
-abstract class Request[T <: ApiObject : ToEntityMarshaller](implicit val exec : RequestExecutor, val settings : Settings) {
+abstract class Request[M[_],T <: ApiObject : ToEntityMarshaller](implicit val exec : RequestExecutor[M], val settings : Settings, protected val containerClass : Monad[M]) {
   import Request._
 
   private lazy val _serverRoot = settings.EcobeeServerRoot
@@ -79,39 +90,48 @@ abstract class Request[T <: ApiObject : ToEntityMarshaller](implicit val exec : 
   val uri: Uri.Path
 
   /** The querystring parameters to be included in the request */
-  val query: List[Querystrings.Entry]
+  val query: M[List[Querystrings.Entry]]
 
   /** The request body (if any) */
   val entity : Option[T]
 
+  /** Creates a new Akka HTTP request to encapsulate the request to the Ecobee API
+    *
+    * Will return a [[RequestError]] if the request is malformed or unrecognized.
+    */
+  def createRequest : EitherT[M, RequestError, Task[HttpRequest]] = {
+    val task = containerClass.map(this.query) { qry ⇒
 
-  /** Creates a new Akka HTTP request to encapsulate the request to the Ecobee API */
-  def createRequest = {
-    Task.deferFutureAction { implicit s ⇒
-      val computedQuery = {
-        val q1 = (if (this.query.size == 0) Nil else this.query) ++ (Querystrings.JsonFormat :: Nil)
-        if (q1.isEmpty) Uri.Query(None) else Uri.Query(q1.toSeq : _*)
+      val tsk = Task.deferFutureAction { implicit s ⇒
+        val computedQuery = {
+          val q1 = (if (qry.size == 0) Nil else qry) ++ (Querystrings.JsonFormat :: Nil)
+          if (q1.isEmpty) Uri.Query(None) else Uri.Query(q1.toSeq : _*)
+        }
+
+        val computedEntity = this.entity.map(Marshal(_).to[MessageEntity].map(_.withContentType(ContentTypeJson)))
+          .getOrElse(Future.successful(HttpEntity.empty(ContentTypeJson)))
+
+        computedEntity.map { e ⇒
+          HttpRequest(
+            uri = _serverRoot.withPath(_serverRoot.path ++ uri).withQuery(computedQuery)
+          ).withEntity(e)
+        }
       }
 
-      val computedEntity = this.entity.map(Marshal(_).to[MessageEntity].map(_.withContentType(ContentTypeJson)))
-        .getOrElse(Future.successful(HttpEntity.empty(ContentTypeJson)))
-
-      computedEntity.map { e ⇒
-        HttpRequest(
-          uri = _serverRoot.withPath(_serverRoot.path ++ uri).withQuery(computedQuery)
-        ).withEntity(e)
-      }
+      (Right[RequestError,Task[HttpRequest]](tsk) : Either[RequestError,Task[HttpRequest]])
     }
+
+    EitherT(task)
   }
 
   /** Returns the authorization code querystring parameter used during initial authorization */
-  def getAuthCodeQs : Option[Querystrings.Entry] = exec.getAuthCode map { (("code", _)) }
+  def getAuthCodeQs : OptionT[M,Querystrings.Entry] = exec.getAuthCode  map { (("code", _)) }
 
 
   /** Returns the refresh token querystring parameter used during token refreshes */
-  def getRefreshTokenQs : Querystrings.Entry = {
+  def getRefreshTokenQs : M[Querystrings.Entry] = {
     val token = exec.getRefreshToken.getOrElse("")
-    (("refresh_token", token))
+    Monad[M].map(token){ (("refresh_token", _)) }
   }
 }
 
@@ -120,14 +140,17 @@ abstract class Request[T <: ApiObject : ToEntityMarshaller](implicit val exec : 
 
 
 /** [[Request]] with no entity */
-abstract class RequestNoEntity(implicit exec : RequestExecutor, settings : Settings) extends Request[ParameterlessApi] {
+abstract class RequestNoEntity[M[_] : Monad](implicit exec : RequestExecutor[M], settings : Settings) extends Request[M,ParameterlessApi] {
   val entity : Option[ParameterlessApi] = None
 }
 
 
 /** A mix-in trait which includes the authorization header in a [[Request]] */
-trait AuthorizedRequest[T <: ApiObject] extends Request[T] {
-  abstract override def createRequest = super.createRequest.map(_.addHeader(exec.generateAuthorizationHeader))
+trait AuthorizedRequest[M[_],T <: ApiObject] extends Request[M,T] {
+
+  abstract override def createRequest = exec.generateAuthorizationHeader.flatMap { hdr ⇒
+    super.createRequest.map { req ⇒ req.map(_.addHeader(hdr)) }
+  }
 }
 
 
@@ -138,9 +161,6 @@ trait AuthorizedRequest[T <: ApiObject] extends Request[T] {
   *
   * @tparam T Request entity type, which must be an `WriteableApiObject`
   */
-trait PostRequest[T <: WriteableApiObject] extends Request[T] {
-  abstract override def createRequest = {
-    val req = super.createRequest
-    req.map(_.withMethod(HttpMethods.POST))
-  }
+trait PostRequest[M[_],T <: WriteableApiObject] extends Request[M,T] {
+  abstract override def createRequest = super.createRequest.map { tsk => tsk.map(_.withMethod(HttpMethods.POST)) }
 }

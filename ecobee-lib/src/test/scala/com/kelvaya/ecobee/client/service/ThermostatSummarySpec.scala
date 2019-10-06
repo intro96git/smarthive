@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.config.Settings
@@ -11,12 +10,11 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
 import spray.json._
+import com.kelvaya.ecobee.test.TestSettings
 
 class ThermostatSummarySpec extends BaseTestSpec {
 
-  implicit lazy val settings = this.injector.instance[Settings]
-  implicit lazy val exec = this.createTestExecutor(Map.empty)
-  implicit lazy val client = new Client
+  import deps.Implicits._
 
   "The thermostat summary service" must "serialize requests correctly" in {
 

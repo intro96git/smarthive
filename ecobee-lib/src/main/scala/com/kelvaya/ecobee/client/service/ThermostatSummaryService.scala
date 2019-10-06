@@ -1,20 +1,19 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.Querystrings
-import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
+import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.config.Settings
-import com.kelvaya.util.Realizer
 
 import scala.language.higherKinds
 
 import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
+import cats.Monad
+import cats.data.EitherT
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import com.kelvaya.ecobee.client.RequestNoEntity
 
 object ThermostatSummaryRequest {
   private val Endpoint = Uri.Path("/thermostatSummary")
@@ -25,11 +24,11 @@ object ThermostatSummaryRequest {
 }
 
 
-case class ThermostatSummaryRequest(selectType : SelectType, includeEquipStatus : Boolean = false)
-(implicit e : RequestExecutor, s : Settings) extends RequestNoEntity {
+case class ThermostatSummaryRequest[M[_]:Monad](selectType : SelectType, includeEquipStatus : Boolean = false)
+(implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M] {
   import ThermostatSummaryRequest._
 
-  val query: List[Querystrings.Entry] = (("selection", getJson(selectType, includeEquipStatus))) :: Nil
+  val query: M[List[Querystrings.Entry]] = this.containerClass.pure( (("selection", getJson(selectType, includeEquipStatus))) :: Nil )
   val uri: Uri.Path = ThermostatSummaryRequest.Endpoint
 
 }
@@ -54,7 +53,7 @@ case class ThermostatSummaryResponse(
 // ############################################################
 
 
-class ThermostatSummaryService(implicit lb : LoggingBus) extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
-  def execute[R[_]](selectType : SelectType, includeEquipStatus : Boolean = false)(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, ThermostatSummaryResponse]] =
+class ThermostatSummaryService[M[_]:Monad](implicit lb : LoggingBus) extends EcobeeJsonService[M,ThermostatSummaryRequest[M],ThermostatSummaryResponse] {
+  def execute[R[_]](selectType : SelectType, includeEquipStatus : Boolean = false)(implicit e : RequestExecutor[M], s : Settings): EitherT[M, ServiceError, ThermostatSummaryResponse] =
     execute(new ThermostatSummaryRequest(selectType, includeEquipStatus))
 }

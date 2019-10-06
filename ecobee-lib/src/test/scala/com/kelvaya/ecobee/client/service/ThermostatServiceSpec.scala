@@ -1,7 +1,6 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.test.BaseTestSpec
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.config.Settings
 import akka.http.scaladsl.model._
 import com.kelvaya.ecobee.client.Request
@@ -10,9 +9,7 @@ import spray.json.DefaultJsonProtocol._
 
 class ThermostatServiceSpec extends BaseTestSpec {
 
-  implicit lazy val settings = this.injector.instance[Settings]
-  implicit lazy val exec = this.createTestExecutor(Map.empty)
-  implicit lazy val client = new Client
+  import deps.Implicits._
 
   "The thermostat service" must "serialize requests correctly" in {
 

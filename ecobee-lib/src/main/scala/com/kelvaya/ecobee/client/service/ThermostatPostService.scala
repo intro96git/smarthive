@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Request
@@ -19,6 +18,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import cats.Monad
+import cats.data.EitherT
 
 object ThermostatPostRequest {
 
@@ -40,13 +41,15 @@ object ThermostatPostRequest {
   * @param thermostat The thermostat and fields to modify.  Send only the minimum to be modified.
   * @param functions Any thermostat functions to execute after performing the modifications on `#thermostat`.
   */
-case class ThermostatPostRequest(selection : Select, thermostat : Option[ThermostatModification], functions : Option[Seq[ThermostatFunction]])(implicit e : RequestExecutor, s : Settings, log : LoggingBus) extends Request[ThermostatPostRequest.RequestBody]
-  with PostRequest[ThermostatPostRequest.RequestBody] {
+case class ThermostatPostRequest[M[_]:Monad](selection : Select, thermostat : Option[ThermostatModification], functions : Option[Seq[ThermostatFunction]])
+(implicit e : RequestExecutor[M], s : Settings, log : LoggingBus)
+  extends Request[M,ThermostatPostRequest.RequestBody]
+  with PostRequest[M,ThermostatPostRequest.RequestBody] {
 
   import ThermostatPostRequest._
 
   val entity = Some(RequestBody(selection, thermostat, functions))
-  val query = List.empty[Querystrings.Entry]
+  val query = this.containerClass.pure(List.empty[Querystrings.Entry])
   val uri : Uri.Path = Endpoint
 }
 
@@ -66,10 +69,8 @@ object ThermostatPostResponse {
   implicit val Format = DefaultJsonProtocol.jsonFormat1(ThermostatPostResponse.apply)
 }
 
-
 // ################################################################################################################
 // ################################################################################################################
-
 
 /** Service to update an Ecobee [[Thermostat]].
   *
@@ -77,7 +78,7 @@ object ThermostatPostResponse {
   *
   * @param ev The AKKA `LoggingBus` that can record application log messages
   */
-class ThermostatPostService(implicit ev : LoggingBus) extends EcobeeJsonService[ThermostatPostRequest, ThermostatPostResponse] {
-  def execute[R[_]](selectType : SelectType, thermostat : Option[ThermostatModification] = None, functions : Option[Seq[ThermostatFunction]] = None)(implicit r : Realizer[R], c : Client, e : RequestExecutor, s : Settings) : R[Either[ServiceError, ThermostatPostResponse]] =
+class ThermostatPostService[M[_] : Monad](implicit ev : LoggingBus) extends EcobeeJsonService[M, ThermostatPostRequest[M], ThermostatPostResponse] {
+  def execute(selectType : SelectType, thermostat : Option[ThermostatModification] = None, functions : Option[Seq[ThermostatFunction]] = None)(implicit e : RequestExecutor[M], s : Settings) : EitherT[M, ServiceError, ThermostatPostResponse] =
     execute(ThermostatPostRequest(Select(selectType), thermostat, functions))
 }

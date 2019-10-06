@@ -1,7 +1,6 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.test.BaseTestSpec
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.Thermostat
 import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.client.Electricity
@@ -20,9 +19,8 @@ import akka.stream.scaladsl.Sink
 
 class ThermostatPostSpec extends BaseTestSpec {
 
-  implicit lazy val settings = this.injector.instance[Settings]
-  implicit lazy val exec = this.createTestExecutor(Map.empty)
-  implicit lazy val client = new Client
+  
+  import deps.Implicits._
   implicit val materializer = ActorMaterializer()
 
   lazy val TestThermostat = ThermostatModification("identifier", name = Some("Hello World"))

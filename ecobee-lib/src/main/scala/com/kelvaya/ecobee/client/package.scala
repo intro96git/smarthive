@@ -6,9 +6,52 @@ import spray.json._
 import akka.http.scaladsl.model.HttpResponse
 import com.kelvaya.util.jsonenum.JsonEnum
 
+
+/** API client to access the Ecobee thermostat's web services.
+  *
+  =Setup=
+  * Many of the classes participating in these API's use Cats Monads to track IO operations.  This allows
+  * proper unit tests (whereby the monad used is usually Cats's `Id` Identity monad).  However, for production code,
+  * choose a more appropriate IO monad (such as Cats's `IO` monad, Scala's `Future`, or Monix's `Task`).
+  * Please note that the Monix `Task` is used within some code already when working
+  * with Akka.  Akka tends to returns `Future` for many of its operations, so the `Task` is used to defer those
+  * operations.
+  *
+  * To start using the API client, you must declare implicitly a number of options:
+  - The [[com.kelvaya.ecobee.config.Settings Settings]] instance that reads global application settings.
+  - The [[RequestExecutor]] instance, which controls the actual execution of HTTP requests against the Ecobee API
+  - The `ActorSystem` instance, used by Akka to coordinate all actor interactions
+  - The Akka `LoggingBus` instance, used for logging.
+  *
+  * This can be done through the [[com.kelvaya.ecobee.config.DI DI]] class for ease-of-use.  It has sane defaults,
+  * and allows overriding of the [[com.kelvaya.ecobee.config.Settings Settings]] and [[RequestExecutor]] for individual situations through the
+  * [[com.kelvaya.ecobee.config.DI.Dependencies Dependencies]] case class.  These defaults include using
+  * the Cats IO monad for its IO operations.
+  *
+  * Please note that there is no default set for the `ActorSystem`. You will always need to pass that in.
+  *
+  * Typical setup:
+{{{
+final class MyApp extends Application {
+
+  // Initialize dependencies using all defaults
+  val deps = DI(ActorSystem("my-actor-sys"))
+  import deps.Implicits._
+}
+}}}
+  *
+  = Working with the Client =
+  * DOCS INCOMPLETE ... need more info!
+  */
 package object client {
 
-  JsonEnum.registerEnums(AlertType,AlertAck,AlertNotificationType,AlertSeverity,AlertNumber,Climate.Owner, Climate.Type,
+  /*
+   * Workaround for an issue loading available JSON-serializable enumerations.  These enumerations must be loaded
+   * into memory before any deserialization occurs, as the system compares JSON payloads to those already loaded
+   * during the deserialzation process.  This method forcibly preloads all enumeration classes that should be
+   * recognized.
+   */
+  JsonEnum.preloadEnums(AlertType,AlertAck,AlertNotificationType,AlertSeverity,AlertNumber,Climate.Owner, Climate.Type,
       DehumidifierMode, Device.OutputType, DRAccept, ExtendedRuntime.RuntimeHVACMode, Event.EventType, Event.FanMode, HoldAction, HouseDetails.Style,
       HouseDetails.WindowEfficiency, HumidifierMode, HVACMode, NotificationSettings.EquipmentType, NotificationSettings.GeneralType,
       NotificationSettings.LimitType, RemoteSensor.Type, Sensor.SensorType, Sensor.SensorUsage, Sensor.StateType, Sensor.ActionType,

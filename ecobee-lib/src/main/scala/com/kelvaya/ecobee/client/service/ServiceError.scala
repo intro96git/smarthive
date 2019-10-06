@@ -48,7 +48,7 @@ object ServiceError {
   *
   *  @see [[ServiceError$]]
   */
-case class ServiceError(error : String, error_description : String, error_uri : String) {
+sealed case class ServiceError(error : String, error_description : String, error_uri : String) {
   import ServiceError._
 
   /** Returns the HTTP status code for this service error */

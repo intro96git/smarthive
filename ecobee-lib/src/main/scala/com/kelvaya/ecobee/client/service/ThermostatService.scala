@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.Page
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.RequestExecutor
@@ -16,22 +15,24 @@ import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import cats.Monad
+import cats.data.EitherT
 
 object ThermostatRequest {
   private val Endpoint = Uri.Path("/thermostat")
 
-  def apply(selection : Select)(implicit e : RequestExecutor, s : Settings) : ThermostatRequest = ThermostatRequest(selection, None)
-  def apply(selection : Select, page : Int)(implicit e : RequestExecutor, s : Settings) : ThermostatRequest = ThermostatRequest(selection, Some(page))
+  def apply[M[_] : Monad](selection : Select)(implicit e : RequestExecutor[M], s : Settings) : ThermostatRequest[M] = ThermostatRequest(selection, None)
+  def apply[M[_] : Monad](selection : Select, page : Int)(implicit e : RequestExecutor[M], s : Settings) : ThermostatRequest[M] = ThermostatRequest(selection, Some(page))
 }
 
 
-case class ThermostatRequest(selection : Select, page : Option[Int] = None)
-(implicit e : RequestExecutor, s : Settings) extends RequestNoEntity {
+case class ThermostatRequest[M[_] : Monad](selection : Select, page : Option[Int] = None)
+(implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M] {
   import ThermostatRequest._
 
   val pageQs : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
 
-  val query: List[Querystrings.Entry] =  {
+  val query: M[List[Querystrings.Entry]] =  this.containerClass.pure {
     val list = collection.mutable.ListBuffer((("selection", selection.toJson.compactPrint)))
     if (pageQs.isDefined) list += pageQs.get
     list.toList
@@ -58,11 +59,11 @@ case class ThermostatResponse(
 // ############################################################
 // ############################################################
 
-class ThermostatService private (_select : Select, _page : Option[Int])(implicit  ev : LoggingBus) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
+class ThermostatService[M[_] : Monad] private (_select : Select, _page : Option[Int])(implicit  ev : LoggingBus) extends EcobeeJsonService[M, ThermostatRequest[M],ThermostatResponse] {
 
   def this(selection : Select)(implicit  ev : LoggingBus) = this(selection, None)
   def this(selection : Select, page : Int)(implicit  ev : LoggingBus) = this(selection, Some(page))
 
-  def execute[R[_]]()(implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings): R[Either[ServiceError, ThermostatResponse]] =
+  def execute()(implicit e : RequestExecutor[M], s : Settings): EitherT[M, ServiceError, ThermostatResponse] =
     execute(ThermostatRequest(_select, _page))
 }

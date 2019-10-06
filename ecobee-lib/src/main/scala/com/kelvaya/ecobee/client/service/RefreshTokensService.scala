@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.util.Realizer
@@ -15,14 +14,18 @@ import akka.http.scaladsl.model.Uri
 import spray.json.DefaultJsonProtocol
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Querystrings.GrantType
+import cats.Monad
+import cats.data.OptionT
 
-class RefreshTokensRequest(implicit e : RequestExecutor, s : Settings) extends TokensRequest {
-  final def authTokenQs : Option[Querystrings.Entry] = Some(this.getRefreshTokenQs)
+class RefreshTokensRequest[M[_]:Monad](implicit e : RequestExecutor[M], s : Settings) extends TokensRequest[M] {
+  final def authTokenQs : OptionT[M,Querystrings.Entry] = OptionT.liftF(this.getRefreshTokenQs)
   final def grantTypeQs : Querystrings.Entry = GrantType.RefreshToken
 }
 
 // ---------------------
 
-object RefreshTokensService extends TokensService[RefreshTokensRequest] {
-  def newTokenRequest(implicit e : RequestExecutor, s : Settings) = new RefreshTokensRequest
+object RefreshTokensService {
+  implicit class RefreshTokensServiceImpl[M[_]:Monad](o : RefreshTokensService.type) extends TokensService[M,RefreshTokensRequest[M]] {
+    def newTokenRequest(implicit e : RequestExecutor[M], s : Settings) = new RefreshTokensRequest
+  }
 }

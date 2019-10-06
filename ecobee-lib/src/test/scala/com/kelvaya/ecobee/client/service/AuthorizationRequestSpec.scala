@@ -2,7 +2,6 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.TokenType
-import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.test.BaseTestSpec
 
 import akka.http.scaladsl.model.HttpEntity
@@ -15,9 +14,8 @@ import spray.json._
 
 class AuthorizationRequestSpec extends BaseTestSpec {
 
-  implicit lazy val settings = this.injector.instance[Settings]
-  implicit lazy val exec = this.createTestExecutor(Map.empty)
-  implicit lazy val client = new Client
+
+  import deps.Implicits._
 
   "Services" must "include support for registering a new application PIN" in {
     val pinReq = new PinRequest()
@@ -45,6 +43,7 @@ class AuthorizationRequestSpec extends BaseTestSpec {
   they must "include support for getting a new set of tokens using the application PIN" in {
     val initTokenReq = new InitialTokensRequest()
     InitialTokensService.execute(initTokenReq)
+    InitialTokensService.execute
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = initTokenReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))

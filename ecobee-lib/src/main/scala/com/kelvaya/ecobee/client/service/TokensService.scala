@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Client
 import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.PostRequest
@@ -14,16 +13,20 @@ import scala.language.higherKinds
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
 import spray.json.DefaultJsonProtocol
+import cats.data.EitherT
+import cats.Monad
+import cats.data.OptionT
 
-abstract class TokensRequest(implicit e : RequestExecutor, s : Settings) extends PostRequest[ParameterlessApi] {
+abstract class TokensRequest[M[_] : Monad](implicit e : RequestExecutor[M], s : Settings) extends PostRequest[M,ParameterlessApi] {
   import com.kelvaya.ecobee.client.Querystrings._
 
   val entity = None
-  val query: List[Entry] = this.grantTypeQs :: ClientId :: (this.authTokenQs map { _ :: Nil } getOrElse Nil)
   val uri = Uri.Path("/token")
+  val query: M[List[Entry]] =
+    this.containerClass.map(this.authTokenQs.value) { tks => this.grantTypeQs :: ClientId :: (tks map { _ :: Nil } getOrElse Nil) }
 
   protected def grantTypeQs : Entry
-  protected def authTokenQs : Option[Entry]
+  protected def authTokenQs : OptionT[M,Entry]
 }
 
 
@@ -39,10 +42,10 @@ case class TokensResponse(access_token : String, token_type : TokenType, expires
 // ---------------------
 
 
-trait TokensService[T <: TokensRequest] extends EcobeeJsonService[T,TokensResponse] {
+abstract class TokensService[M[_] : Monad, T <: TokensRequest[M]] extends EcobeeJsonService[M, T,TokensResponse] {
 
-  def execute[R[_]](implicit r: Realizer[R], c: Client, e : RequestExecutor, s : Settings) : R[Either[ServiceError, TokensResponse]] =
+  def execute(implicit e : RequestExecutor[M], s : Settings) : EitherT[M, ServiceError, TokensResponse] =
     this.execute(this.newTokenRequest)
 
-  protected def newTokenRequest(implicit e : RequestExecutor, s : Settings) : T
+  protected def newTokenRequest(implicit e : RequestExecutor[M], s : Settings) : T
 }

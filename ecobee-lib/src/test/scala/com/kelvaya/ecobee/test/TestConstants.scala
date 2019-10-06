@@ -5,7 +5,6 @@ object TestConstants extends TestConstants
 
 trait TestConstants {
   val ClientId = "ABC123"
-  val MockAuthToken = "Xc7JE8P7XUgSCPogLOx2VLMfITqQQrjg"
   val TestAppKey = "APPKEY"
   val Pin = "A1B2"
   val AuthCode = "uiNQok9Uhy5iScG4gncCAilcFUMK0zWT"
