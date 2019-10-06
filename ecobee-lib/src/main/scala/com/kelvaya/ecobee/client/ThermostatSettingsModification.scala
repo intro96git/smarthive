@@ -3,7 +3,6 @@ package com.kelvaya.ecobee.client
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
-import com.kelvaya.util.Time.FullDate
 import com.kelvaya.util.Time.DateOnly
 
 /** All settings that a Thermostat may use that can be modified in a POST request.
@@ -99,7 +98,7 @@ import com.kelvaya.util.Time.DateOnly
   * @param groupRef The unique reference to the group this thermostat belongs to.
   * @param groupName The name of the the group this thermostat belongs to.
   * @param groupSetting The setting value for the group this thermostat belongs to.
-  * 
+  *
   * @see [[ThermostatSettings]]
   */
 case class ThermostatSettingsModification(
@@ -403,8 +402,3 @@ object ThermostatSettingsModification {
     }
   }
 }
-
-
-
-
-

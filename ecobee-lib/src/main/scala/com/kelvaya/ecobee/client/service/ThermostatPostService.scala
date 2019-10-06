@@ -8,12 +8,10 @@ import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.ThermostatModification
 import com.kelvaya.ecobee.client.WriteableApiObject
 import com.kelvaya.ecobee.config.Settings
-import com.kelvaya.util.Realizer
 
 import scala.language.higherKinds
 
 import akka.event.LoggingBus
-import akka.http.scaladsl.marshallers._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
 import spray.json._

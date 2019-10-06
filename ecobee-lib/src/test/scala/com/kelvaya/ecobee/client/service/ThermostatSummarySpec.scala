@@ -2,7 +2,6 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.Status
-import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.test.BaseTestSpec
 
 import akka.http.scaladsl.model.HttpEntity
@@ -10,7 +9,6 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
 import spray.json._
-import com.kelvaya.ecobee.test.TestSettings
 
 class ThermostatSummarySpec extends BaseTestSpec {
 

@@ -3,7 +3,6 @@ package com.kelvaya.ecobee.client.service.function
 import com.kelvaya.ecobee.client.service.Select
 import com.kelvaya.ecobee.client.service.SelectType
 import com.kelvaya.ecobee.client.service.ThermostatPostRequest
-import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.test.BaseTestSpec
 
 import scala.concurrent.Await
@@ -15,7 +14,6 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.stream.ActorMaterializer
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import com.kelvaya.util.Time
 import org.joda.time.DateTime
 import com.kelvaya.ecobee.client.Temperature
 import com.kelvaya.ecobee.client.Event.FanMode

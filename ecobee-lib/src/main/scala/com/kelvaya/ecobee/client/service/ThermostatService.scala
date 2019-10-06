@@ -7,7 +7,6 @@ import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.Thermostat
 import com.kelvaya.ecobee.config.Settings
-import com.kelvaya.util.Realizer
 
 import scala.language.higherKinds
 
@@ -28,7 +27,6 @@ object ThermostatRequest {
 
 case class ThermostatRequest[M[_] : Monad](selection : Select, page : Option[Int] = None)
 (implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M] {
-  import ThermostatRequest._
 
   val pageQs : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
 

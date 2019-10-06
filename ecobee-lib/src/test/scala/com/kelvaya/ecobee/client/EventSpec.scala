@@ -6,7 +6,6 @@ import com.kelvaya.util.Time.TimeOnly
 import org.joda.time.DateTime
 
 import spray.json._
-import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
 
 class EventSpec extends BaseTestSpec with SprayImplicits {

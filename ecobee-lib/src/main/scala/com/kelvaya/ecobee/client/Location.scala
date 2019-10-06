@@ -5,7 +5,6 @@ import spray.json.DefaultJsonProtocol._
 import org.joda.time.DateTimeZone
 import com.kelvaya.util.SprayImplicits
 import akka.event.LoggingBus
-import org.slf4j.Logger
 
 /** Physical location of [[Thermostat]].
   *

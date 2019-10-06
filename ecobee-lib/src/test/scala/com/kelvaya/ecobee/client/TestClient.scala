@@ -3,22 +3,16 @@ package com.kelvaya.ecobee.client
 import com.kelvaya.ecobee.client.service.ServiceError
 import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.test.TestConstants
-import com.kelvaya.util.Realizer
 
-import scala.language.higherKinds
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.headers.Authorization
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import monix.eval.Task
 import spray.json.JsObject
 import spray.json.JsonFormat
 
 import cats._
 import cats.data.EitherT
-import akka.http.scaladsl.model.HttpResponse
-import cats.data.OptionT
 
 
 /** May be overkill?  At least, the executeRequest method may be overkill.  Do we ever really care to have actual

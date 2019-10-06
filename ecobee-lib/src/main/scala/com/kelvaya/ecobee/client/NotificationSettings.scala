@@ -329,7 +329,7 @@ object NotificationSettings extends SprayImplicits {
           case x => deserializationError(s"'$x' is an invalid Limit type that was detected in JSON, $json")
         }
       }
-      case _ => deserializationError("Invalid Limit JSON returned: ${json}")
+      case _ => deserializationError(s"Invalid Limit JSON returned: ${json}")
     }
 
     def write(obj: Limit): JsValue = {
@@ -349,7 +349,6 @@ object NotificationSettings extends SprayImplicits {
 
 
   implicit object LimitModificationFormat extends RootJsonFormat[LimitModification] {
-    import Limit._
 
     def read(json: JsValue): LimitModification =
       deserializationError("Cannot deserialize Limit modification JSON; limit type is indeterminate.")

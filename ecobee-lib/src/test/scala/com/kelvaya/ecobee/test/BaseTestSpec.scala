@@ -4,7 +4,6 @@ import com.kelvaya.ecobee.client.TestStorage
 import com.kelvaya.ecobee.client.TestClient
 import com.kelvaya.ecobee.config.Settings
 
-import scala.language.higherKinds
 import scala.language.implicitConversions
 
 import org.scalatest.FlatSpec
@@ -31,8 +30,6 @@ with AdditionalFormats {
 
   /** Creates default test dependencies.  Override to do something different */
   val deps : DI[Id] = BaseTestSpec.createDependencies()
-
-  import deps.Implicits._
 
   /*
    * Convenience test method to allow a quick conversion from the (frequent) return of an `EitherT` of the Identity type

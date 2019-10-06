@@ -1,12 +1,8 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.test.BaseTestSpec
 
 import scala.concurrent.duration.Duration
-import scala.reflect.ManifestFactory.classType
-
-import org.scalactic.source.Position.apply
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers

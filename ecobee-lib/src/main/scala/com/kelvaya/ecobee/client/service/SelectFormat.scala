@@ -1,9 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client._
-
-import akka.event.Logging
-import akka.event.LoggingBus
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
@@ -163,4 +159,3 @@ private[client] class SelectFormat extends RootJsonFormat[Select] with SprayImpl
     var includeEnergy :               Boolean = false
   )
 }
-

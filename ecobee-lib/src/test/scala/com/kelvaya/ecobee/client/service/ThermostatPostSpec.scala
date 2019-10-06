@@ -1,25 +1,21 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.test.BaseTestSpec
-import com.kelvaya.ecobee.client.Thermostat
-import com.kelvaya.ecobee.config.Settings
 import com.kelvaya.ecobee.client.Electricity
 import com.kelvaya.ecobee.client.ThermostatModification
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.HttpMethods
 import com.kelvaya.ecobee.client.Request
-import akka.http.scaladsl.model.HttpEntity
 import spray.json._
 import scala.concurrent.duration.Duration
 import akka.stream.ActorMaterializer
 import scala.concurrent.Await
 import java.nio.charset.StandardCharsets
-import akka.stream.scaladsl.Sink
 
 class ThermostatPostSpec extends BaseTestSpec {
 
-  
+
   import deps.Implicits._
   implicit val materializer = ActorMaterializer()
 

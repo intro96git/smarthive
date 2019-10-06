@@ -1,8 +1,6 @@
 package com.kelvaya.ecobee.client.service
 
-import akka.event.LoggingBus
 import spray.json.RootJsonFormat
-import spray.json.JsonFormat
 
 object Select {
   private[client] implicit val Format : RootJsonFormat[Select] = new SelectFormat

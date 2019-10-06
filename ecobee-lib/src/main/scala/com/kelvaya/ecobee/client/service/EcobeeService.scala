@@ -2,16 +2,9 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
-import com.kelvaya.ecobee.config.Settings
-import akka.http.scaladsl.model.HttpResponse
-import com.kelvaya.util.Realizer
 
 import scala.language.higherKinds
 import spray.json.JsonFormat
-import spray.json.DefaultJsonProtocol
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.HttpRequest
 import cats.Monad
 import cats.data.EitherT
 

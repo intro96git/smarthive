@@ -6,7 +6,6 @@ import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.config.Settings
-import com.kelvaya.util.Realizer
 
 import scala.language.higherKinds
 

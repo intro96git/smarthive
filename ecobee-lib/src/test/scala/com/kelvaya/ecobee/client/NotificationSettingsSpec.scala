@@ -147,7 +147,7 @@ class NotificationSettingsSpec extends BaseTestSpec {
       case _ => throw new NotImplementedError(s"$limit missing a test")
     }
 
-    def check(check : LimitType, obj : Limit) : Unit = {
+    def check(check : LimitType, obj : Limit) = {
       val settingJson = s""" { "limit" : [ { "type" : "${check.toString}" } ] }"""
       settingJson.parseJson.convertTo[NotificationSettings] shouldBe NotificationSettings(limit = Some(Seq(obj)))
     }

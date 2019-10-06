@@ -19,7 +19,6 @@ import monix.eval.Task
 import cats.data.OptionT
 import cats.Monad
 import cats.data.EitherT
-import akka.http.scaladsl.model.headers.Authorization
 
 
 object Request {

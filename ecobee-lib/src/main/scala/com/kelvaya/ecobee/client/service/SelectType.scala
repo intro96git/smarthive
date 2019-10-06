@@ -1,7 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import spray.json._
-
 
 object SelectType {
 

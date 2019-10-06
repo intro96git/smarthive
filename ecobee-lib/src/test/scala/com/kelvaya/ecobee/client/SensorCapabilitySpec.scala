@@ -2,7 +2,6 @@ package com.kelvaya.ecobee.client
 
 import com.kelvaya.ecobee.test.BaseTestSpec
 import spray.json._
-import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
 
 class SensorCapabilitySpec extends BaseTestSpec with SprayImplicits {

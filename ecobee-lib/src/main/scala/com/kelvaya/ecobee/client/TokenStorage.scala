@@ -1,8 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.util.Realizer
 import scala.language.higherKinds
-import cats.Monad
 
 /** Implementations of `TokenStorage` store and retrieve Ecobee API tokens to be used in requests by the [[Client]]
   *

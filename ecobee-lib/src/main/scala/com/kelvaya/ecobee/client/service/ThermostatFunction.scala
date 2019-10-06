@@ -2,8 +2,6 @@ package com.kelvaya.ecobee.client.service
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import com.kelvaya.ecobee.client.service.function.EcobeeFunction
-import scala.language.implicitConversions
 
 /** API function used to update a [[Thermostat]].
   *

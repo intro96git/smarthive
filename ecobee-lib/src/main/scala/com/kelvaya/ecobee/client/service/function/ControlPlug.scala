@@ -16,7 +16,7 @@ import org.joda.time.DateTime
   * @param endDateTime The end date/time in thermostat time.
   * @param holdType The hold duration type.
   * @param holdHours The number of hours to hold for, used and required if `holdType` is `HoldHours`.
-  * 
+  *
   * @see [[ControlPlugFunction]]
   */
 case class ControlPlug(
@@ -36,10 +36,6 @@ case class ControlPlug(
 
 
 object ControlPlug {
-  import spray.json._
-  import spray.json.DefaultJsonProtocol._
-  import com.kelvaya.util.SprayImplicits._
-
 
   type PlugState = PlugState.Entry
   object PlugState extends JsonStringEnum {

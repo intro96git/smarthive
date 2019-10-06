@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee
 
-import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 import spray.json._
 import akka.http.scaladsl.model.HttpResponse
@@ -81,7 +80,7 @@ package object client {
     // Members declared in spray.json.JsonReader
     def read(json: JsValue): PinScope = json match {
       case JsString(s) => PinScope.withName(s)
-      case _ => throw new spray.json.DeserializationException("$json is not a recognized PinScope")
+      case _ => throw new spray.json.DeserializationException(s"$json is not a recognized PinScope")
     }
 
     // Members declared in spray.json.JsonWriter
@@ -96,7 +95,7 @@ package object client {
     // Members declared in spray.json.JsonReader
     def read(json: JsValue): TokenType = json match {
       case JsString(s) => TokenType.withName(s)
-      case _ => throw new spray.json.DeserializationException("$json is not a recognized TokenType")
+      case _ => throw new spray.json.DeserializationException(s"$json is not a recognized TokenType")
     }
 
     // Members declared in spray.json.JsonWriter

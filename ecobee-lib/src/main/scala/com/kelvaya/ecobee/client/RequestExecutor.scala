@@ -1,9 +1,7 @@
 package com.kelvaya.ecobee.client
 
 import com.kelvaya.ecobee.client.service.ServiceError
-import com.kelvaya.util.Realizer
 
-import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 import akka.http.scaladsl.model.HttpRequest
@@ -11,7 +9,6 @@ import akka.http.scaladsl.model.headers.Authorization
 import monix.eval.Task
 import spray.json.JsonFormat
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.server.AuthorizationFailedRejection
 import cats.Monad
 import cats.data.OptionT
 import cats.data.EitherT

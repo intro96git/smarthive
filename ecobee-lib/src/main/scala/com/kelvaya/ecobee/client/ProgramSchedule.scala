@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client
 
-import scala.collection.mutable.ListBuffer
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 

@@ -3,7 +3,6 @@ package com.kelvaya.ecobee.client.service
 import akka.event.Logging
 import akka.event.LoggingBus
 import spray.json._
-import spray.json.DefaultJsonProtocol._
 
 object EquipmentStatusListItem {
 

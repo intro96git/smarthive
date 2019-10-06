@@ -1,8 +1,5 @@
 package com.kelvaya.ecobee.client
 
-import spray.json.DefaultJsonProtocol
-import spray.json.RootJsonFormat
-
 
 
 /** Any object that can be passed in or returned by the Ecobee API */

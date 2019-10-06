@@ -1,11 +1,9 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.test.BaseTestSpec
-import com.kelvaya.ecobee.config.Settings
 import akka.http.scaladsl.model._
 import com.kelvaya.ecobee.client.Request
 import spray.json._
-import spray.json.DefaultJsonProtocol._
 
 class ThermostatServiceSpec extends BaseTestSpec {
 

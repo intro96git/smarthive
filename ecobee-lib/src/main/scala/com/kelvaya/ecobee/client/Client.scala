@@ -25,12 +25,6 @@ import spray.json.JsonFormat
   * @tparam M The monad container type that will hold results  (from dependency injection, `DI`)
   */
 abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: Settings, system: ActorSystem, container : Monad[M]) extends RequestExecutor[M] {
-  private implicit val _materializer = ActorMaterializer()
-  private implicit val _ec = system.dispatcher
-
-
-
-  private lazy val _serverRoot = settings.EcobeeServerRoot
 
   /** Application key used to authorize the application against the Ecobee API
     *
@@ -90,5 +84,12 @@ abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: S
   * @see [[com.kelvaya.ecobee.client client]]
   */
 final class Client[M[_]] (storage : TokenStorage[M])(implicit settings: Settings, system: ActorSystem, container : Monad[M]) extends BaseClient(storage) {
+  private implicit val _materializer = ActorMaterializer()
+  private implicit val _ec = system.dispatcher
+
+
+
+  private lazy val _serverRoot = settings.EcobeeServerRoot
+
   def executeRequest[S : JsonFormat](req: EitherT[M, RequestError, Task[HttpRequest]]): EitherT[M, ServiceError, S] = ???
 }
