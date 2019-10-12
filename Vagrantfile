@@ -64,6 +64,7 @@ Vagrant.configure("2") do |config|
      # Make sure we can use multiple cores
      vb.cpus = 2
      vb.customize ["modifyvm", :id, "--ioapic", "on"]
+     vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
    end
   #
   # View the documentation for the provider you are using for more
