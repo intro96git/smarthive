@@ -5,8 +5,8 @@ import com.kelvaya.ecobee.client.RequestExecutor
 
 import scala.language.higherKinds
 import spray.json.JsonFormat
+
 import cats.Monad
-import cats.data.EitherT
 
 
 /** Response from the Ecobee API to an HTTP Request
@@ -38,7 +38,7 @@ abstract class EcobeeService[M[_] : Monad, T <: Request[M,_], S] {
     * @param req The $T used to query the API
     * @param exec (implicit) The executor responsible for sending the request to the Ecobee API  (from dependency injection, `DI`)
     */
-  def execute(req: T)(implicit exec : RequestExecutor[M]) : EitherT[M,ServiceError,S]
+  def execute(req: T)(implicit exec : RequestExecutor[M]) : M[Either[ServiceError,S]]
 }
 
 // ---------------------
@@ -54,5 +54,5 @@ abstract class EcobeeService[M[_] : Monad, T <: Request[M,_], S] {
   * @define S JSON response
   */
 abstract class EcobeeJsonService[M[_] : Monad, T <: Request[M,_], S : JsonFormat] extends EcobeeService[M,T,S] {
-  final def execute(req: T)(implicit exec : RequestExecutor[M]) : EitherT[M,ServiceError,S] = exec.executeRequest(req.createRequest)
+  final def execute(req: T)(implicit exec : RequestExecutor[M]) : M[Either[ServiceError,S]] = exec.executeRequest(req.createRequest)
 }

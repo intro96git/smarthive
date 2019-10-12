@@ -14,8 +14,8 @@ import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+
 import cats.Monad
-import cats.data.EitherT
 
 object ThermostatRequest {
   private val Endpoint = Uri.Path("/thermostat")
@@ -30,7 +30,7 @@ case class ThermostatRequest[M[_] : Monad](selection : Select, page : Option[Int
 
   val pageQs : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
 
-  val query: M[List[Querystrings.Entry]] =  this.containerClass.pure {
+  val query: M[List[Querystrings.Entry]] =  async.pure {
     val list = collection.mutable.ListBuffer((("selection", selection.toJson.compactPrint)))
     if (pageQs.isDefined) list += pageQs.get
     list.toList
@@ -62,6 +62,6 @@ class ThermostatService[M[_] : Monad] private (_select : Select, _page : Option[
   def this(selection : Select)(implicit  ev : LoggingBus) = this(selection, None)
   def this(selection : Select, page : Int)(implicit  ev : LoggingBus) = this(selection, Some(page))
 
-  def execute()(implicit e : RequestExecutor[M], s : Settings): EitherT[M, ServiceError, ThermostatResponse] =
+  def execute()(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, ThermostatResponse]] =
     execute(ThermostatRequest(_select, _page))
 }

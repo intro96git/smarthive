@@ -6,37 +6,39 @@ import scala.language.higherKinds
 
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.headers.Authorization
-import monix.eval.Task
-import spray.json.JsonFormat
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
+
+import monix.eval.Task
+
+import spray.json.JsonFormat
+
 import cats.Monad
-import cats.data.OptionT
-import cats.data.EitherT
+
 
 
 /** Executes HTTP requests to the Ecobee API */
 trait RequestExecutor[M[_]] {
 
+  type EitherM[E,A] = M[Either[E,A]]
+
   /** Return a new Akka `Authorization` OAuth Bearer Token HTTP header */
-  def generateAuthorizationHeader(implicit io : Monad[M]): EitherT[M,RequestError,Authorization] = {
-    val header = io.map(getAccessToken.value) {
-      _.map(t => Right[RequestError,Authorization](Authorization(OAuth2BearerToken(t))))
-       .getOrElse(Left[RequestError,Authorization](RequestError.MissingTokenError))
+  def generateAuthorizationHeader(implicit io : Monad[M]): EitherM[RequestError,Authorization] = {
+    io.map(getAccessToken) { 
+      _.flatMap(t => Right(Authorization(OAuth2BearerToken(t))))
     }
-    EitherT(header)
   }
 
   /** Return the Ecobee application key used for authorization against the API */
   def getAppKey: String
 
   /** Return the Ecobee authorization code used for authorization against the API for this client */
-  def getAuthCode: OptionT[M,String]
+  def getAuthCode: EitherM[RequestError,String]
 
   /** Return the current access token used for authorization against the API */
-  def getAccessToken: OptionT[M,String]
+  def getAccessToken: EitherM[RequestError,String]
 
   /** Return the refresh token used to generate new authorization tokens for the API */
-  def getRefreshToken: OptionT[M,String]
+  def getRefreshToken: EitherM[RequestError,String]
 
 
   /** Return the results of executing an HTTP request.
@@ -46,16 +48,12 @@ trait RequestExecutor[M[_]] {
     * @note The results will be either an error or the return payload.  This is encapsulated
     * as an `Either` of [[com.kelvaya.ecobee.client.service.ServiceError ServiceError]] or an object of type $S.
     *
+    * @usecase def executeRequest[S](req : EitherM[RequestError,Task[HttpRequest]]) : EitherM[ServiceError,S]
+    *
     * @param req The HTTP Request to execute
     *
-    * @tparam T The `Realizer` type that will contain the result of the request execution
     * @tparam S The return payload type (must be in the typeclass of `JsonFormat` used to deserialize it)
     *
     */
-  def executeRequest[S : JsonFormat](req : EitherT[M,RequestError,Task[HttpRequest]]) : EitherT[M,ServiceError,S]
-}
-
-sealed trait RequestError
-object RequestError {
-  val MissingTokenError : RequestError = new RequestError {}
+  def executeRequest[S : JsonFormat](req : EitherM[RequestError,Task[HttpRequest]]) : EitherM[ServiceError,S]
 }

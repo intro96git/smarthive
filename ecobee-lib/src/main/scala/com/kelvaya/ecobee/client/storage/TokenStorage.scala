@@ -1,4 +1,4 @@
-package com.kelvaya.ecobee.client
+package com.kelvaya.ecobee.client.storage
 
 import scala.language.higherKinds
 
@@ -8,17 +8,28 @@ import scala.language.higherKinds
   */
 trait TokenStorage[F[_]] {
 
-  /** Must be a self-type to assist the Scala compiler in the definition of the `storeTokens` method. */
-  type Self <: TokenStorage[F]
-
   /** Returns the currently stored [[Tokens]] used for authorizing against the Ecobee API */
-  def getTokens() : F[Tokens]
+  def getTokens() : F[Either[TokenStorageError,Tokens]]
 
   /** Returns a `TokenStorage` with all tokens updated to the given value */
-  def storeTokens(tokens : Tokens) : F[Self]
+  def storeTokens(tokens : Tokens) : F[Either[TokenStorageError,Unit]]
+
+
+  /** Shut down the storage connection.
+    *
+    * @note Access to the same instance after calling this method results in
+    * undefined behavior.
+    */
+  def close() : F[Either[TokenStorageError,Unit]]
 }
 
 
+
+sealed trait TokenStorageError extends RuntimeException
+object TokenStorageError {
+  final val ConnectionError : TokenStorageError = new TokenStorageError {}
+  final val MissingTokenError : TokenStorageError = new TokenStorageError {}
+}
 
 /** Tokens used for authorization against the Ecobee API.
   *

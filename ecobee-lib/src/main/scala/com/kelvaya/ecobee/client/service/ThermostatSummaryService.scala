@@ -10,8 +10,9 @@ import scala.language.higherKinds
 
 import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
+
 import cats.Monad
-import cats.data.EitherT
+
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
@@ -28,7 +29,7 @@ case class ThermostatSummaryRequest[M[_]:Monad](selectType : SelectType, include
 (implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M] {
   import ThermostatSummaryRequest._
 
-  val query: M[List[Querystrings.Entry]] = this.containerClass.pure( (("selection", getJson(selectType, includeEquipStatus))) :: Nil )
+  val query: M[List[Querystrings.Entry]] = async.pure( (("selection", getJson(selectType, includeEquipStatus))) :: Nil )
   val uri: Uri.Path = ThermostatSummaryRequest.Endpoint
 
 }
@@ -54,6 +55,6 @@ case class ThermostatSummaryResponse(
 
 
 class ThermostatSummaryService[M[_]:Monad](implicit lb : LoggingBus) extends EcobeeJsonService[M,ThermostatSummaryRequest[M],ThermostatSummaryResponse] {
-  def execute[R[_]](selectType : SelectType, includeEquipStatus : Boolean = false)(implicit e : RequestExecutor[M], s : Settings): EitherT[M, ServiceError, ThermostatSummaryResponse] =
+  def execute[R[_]](selectType : SelectType, includeEquipStatus : Boolean = false)(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, ThermostatSummaryResponse]] =
     execute(new ThermostatSummaryRequest(selectType, includeEquipStatus))
 }

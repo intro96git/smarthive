@@ -10,8 +10,8 @@ import scala.language.higherKinds
 import spray.json.DefaultJsonProtocol
 import spray.json.DefaultJsonProtocol._
 import akka.http.scaladsl.model.Uri
+
 import cats.Monad
-import cats.data.EitherT
 
 
 object PinRequest {
@@ -20,7 +20,7 @@ object PinRequest {
 
 class PinRequest[M[_] : Monad](implicit exec: RequestExecutor[M], settings: Settings) extends RequestNoEntity[M] {
   val uri = PinRequest.Endpoint
-  val query = this.containerClass.pure(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil)
+  val query = async.pure(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil)
 }
 
 
@@ -47,6 +47,6 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
 
 object PinService {
   implicit class PinServiceImpl[M[_] : Monad](o : PinService.type) extends EcobeeJsonService[M,PinRequest[M],PinResponse] {
-    def execute(implicit e : RequestExecutor[M], s : Settings): EitherT[M, ServiceError, PinResponse] = this.execute(new PinRequest)
+    def execute(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, PinResponse]] = this.execute(new PinRequest)
   }
 }

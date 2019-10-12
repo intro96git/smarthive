@@ -8,7 +8,6 @@ import com.kelvaya.ecobee.config.Settings
 import scala.language.higherKinds
 
 import cats.Monad
-import cats.data.OptionT
 
 /** Initial authorization request against the Ecobee API.
   *
@@ -26,7 +25,7 @@ import cats.data.OptionT
   * @see [[com.kelvaya.ecobee.config.DI]]
   */
 class InitialTokensRequest[M[_] : Monad](implicit e : RequestExecutor[M], s : Settings) extends TokensRequest[M] {
-  final def authTokenQs : OptionT[M,Querystrings.Entry] = this.getAuthCodeQs
+  final def authTokenQs : M[Option[Querystrings.Entry]] = this.getAuthCodeQs
   final def grantTypeQs : Querystrings.Entry = GrantType.Pin
 }
 

@@ -16,8 +16,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+
 import cats.Monad
-import cats.data.EitherT
 
 object ThermostatPostRequest {
 
@@ -47,7 +47,7 @@ case class ThermostatPostRequest[M[_]:Monad](selection : Select, thermostat : Op
   import ThermostatPostRequest._
 
   val entity = Some(RequestBody(selection, thermostat, functions))
-  val query = this.containerClass.pure(List.empty[Querystrings.Entry])
+  val query = async.pure(List.empty[Querystrings.Entry])
   val uri : Uri.Path = Endpoint
 }
 
@@ -77,6 +77,6 @@ object ThermostatPostResponse {
   * @param ev The AKKA `LoggingBus` that can record application log messages
   */
 class ThermostatPostService[M[_] : Monad](implicit ev : LoggingBus) extends EcobeeJsonService[M, ThermostatPostRequest[M], ThermostatPostResponse] {
-  def execute(selectType : SelectType, thermostat : Option[ThermostatModification] = None, functions : Option[Seq[ThermostatFunction]] = None)(implicit e : RequestExecutor[M], s : Settings) : EitherT[M, ServiceError, ThermostatPostResponse] =
+  def execute(selectType : SelectType, thermostat : Option[ThermostatModification] = None, functions : Option[Seq[ThermostatFunction]] = None)(implicit e : RequestExecutor[M], s : Settings) : M[Either[ServiceError, ThermostatPostResponse]] =
     execute(ThermostatPostRequest(Select(selectType), thermostat, functions))
 }
