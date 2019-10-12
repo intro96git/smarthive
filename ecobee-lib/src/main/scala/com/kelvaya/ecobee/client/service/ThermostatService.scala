@@ -1,5 +1,6 @@
 package com.kelvaya.ecobee.client.service
 
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Page
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.RequestExecutor
@@ -20,13 +21,13 @@ import cats.Monad
 object ThermostatRequest {
   private val Endpoint = Uri.Path("/thermostat")
 
-  def apply[M[_] : Monad](selection : Select)(implicit e : RequestExecutor[M], s : Settings) : ThermostatRequest[M] = ThermostatRequest(selection, None)
-  def apply[M[_] : Monad](selection : Select, page : Int)(implicit e : RequestExecutor[M], s : Settings) : ThermostatRequest[M] = ThermostatRequest(selection, Some(page))
+  def apply[M[_] : Monad](account: AccountID, selection : Select)(implicit e : RequestExecutor[M], s : Settings) : ThermostatRequest[M] = ThermostatRequest(account, selection, None)
+  def apply[M[_] : Monad](account: AccountID, selection : Select, page : Int)(implicit e : RequestExecutor[M], s : Settings) : ThermostatRequest[M] = ThermostatRequest(account, selection, Some(page))
 }
 
 
-case class ThermostatRequest[M[_] : Monad](selection : Select, page : Option[Int] = None)
-(implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M] {
+case class ThermostatRequest[M[_] : Monad](override val account: AccountID, selection : Select, page : Option[Int] = None)
+(implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M](account) {
 
   val pageQs : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
 
@@ -62,6 +63,6 @@ class ThermostatService[M[_] : Monad] private (_select : Select, _page : Option[
   def this(selection : Select)(implicit  ev : LoggingBus) = this(selection, None)
   def this(selection : Select, page : Int)(implicit  ev : LoggingBus) = this(selection, Some(page))
 
-  def execute()(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, ThermostatResponse]] =
-    execute(ThermostatRequest(_select, _page))
+  def execute(account : AccountID)(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, ThermostatResponse]] =
+    execute(ThermostatRequest(account, _select, _page))
 }

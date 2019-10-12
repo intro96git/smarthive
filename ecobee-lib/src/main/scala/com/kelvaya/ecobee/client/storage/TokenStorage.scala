@@ -1,5 +1,7 @@
 package com.kelvaya.ecobee.client.storage
 
+import com.kelvaya.ecobee.client.AccountID
+
 import scala.language.higherKinds
 
 /** Implementations of `TokenStorage` store and retrieve Ecobee API tokens to be used in requests by the [[Client]]
@@ -9,10 +11,10 @@ import scala.language.higherKinds
 trait TokenStorage[F[_]] {
 
   /** Returns the currently stored [[Tokens]] used for authorizing against the Ecobee API */
-  def getTokens() : F[Either[TokenStorageError,Tokens]]
+  def getTokens(account : AccountID) : F[Either[TokenStorageError,Tokens]]
 
   /** Returns a `TokenStorage` with all tokens updated to the given value */
-  def storeTokens(tokens : Tokens) : F[Either[TokenStorageError,Unit]]
+  def storeTokens(account : AccountID, tokens : Tokens) : F[Either[TokenStorageError,Unit]]
 
 
   /** Shut down the storage connection.

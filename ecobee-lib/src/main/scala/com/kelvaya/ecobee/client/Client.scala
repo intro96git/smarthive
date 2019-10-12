@@ -23,7 +23,8 @@ import spray.json.JsonFormat
   *
   * @tparam M The tagless final type that will hold results  (from dependency injection, `DI`)
   */
-abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: Settings, system: ActorSystem, async : Monad[M]) extends RequestExecutor[M] {
+abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: Settings, sys: ActorSystem, async : Monad[M]) extends RequestExecutor[M] {
+
 
   /** Application key used to authorize the application against the Ecobee API
     *
@@ -33,13 +34,13 @@ abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: S
   def getAppKey = settings.EcobeeAppKey
 
   /** Access Token used to authorize a request against the API */
-  def getAccessToken: EitherM[RequestError,String] = readFromStorage(_.accessToken)
+  def getAccessToken(account : AccountID): EitherM[RequestError,String] = readFromStorage(account, _.accessToken)
 
   /** Authorization code used to initially authorize an installation of the application */
-  def getAuthCode: EitherM[RequestError,String] = readFromStorage(_.authorizationToken)
+  def getAuthCode(account : AccountID): EitherM[RequestError,String] = readFromStorage(account, _.authorizationToken)
 
   /** Refresh Token used to generate a new Access Token */
-  def getRefreshToken: EitherM[RequestError,String] = readFromStorage(_.refreshToken)
+  def getRefreshToken(account : AccountID): EitherM[RequestError,String] = readFromStorage(account, _.refreshToken)
 
 
   /** Returns a new client containing the given tokens stored on the backend [[TokenStorage]] store.
@@ -47,14 +48,14 @@ abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: S
     * @param accessToken New access token to be stored
     * @param refreshToken New refresh token to be stored
     */
-  def storeTokens(accessToken : String, refreshToken : String) : EitherM[RequestError,Unit] = {
+  def storeTokens(account : AccountID, accessToken : String, refreshToken : String) : EitherM[RequestError,Unit] = {
 
     import cats.Monad.ops._
-    storage.getTokens.flatMap { 
+    storage.getTokens(account).flatMap { 
       case Left(e)       => async.pure(Left(RequestError.TokenAccessError(e)))
       case Right(tokens) => {
-        tokens.copy(accessToken  = Some(accessToken), refreshToken = Some(refreshToken))
-        storage.storeTokens(tokens).map {
+        val newTokens = tokens.copy(accessToken  = Some(accessToken), refreshToken = Some(refreshToken))
+        storage.storeTokens(account, newTokens).map {
           case Left(e)  => Left(RequestError.TokenAccessError(e))
           case Right(v) => Right(v)
         }
@@ -64,18 +65,18 @@ abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: S
 
 
   /** Returns a new client containing the auth code stored on the backend [[TokenStorage]] store. */
-  def storeAuthCode(authCode : String) : EitherM[TokenStorageError,Unit] = {
-    async.flatMap(storage.getTokens) { 
+  def storeAuthCode(account : AccountID, authCode : String) : EitherM[TokenStorageError,Unit] = {
+    async.flatMap(storage.getTokens(account)) { 
       case Left(e)       => async.pure(Left(e))
       case Right(tokens) => {
         val newTokens = tokens.copy(authorizationToken = Some(authCode))
-        storage.storeTokens(newTokens)
+        storage.storeTokens(account, newTokens)
       }
     }
   }
 
-  private def readFromStorage[S](f : Tokens => Option[S]) : EitherM[RequestError,S] = {
-    async.map(storage.getTokens) {  tokens =>
+  private def readFromStorage[S](account : AccountID, f : Tokens => Option[S]) : EitherM[RequestError,S] = {
+    async.map(storage.getTokens(account)) {  tokens =>
       val fnValue = tokens.flatMap { 
         f(_) match {
           case None        => Left(TokenStorageError.MissingTokenError)
@@ -103,7 +104,7 @@ abstract class BaseClient[M[_]] (storage : TokenStorage[M])(implicit settings: S
   *
   * @see [[com.kelvaya.ecobee.client client]]
   */
-final class Client[M[_]] (storage : TokenStorage[M])(implicit settings: Settings, system: ActorSystem, container : Monad[M]) extends BaseClient(storage) {
+final class Client[M[_]] (storage : TokenStorage[M])(implicit settings: Settings, system: ActorSystem, async : Monad[M]) extends BaseClient(storage) {
   private implicit val _materializer = ActorMaterializer()
   private implicit val _ec = system.dispatcher
 

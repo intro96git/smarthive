@@ -1,5 +1,6 @@
 package com.kelvaya.ecobee.client.service
 
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Request
@@ -39,9 +40,9 @@ object ThermostatPostRequest {
   * @param thermostat The thermostat and fields to modify.  Send only the minimum to be modified.
   * @param functions Any thermostat functions to execute after performing the modifications on `#thermostat`.
   */
-case class ThermostatPostRequest[M[_]:Monad](selection : Select, thermostat : Option[ThermostatModification], functions : Option[Seq[ThermostatFunction]])
+case class ThermostatPostRequest[M[_]:Monad](override val account: AccountID, selection : Select, thermostat : Option[ThermostatModification], functions : Option[Seq[ThermostatFunction]])
 (implicit e : RequestExecutor[M], s : Settings, log : LoggingBus)
-  extends Request[M,ThermostatPostRequest.RequestBody]
+  extends Request[M,ThermostatPostRequest.RequestBody](account)
   with PostRequest[M,ThermostatPostRequest.RequestBody] {
 
   import ThermostatPostRequest._
@@ -77,6 +78,6 @@ object ThermostatPostResponse {
   * @param ev The AKKA `LoggingBus` that can record application log messages
   */
 class ThermostatPostService[M[_] : Monad](implicit ev : LoggingBus) extends EcobeeJsonService[M, ThermostatPostRequest[M], ThermostatPostResponse] {
-  def execute(selectType : SelectType, thermostat : Option[ThermostatModification] = None, functions : Option[Seq[ThermostatFunction]] = None)(implicit e : RequestExecutor[M], s : Settings) : M[Either[ServiceError, ThermostatPostResponse]] =
-    execute(ThermostatPostRequest(Select(selectType), thermostat, functions))
+  def execute(account: AccountID, selectType : SelectType, thermostat : Option[ThermostatModification] = None, functions : Option[Seq[ThermostatFunction]] = None)(implicit e : RequestExecutor[M], s : Settings) : M[Either[ServiceError, ThermostatPostResponse]] =
+    execute(ThermostatPostRequest(account, Select(selectType), thermostat, functions))
 }

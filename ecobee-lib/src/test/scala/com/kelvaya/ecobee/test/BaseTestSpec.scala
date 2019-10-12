@@ -1,5 +1,6 @@
 package com.kelvaya.ecobee.test
 
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.TestClient
 import com.kelvaya.ecobee.client.storage.TestStorage
 import com.kelvaya.ecobee.config.Settings
@@ -30,6 +31,8 @@ with AdditionalFormats {
   /** Creates default test dependencies.  Override to do something different */
   val deps : DI[Id] = BaseTestSpec.createDependencies()
 
+  val account = BaseTestSpec.DefaultAccount
+
   /*
    * Convenience test method to allow a quick conversion from the (frequent) return of an `EitherT` of the Identity type
    * to the underlying value.  It assumes that the Either is always successful (i.e.: a right projection), which is
@@ -41,9 +44,11 @@ with AdditionalFormats {
 
 object BaseTestSpec {
 
+  final val DefaultAccount = new AccountID("test")
+
   /** Setup system dependencies.  Defaults to using `TestSettings` and `TestClient` */
   def createDependencies(reqResp : Map[HttpRequest,JsObject] = Map.empty, deps: DI.Dependencies[Id] = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestSettings))) = {
-    val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient(TestStorage(),reqResp)(deps.settings.get, deps.actorSystem))))
+    val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient(TestStorage(DefaultAccount),reqResp)(deps.settings.get, deps.actorSystem))))
     DI(newDeps)
   }
 

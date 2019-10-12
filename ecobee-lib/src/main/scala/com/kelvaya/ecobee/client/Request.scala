@@ -36,8 +36,8 @@ object Request {
     * @tparam T Request entity type, which must be an `ApiObject`
     * @tparam M The monad container type that will hold results
     */
-  def apply[T <: ApiObject : ToEntityMarshaller,M[_] : Monad](reqUri: Uri.Path,  querystring: List[Querystrings.Entry], reqEntity: T)
-  (implicit exec: RequestExecutor[M], settings: Settings) : Request[M,T] = apply(reqUri, querystring, Some(reqEntity))
+  def apply[T <: ApiObject : ToEntityMarshaller,M[_] : Monad](account: AccountID, reqUri: Uri.Path,  querystring: List[Querystrings.Entry], reqEntity: T)
+  (implicit exec: RequestExecutor[M], settings: Settings) : Request[M,T] = apply(account, reqUri, querystring, Some(reqEntity))
 
   /** Create a new [[AuthorizedRequest]] at the given URI with an empty request body.
     *
@@ -48,14 +48,14 @@ object Request {
     *
     * @tparam M The monad type to contain operation results
     */
-  def apply[M[_] : Monad](reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty)
-  (implicit exec: RequestExecutor[M], settings: Settings) : Request[M,ParameterlessApi] = apply(reqUri, querystring, None)
+  def apply[M[_] : Monad](account: AccountID, reqUri: Uri.Path, querystring: List[Querystrings.Entry] = List.empty)
+  (implicit exec: RequestExecutor[M], settings: Settings) : Request[M,ParameterlessApi] = apply(account, reqUri, querystring, None)
 
 
 
-  private def apply[T <: ApiObject : ToEntityMarshaller,M[_] : Monad](reqUri: Uri.Path, querystring: List[Querystrings.Entry], reqEntity : Option[T])
+  private def apply[T <: ApiObject : ToEntityMarshaller,M[_] : Monad](account: AccountID, reqUri: Uri.Path, querystring: List[Querystrings.Entry], reqEntity : Option[T])
   (implicit e: RequestExecutor[M], s: Settings) =
-    new Request[M,T] with AuthorizedRequest[M,T] {
+    new Request[M,T](account) with AuthorizedRequest[M,T] {
       val uri = reqUri
       val query = async.pure(querystring)
       val entity = reqEntity
@@ -78,7 +78,7 @@ object Request {
   * @tparam T Request entity type, which must be an `ApiObject`
   * @tparam M The monad container type that will hold results
   */
-abstract class Request[M[_],T <: ApiObject : ToEntityMarshaller](implicit val exec : RequestExecutor[M], val settings : Settings, protected val async : Monad[M]) {
+abstract class Request[M[_],T <: ApiObject : ToEntityMarshaller](protected val account : AccountID)(implicit val exec : RequestExecutor[M], val settings : Settings, protected val async : Monad[M]) {
   import Request._
 
   private lazy val _serverRoot = settings.EcobeeServerRoot
@@ -124,7 +124,7 @@ abstract class Request[M[_],T <: ApiObject : ToEntityMarshaller](implicit val ex
   def getAuthCodeQs : M[Option[Querystrings.Entry]] = {
     import RequestError._
     import TokenStorageError._
-    async.map(exec.getAuthCode) { 
+    async.map(exec.getAuthCode(account)) { 
       case Left(TokenAccessError(MissingTokenError)) => None
       case Right(code)                               => Some(("code", code))
       case Left(e)                                   => throw e // TODO: log error!
@@ -136,7 +136,7 @@ abstract class Request[M[_],T <: ApiObject : ToEntityMarshaller](implicit val ex
 
   /** Returns the refresh token querystring parameter used during token refreshes */
   def getRefreshTokenQs : M[Querystrings.Entry] = {
-    async.map(exec.getRefreshToken) { 
+    async.map(exec.getRefreshToken(account)) { 
       case Left(_)      => (("refresh_token", "")) // TODO: log error!
       case Right(token) => (("refresh_token", token))
     }
@@ -148,7 +148,7 @@ abstract class Request[M[_],T <: ApiObject : ToEntityMarshaller](implicit val ex
 
 
 /** [[Request]] with no entity */
-abstract class RequestNoEntity[M[_] : Monad](implicit exec : RequestExecutor[M], settings : Settings) extends Request[M,ParameterlessApi] {
+abstract class RequestNoEntity[M[_] : Monad](account : AccountID)(implicit e : RequestExecutor[M], s : Settings) extends Request[M,ParameterlessApi](account) {
   val entity : Option[ParameterlessApi] = None
 }
 
@@ -156,7 +156,7 @@ abstract class RequestNoEntity[M[_] : Monad](implicit exec : RequestExecutor[M],
 /** A mix-in trait which includes the authorization header in a [[Request]] */
 trait AuthorizedRequest[M[_],T <: ApiObject] extends Request[M,T] { 
 
-  abstract override def createRequest = async.flatMap(exec.generateAuthorizationHeader) {
+  abstract override def createRequest = async.flatMap(exec.generateAuthorizationHeader(this.account)) {
     case Left(e)    => async.pure(Left(e))
     case Right(hdr) => async.map(super.createRequest) { _.map { req => req.map(_.addHeader(hdr)) }}
   }

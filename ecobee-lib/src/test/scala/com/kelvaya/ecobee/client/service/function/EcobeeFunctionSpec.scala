@@ -1,5 +1,6 @@
 package com.kelvaya.ecobee.client.service.function
 
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.service.Select
 import com.kelvaya.ecobee.client.service.SelectType
 import com.kelvaya.ecobee.client.service.ThermostatPostRequest
@@ -25,9 +26,10 @@ class EcobeeFunctionSpec extends BaseTestSpec {
 
   val now = DateTime.parse("2014-03-22T10:23:44")
 
+
   "An Ecobee function" must "implicitly convert to a ThermostatFunction" in {
     val tf = TestFunction("world")
-    val req = ThermostatPostRequest(Select(SelectType.Thermostats), None, Some(Seq(tf)))
+    val req = ThermostatPostRequest(account, Select(SelectType.Thermostats), None, Some(Seq(tf)))
 
     val expectedPayload = """
       {
@@ -60,7 +62,7 @@ class EcobeeFunctionSpec extends BaseTestSpec {
     val uv = UnlinkVoice("voice")
     val us = UpdateSensor("sense", "rs:100", "1")
 
-    val req = ThermostatPostRequest(Select(SelectType.Thermostats), None, Some(Seq(ack, plug, vaca, dv, reset, resume, sm, sh, uv, us)))
+    val req = ThermostatPostRequest(account, Select(SelectType.Thermostats), None, Some(Seq(ack, plug, vaca, dv, reset, resume, sm, sh, uv, us)))
 
     val expectedPayload = """
       {

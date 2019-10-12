@@ -1,5 +1,6 @@
 package com.kelvaya.ecobee.client.service
 
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.RequestNoEntity
@@ -25,8 +26,8 @@ object ThermostatSummaryRequest {
 }
 
 
-case class ThermostatSummaryRequest[M[_]:Monad](selectType : SelectType, includeEquipStatus : Boolean = false)
-(implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M] {
+case class ThermostatSummaryRequest[M[_]:Monad](override val account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false)
+(implicit e : RequestExecutor[M], s : Settings) extends RequestNoEntity[M](account) {
   import ThermostatSummaryRequest._
 
   val query: M[List[Querystrings.Entry]] = async.pure( (("selection", getJson(selectType, includeEquipStatus))) :: Nil )
@@ -55,6 +56,6 @@ case class ThermostatSummaryResponse(
 
 
 class ThermostatSummaryService[M[_]:Monad](implicit lb : LoggingBus) extends EcobeeJsonService[M,ThermostatSummaryRequest[M],ThermostatSummaryResponse] {
-  def execute[R[_]](selectType : SelectType, includeEquipStatus : Boolean = false)(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, ThermostatSummaryResponse]] =
-    execute(new ThermostatSummaryRequest(selectType, includeEquipStatus))
+  def execute[R[_]](account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false)(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, ThermostatSummaryResponse]] =
+    execute(new ThermostatSummaryRequest(account, selectType, includeEquipStatus))
 }

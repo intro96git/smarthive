@@ -1,15 +1,19 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Electricity
+import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.ThermostatModification
+import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.HttpMethods
-import com.kelvaya.ecobee.client.Request
+import com.kelvaya.ecobee.test.BaseTestSpec
+
 import spray.json._
-import scala.concurrent.duration.Duration
+
 import akka.stream.ActorMaterializer
+
+import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 import java.nio.charset.StandardCharsets
 
@@ -23,7 +27,7 @@ class ThermostatPostSpec extends BaseTestSpec {
   lazy val TestFunction = ThermostatFunction("test", Electricity(Seq.empty))
 
   "The request" must "serialize correctly for HTTP" in {
-    val thermReq = ThermostatPostRequest(Select(SelectType.Thermostats), Some(TestThermostat), Some(Seq(TestFunction)))
+    val thermReq = ThermostatPostRequest(account, Select(SelectType.Thermostats), Some(TestThermostat), Some(Seq(TestFunction)))
 
     val expectedPayload = """
       {

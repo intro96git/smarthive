@@ -17,8 +17,9 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
   import deps.Implicits._
 
+
   "Services" must "include support for registering a new application PIN" in {
-    val pinReq = new PinRequest()
+    val pinReq = new PinRequest(account)
     PinService.execute(pinReq)
 
     // Confirm generated HTTP request is validly structured
@@ -41,9 +42,9 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
 
   they must "include support for getting a new set of tokens using the application PIN" in {
-    val initTokenReq = new InitialTokensRequest()
+    val initTokenReq = new InitialTokensRequest(account)
     InitialTokensService.execute(initTokenReq)
-    InitialTokensService.execute
+    InitialTokensService.execute(account)
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = initTokenReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
@@ -65,7 +66,7 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
 
   they must "include support for getting a new access token using the refresh token" in {
-    val tokenReq = new RefreshTokensRequest()
+    val tokenReq = new RefreshTokensRequest(account)
     RefreshTokensService.execute(tokenReq)
 
     // Confirm generated HTTP request is validly structured

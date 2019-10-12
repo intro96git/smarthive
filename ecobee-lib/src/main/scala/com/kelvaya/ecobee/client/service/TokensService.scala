@@ -1,8 +1,10 @@
 package com.kelvaya.ecobee.client.service
 
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.PostRequest
+import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.config.Settings
@@ -14,7 +16,8 @@ import akka.http.scaladsl.model.Uri
 import spray.json.DefaultJsonProtocol
 import cats.Monad
 
-abstract class TokensRequest[M[_] : Monad](implicit e : RequestExecutor[M], s : Settings) extends PostRequest[M,ParameterlessApi] {
+abstract class TokensRequest[M[_] : Monad](override val account: AccountID)(implicit e : RequestExecutor[M], s : Settings) 
+extends Request[M,ParameterlessApi](account) with PostRequest[M,ParameterlessApi] {
   import com.kelvaya.ecobee.client.Querystrings._
 
   val entity = None
@@ -41,8 +44,8 @@ case class TokensResponse(access_token : String, token_type : TokenType, expires
 
 abstract class TokensService[M[_] : Monad, T <: TokensRequest[M]] extends EcobeeJsonService[M, T,TokensResponse] {
 
-  def execute(implicit e : RequestExecutor[M], s : Settings) : M[Either[ServiceError, TokensResponse]] =
-    this.execute(this.newTokenRequest)
+  def execute(account: AccountID)(implicit e : RequestExecutor[M], s : Settings) : M[Either[ServiceError, TokensResponse]] =
+    this.execute(this.newTokenRequest(account))
 
-  protected def newTokenRequest(implicit e : RequestExecutor[M], s : Settings) : T
+  protected def newTokenRequest(account: AccountID)(implicit e : RequestExecutor[M], s : Settings) : T
 }

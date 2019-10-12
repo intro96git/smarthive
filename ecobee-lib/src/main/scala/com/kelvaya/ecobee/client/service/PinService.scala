@@ -18,7 +18,7 @@ object PinRequest {
   val Endpoint = Uri.Path("/authorize")
 }
 
-class PinRequest[M[_] : Monad](implicit exec: RequestExecutor[M], settings: Settings) extends RequestNoEntity[M] {
+class PinRequest[M[_] : Monad](override val account: AccountID)(implicit exec: RequestExecutor[M], settings: Settings) extends RequestNoEntity[M](account) {
   val uri = PinRequest.Endpoint
   val query = async.pure(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil)
 }
@@ -47,6 +47,6 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
 
 object PinService {
   implicit class PinServiceImpl[M[_] : Monad](o : PinService.type) extends EcobeeJsonService[M,PinRequest[M],PinResponse] {
-    def execute(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, PinResponse]] = this.execute(new PinRequest)
+    def execute(account: AccountID)(implicit e : RequestExecutor[M], s : Settings): M[Either[ServiceError, PinResponse]] = this.execute(new PinRequest(account))
   }
 }

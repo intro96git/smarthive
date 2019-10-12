@@ -22,8 +22,8 @@ trait RequestExecutor[M[_]] {
   type EitherM[E,A] = M[Either[E,A]]
 
   /** Return a new Akka `Authorization` OAuth Bearer Token HTTP header */
-  def generateAuthorizationHeader(implicit io : Monad[M]): EitherM[RequestError,Authorization] = {
-    io.map(getAccessToken) { 
+  def generateAuthorizationHeader(account : AccountID)(implicit io : Monad[M]): EitherM[RequestError,Authorization] = {
+    io.map(getAccessToken(account)) { 
       _.flatMap(t => Right(Authorization(OAuth2BearerToken(t))))
     }
   }
@@ -32,13 +32,13 @@ trait RequestExecutor[M[_]] {
   def getAppKey: String
 
   /** Return the Ecobee authorization code used for authorization against the API for this client */
-  def getAuthCode: EitherM[RequestError,String]
+  def getAuthCode(account : AccountID): EitherM[RequestError,String]
 
   /** Return the current access token used for authorization against the API */
-  def getAccessToken: EitherM[RequestError,String]
+  def getAccessToken(account : AccountID): EitherM[RequestError,String]
 
   /** Return the refresh token used to generate new authorization tokens for the API */
-  def getRefreshToken: EitherM[RequestError,String]
+  def getRefreshToken(account : AccountID): EitherM[RequestError,String]
 
 
   /** Return the results of executing an HTTP request.

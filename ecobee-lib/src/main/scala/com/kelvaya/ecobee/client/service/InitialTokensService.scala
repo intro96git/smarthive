@@ -1,5 +1,6 @@
 package com.kelvaya.ecobee.client.service
 
+import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Querystrings.GrantType
 import com.kelvaya.ecobee.client.RequestExecutor
@@ -24,7 +25,7 @@ import cats.Monad
   *
   * @see [[com.kelvaya.ecobee.config.DI]]
   */
-class InitialTokensRequest[M[_] : Monad](implicit e : RequestExecutor[M], s : Settings) extends TokensRequest[M] {
+class InitialTokensRequest[M[_] : Monad](override val account: AccountID)(implicit e : RequestExecutor[M], s : Settings) extends TokensRequest[M](account) {
   final def authTokenQs : M[Option[Querystrings.Entry]] = this.getAuthCodeQs
   final def grantTypeQs : Querystrings.Entry = GrantType.Pin
 }
@@ -50,6 +51,6 @@ object InitialTokensService {
     * an `InitialTokensRequest` and pass it explicitly to a new `InitialTokensServiceImpl`.
     */
   implicit class InitialTokensServiceImpl[M[_] : Monad](o : InitialTokensService.type) extends TokensService[M,InitialTokensRequest[M]] {
-    def newTokenRequest(implicit e : RequestExecutor[M], s : Settings) = new InitialTokensRequest
+    def newTokenRequest(account: AccountID)(implicit e : RequestExecutor[M], s : Settings) = new InitialTokensRequest(account)
   }
 }
