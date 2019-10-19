@@ -1,11 +1,10 @@
 package com.kelvaya.ecobee.config
 
-import akka.actor.ActorSystem
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.RequestExecutorImpl
 
-import scala.language.higherKinds
-import cats.Monad
+import akka.actor.ActorSystem
+
 
 /** Factory for creating new dependency injections for the application execution.
   *
@@ -13,11 +12,11 @@ import cats.Monad
   */
 object DI {
 
-  /** Create default dependencies using Monix's `Task` as the Monad to contain token and operational results */
-  def apply(actorSystem : ActorSystem) = new DI[monix.eval.Task,monix.eval.Task](Dependencies(actorSystem))
+  /** Create default dependencies using the given Actor system */
+  def apply(actorSystem : ActorSystem) = new DI(Dependencies(actorSystem))
 
   /** Use the given dependencies for application execution */
-  def apply[A[_] : Monad,B[_]](options : Dependencies[A,B]) : DI[A,B] = new DI[A,B](options)
+  def apply(options : Dependencies) : DI = new DI(options)
 
 
   /** Dependencies that can be chosen to be used during application execution.
@@ -26,19 +25,16 @@ object DI {
     * @param settings The [[com.kelvaya.ecobee.config.Settings Settings]] to use for global application settings
     * @param executor The [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]] used to execute API requests
     */
-  case class Dependencies[A[_],B[_]](actorSystem : ActorSystem, settings : Option[Settings] = None, executor : Option[RequestExecutor[A,B]] = None)
+  case class Dependencies(actorSystem : ActorSystem, settings : Option[Settings] = None, executor : Option[RequestExecutor] = None)
 }
 
 
 /** Dependency Injection settings
   *
   * Sets the dependencies used by the application, including the [[com.kelvaya.ecobee.config.Settings Settings]], `ActorSystem`,
-  * `LoggingBus`, [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]], and the Monad type that will be used
-  * to contain the results of the `RequestExecutor`.
+  * `LoggingBus`, and [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]].
   *
   * @param di [[DI$.Dependencies]] to use in the application
-  * @tparam A The monad container type to hold requests throughout the use of the library
-  * @tparam B The monad container type to hold responses throughout the use of the library
   *
   * @example
 {{{
@@ -50,9 +46,9 @@ final class MyApp extends Application {
 }
 
 final class MyOverrideApp extends Application {
-  val overrides = DI.Dependencies[Future](ActorSystem("my-overrides"),settings=new MySettings)
+  val overrides = DI.Dependencies(ActorSystem("my-overrides"),settings=new MySettings)
 
-  // Initialize dependencies using custom settings and using Scala's Future as the container Monad
+  // Initialize dependencies using custom settings
   val deps = DI(overrides)
 
   // Import the created dependencies except for the executor, which we create on our own (useful for unit testing)
@@ -65,10 +61,10 @@ final class MyOverrideApp extends Application {
   *
   * @note To setup Dependency Injection, call an `apply` method of [[DI$]] and then import the implicit values from the created instance.
   * If no dependencies are explicitly requested, it will use the following defaults: [[com.kelvaya.ecobee.config.Settings$]],
-  * the `LoggingBus` directly off of the given `ActorSystem`, and [[com.kelvaya.ecobee.client.RequestExecutorImpl RequestExecutorImpl[Task]]]
+  * the `LoggingBus` directly off of the given `ActorSystem`, and [[com.kelvaya.ecobee.client.RequestExecutorImpl RequestExecutorImpl]]
   *
   */
-class DI[A[_] : Monad,B[_]] (di : DI.Dependencies[A,B]) {
+class DI (di : DI.Dependencies) {
 
   /** Application settings */
   lazy val settings = di.settings.getOrElse(Settings)
@@ -80,7 +76,7 @@ class DI[A[_] : Monad,B[_]] (di : DI.Dependencies[A,B]) {
   lazy val loggingBus = di.actorSystem.eventStream
 
   /** RequestExecutor used to execute all API requests */
-  lazy val executor = di.executor.getOrElse(new RequestExecutorImpl[A,B])
+  lazy val executor = di.executor.getOrElse(new RequestExecutorImpl)
 
   /** Exposes all dependencies implicitly
     *

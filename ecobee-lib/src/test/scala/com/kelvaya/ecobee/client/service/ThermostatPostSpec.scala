@@ -28,7 +28,7 @@ class ThermostatPostSpec extends BaseTestSpec {
   lazy val store = this.createStorage()
 
   "The request" must "serialize correctly for HTTP" in {
-    val thermReq = ThermostatPostRequest(account, store, Select(SelectType.Thermostats), Some(TestThermostat), Some(Seq(TestFunction)))
+    val thermReq = ThermostatPostRequest(account, Select(SelectType.Thermostats), Some(TestThermostat), Some(Seq(TestFunction)))
 
     val expectedPayload = """
       {
@@ -38,9 +38,7 @@ class ThermostatPostSpec extends BaseTestSpec {
       }
       """.parseJson
 
-    import monix.execution.Scheduler.Implicits.global
-
-    val req: HttpRequest = thermReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val req: HttpRequest = this.runtime.unsafeRun(thermReq.createRequest.provide(store))
     req.method shouldBe HttpMethods.POST
     req.uri.path shouldBe Uri.Path("/thermostat")
     req.uri.query().size shouldBe 1

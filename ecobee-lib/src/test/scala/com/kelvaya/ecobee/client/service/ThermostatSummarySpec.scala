@@ -18,16 +18,14 @@ class ThermostatSummarySpec extends BaseTestSpec {
 
   "The thermostat summary service" must "serialize requests correctly" in {
 
-    ThermostatSummaryService.execute(account, store, SelectType.Thermostats, true)
+    ThermostatSummaryService.execute(account, SelectType.Thermostats, true)
 
-    val thermReq = new ThermostatSummaryRequest(account, store, SelectType.Thermostats, true)
+    val thermReq = new ThermostatSummaryRequest(account, SelectType.Thermostats, true)
     ThermostatSummaryService.execute(thermReq)
 
     val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeEquipmentStatus":true}""".parseJson
 
-    import monix.execution.Scheduler.Implicits.global
-
-    val req: HttpRequest = thermReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val req: HttpRequest = this.runtime.unsafeRun(thermReq.createRequest.provide(store))
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/thermostatSummary")

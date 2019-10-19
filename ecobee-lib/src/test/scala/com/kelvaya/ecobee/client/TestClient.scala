@@ -6,34 +6,31 @@ import com.kelvaya.ecobee.test.TestConstants
 
 
 import akka.http.scaladsl.model.HttpRequest
-import monix.eval.Task
+
 import spray.json.JsObject
 import spray.json.JsonFormat
-
-import cats.Id
+import zio.ZIO
+import zio.IO
+import com.kelvaya.ecobee.client.tokens.TokenStorage
 
 
 /** May be overkill?  At least, the executeRequest method may be overkill.  Do we ever really care to have actual
  *  responses in the tests?
  *
  */
-class TestClient(responses : Map[HttpRequest, JsObject])(implicit settings : Settings)
-extends RequestExecutor[Id,Id] with TestConstants {
+class TestClient(storage : TokenStorage, responses : Map[HttpRequest, JsObject])(implicit settings : Settings)
+extends RequestExecutor with TestConstants {
 
-  def executeRequest[S : JsonFormat](taskReq: Task[Id[Either[RequestError, HttpRequest]]]): Id[Either[ServiceError, S]] = {
-    import monix.execution.Scheduler.Implicits.global
+  def executeRequest[S : JsonFormat](taskReq : ZIO[TokenStorage,RequestError,HttpRequest]) : IO[ServiceError,S] = {
     taskReq
-      .map { reqE =>
-        reqE
-          .left.map( _ => ServiceError("invalid_request", "Unit Test Failure - Missing Request", ""))
-          .flatMap { req =>
-            val fixedReq = req.withUri(settings.EcobeeServerRoot)
-            val response : Either[ServiceError,S] = responses.get(fixedReq)
-              .map { json ⇒ Right(implicitly[JsonFormat[S]].read(json)) }
-              .getOrElse(Left(ServiceError("invalid_request", s"Unit Test Failure - Missing Response for given request: $req", fixedReq.uri.toString)))
-            response
-          }
+      .provide(storage)
+      .catchAll(_ => IO.fail(ServiceError("invalid_request", "Unit Test Failure - Missing Request", "")))
+      .flatMap { req =>
+        val fixedReq = req.withUri(settings.EcobeeServerRoot)
+        val response : Either[ServiceError,S] = responses.get(fixedReq)
+          .map { json ⇒ Right(implicitly[JsonFormat[S]].read(json)) }
+          .getOrElse(Left(ServiceError("invalid_request", s"Unit Test Failure - Missing Response for given request: $req", fixedReq.uri.toString)))
+        ZIO.fromEither(response)
       }
-      .runSyncUnsafe()
   }
 }

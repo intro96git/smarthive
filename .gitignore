@@ -11,3 +11,4 @@ target
 /.bashrc
 .bloop
 .metals
+*.scalafmt.conf

@@ -7,41 +7,39 @@ import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.TokenType
-import com.kelvaya.ecobee.client.storage.TokenStorage
+import com.kelvaya.ecobee.client.tokens.TokenStorage
+import com.kelvaya.ecobee.client.tokens.TokenStorageError
 import com.kelvaya.ecobee.config.Settings
-
-import scala.language.higherKinds
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
 
 import spray.json.DefaultJsonProtocol
 
-import cats.Monad
+import zio.IO
+import zio.ZIO
 
-import monix.eval.Coeval
 
-
-/** Request for a new set of [[com.kelvaya.ecobee.client.Tokens tokens]] 
+/** Request for a new set of [[com.kelvaya.ecobee.client.tokens.Tokens tokens]] 
   * 
   * @param account The ID of the account for which the token request will be made
-  * @param tokenStore The store of all API tokens
   */ 
-abstract class TokensRequest[M[_] : Monad](override protected val account: AccountID, override protected val tokenStore : Coeval[TokenStorage[M]])(implicit s : Settings) 
-extends Request[M,ParameterlessApi](account, tokenStore) with PostRequest[M,ParameterlessApi] {
+abstract class TokensRequest(override protected val account: AccountID)(implicit s : Settings) 
+extends Request[ParameterlessApi](account) with PostRequest[ParameterlessApi] {
   import com.kelvaya.ecobee.client.Querystrings._
 
   val entity = None
   val uri = Uri.Path("/token")
-  val query: Coeval[M[List[Entry]]] = this.authTokenQS.map { QS => 
-    this.tokenIO.map(QS) { tks => this.grantTypeQS :: ClientId :: (tks map { _ :: Nil } getOrElse Nil) }
+  val query: ZIO[TokenStorage,TokenStorageError, List[Entry]] = this.authTokenQS.map { qs =>
+    val list = qs.map(_ :: Nil).getOrElse(List.empty[Entry])
+    this.grantTypeQS :: ClientId :: list
   }
 
   /** The Querystring required to be on the request to request this type of token */
   protected def grantTypeQS : Entry
 
   /** The Querystring required to authorize the request for a new token */
-  protected def authTokenQS : Coeval[M[Option[Entry]]]
+  protected def authTokenQS : TokenStorage.IO[Option[Entry]]
 }
 
 
@@ -53,7 +51,7 @@ object TokensResponse extends DefaultJsonProtocol {
   implicit val format = DefaultJsonProtocol.jsonFormat5(TokensResponse.apply)
 }
 
-/** Response from a [[TokenRequest]]
+/** Response from a [[TokensRequest]]
   * 
   * @param access_token The new access token used to authorize subsequent API requests
   * @param token_type The type of token returned.  Currently supports only "Bearer"
@@ -67,24 +65,22 @@ case class TokensResponse(access_token : String, token_type : TokenType, expires
 // ---------------------
 
 
-/** Service to handle requests for news set of [[com.kelvaya.ecobee.client.Tokens tokens]]  */ 
-abstract class TokensService[F[_] : Monad,M[_],T <: TokensRequest[F]] extends EcobeeJsonService[F,M,T,TokensResponse] {
+/** Service to handle requests for news set of [[com.kelvaya.ecobee.client.tokens.Tokens tokens]]  */ 
+abstract class TokensService[T <: TokensRequest] extends EcobeeJsonService[T,TokensResponse] {
 
   /** Return the new tokens by executing the given request
     * 
     * @param account The ID of the account for which the token request will be made
-    * @param tokenStore The store of all API tokens
     * @param e (implicit) The executor that will execute the request against the API
     * @param s (implicit) Global application settings
     */
-  def execute(account: AccountID, tokenStore: Coeval[TokenStorage[F]])(implicit e : RequestExecutor[F,M], s : Settings) : M[Either[ServiceError, TokensResponse]] =
-    this.execute(this.newTokenRequest(account, tokenStore))
+  def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings) : IO[ServiceError, TokensResponse] =
+    this.execute(this.newTokenRequest(account))
 
   /** Create the tokens request for this service
     * 
     * @param account The ID of the account for which the token request will be made
-    * @param tokenStore The store of all API tokens
     * @param s (implicit) Global application settings
     */
-  protected def newTokenRequest(account: AccountID, tokenStore: Coeval[TokenStorage[F]])(implicit s : Settings) : T
+  protected def newTokenRequest(account: AccountID)(implicit s : Settings) : T
 }

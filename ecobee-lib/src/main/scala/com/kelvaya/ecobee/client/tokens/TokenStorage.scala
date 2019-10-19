@@ -1,28 +1,42 @@
-package com.kelvaya.ecobee.client.storage
+package com.kelvaya.ecobee.client.tokens
 
 import com.kelvaya.ecobee.client.AccountID
 
-import scala.language.higherKinds
+import zio.ZIO
 
 /** Implementations of `TokenStorage` store and retrieve Ecobee API tokens to be used in requests by the [[Client]]
   *
-  * @tparam F The tagless-final-style type holding all return values of the storage class operations
+  * @note Uses the "module" pattern of ZIO environments.  The tokenStorage member contains the actual service that will
+  * provide access to the underlying token storage medium. 
   */
-trait TokenStorage[F[_]] {
-
-  /** Returns the currently stored [[Tokens]] used for authorizing against the Ecobee API */
-  def getTokens(account : AccountID) : F[Either[TokenStorageError,Tokens]]
-
-  /** Returns a `TokenStorage` with all tokens updated to the given value */
-  def storeTokens(account : AccountID, tokens : Tokens) : F[Either[TokenStorageError,Unit]]
+trait TokenStorage {
+  val tokenStorage : TokenStorage.Service[Any]
+}
 
 
-  /** Shut down the storage connection.
-    *
-    * @note Access to the same instance after calling this method results in
-    * undefined behavior.
-    */
-  def close() : F[Either[TokenStorageError,Unit]]
+/** Type aliases and service definition for [[TokenStorage]] */
+object TokenStorage {
+
+  /** Standard return type for most [[TokenStorage]] services */
+  type IO[T] = ZIO[TokenStorage,TokenStorageError,T]
+
+  /** Read and write [[Tokens]] from a backend using environment `R` */
+  trait Service[R] {
+    
+    /** Returns the currently stored [[Tokens]] used for authorizing against the Ecobee API */
+    def getTokens(account : AccountID) : ZIO[R,TokenStorageError,Tokens]
+
+    /** Returns a `TokenStorage` with all tokens updated to the given value */
+    def storeTokens(account : AccountID, tokens : Tokens) : ZIO[R,TokenStorageError,Unit]
+
+
+    /** Shut down the storage connection.
+      *
+      * @note Access to the same instance after calling this method results in
+      * undefined behavior.
+      */
+    def close() : ZIO[R,TokenStorageError,Unit]
+  }
 }
 
 

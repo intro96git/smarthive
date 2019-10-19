@@ -17,14 +17,12 @@ class ThermostatServiceSpec extends BaseTestSpec {
 
     val selection = Select(SelectType.Thermostats, includeRuntime=true)
 
-    ThermostatService.execute(account, store, selection)
+    ThermostatService.execute(account, selection)
 
     // ############
 
-    import monix.execution.Scheduler.Implicits.global
-
-    val thermReq = ThermostatRequest(account, store, selection)
-    val req: HttpRequest = thermReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val thermReq = ThermostatRequest(account, selection)
+    val req: HttpRequest = this.runtime.unsafeRun(thermReq.createRequest.provide(store))
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/thermostat")
@@ -42,8 +40,8 @@ class ThermostatServiceSpec extends BaseTestSpec {
 
     // ############
 
-    val thermReq2 = ThermostatRequest(account, store, selection, 1)
-    val req2: HttpRequest = thermReq2.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val thermReq2 = ThermostatRequest(account, selection, 1)
+    val req2: HttpRequest = this.runtime.unsafeRun(thermReq2.createRequest.provide(store))
 
     val expectedPage2 = """{"page":1}""".parseJson
 

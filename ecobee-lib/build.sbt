@@ -11,13 +11,13 @@ libraryDependencies ++= Seq(
 
   "com.typesafe.akka" %% "akka-stream"          % AkkaVersion,
   AkkaSlf4j,
-  
+
   "com.typesafe" % "config" % "1.3.3",
   
-  Monix,
-  
+  ZIO,
+
   Slf4j,
-  
+
   JodaTime,
   JodaConvert,
   ScalaTime,
@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit"         % AkkaVersion     % Test,
   "com.typesafe.akka" %% "akka-stream-testkit"  % AkkaVersion     % Test,
   ScalaTest,
-  
+
   ammonite(scalaBinaryVersion.value)
 )
 

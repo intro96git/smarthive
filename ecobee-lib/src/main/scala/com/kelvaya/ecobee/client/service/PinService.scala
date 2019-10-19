@@ -4,18 +4,14 @@ import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.Querystrings._
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.config.Settings
-import com.kelvaya.ecobee.client.storage.TokenStorage
-
-import scala.language.higherKinds
 
 import spray.json.DefaultJsonProtocol
 import spray.json.DefaultJsonProtocol._
 
 import akka.http.scaladsl.model.Uri
 
-import cats.Monad
+import zio.{IO,UIO}
 
-import monix.eval.Coeval
 
 /** Contains constants used by [[PinRequest]] */
 object PinRequest {
@@ -27,20 +23,16 @@ object PinRequest {
   * Returns a new PIN which can be used to request a new set of tokens for subsequent API request.
   * To use the PIN, call [[InitialTokensService]].
   *
-  * @note This should not be created directly.  Instead, use the service object, [[PinRequestService$]]
+  * @note This should not be created directly.  Instead, use the service object, [[PinService$]]
   *
   * @param account The ID of the account for which the token request will be made
-  * @param tokenStore The store of all API tokens
   * @param settings (implicit) The application global settings (from dependency injection, `DI`)
-  *
-  * @tparam F The monad type that will hold the request
   *
   * @see [[com.kelvaya.ecobee.config.DI]]
   */
-class PinRequest[F[_] : Monad](override val account: AccountID, override val tokenStore : Coeval[TokenStorage[F]])(implicit settings: Settings)
-extends RequestNoEntity[F](account, tokenStore) {
+class PinRequest(override val account: AccountID)(implicit settings: Settings) extends RequestNoEntity(account) {
   val uri = PinRequest.Endpoint
-  val query = Coeval.pure(this.tokenIO.pure(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil))
+  val query = UIO(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil)
 }
 
 
@@ -69,19 +61,16 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
 /** Service for initial PIN request against the Ecobee API.
   *
   * @param account The ID of the account for which the token request will be made
-  * @param tokenStore The store of all API tokens
   * @param settings (implicit) The application global settings (from dependency injection, `DI`)
-  * @tparam F The monad containing the request
-  * @tparam M The container type that will hold results (from dependency injection, `DI`)
   *
   * @example
 {{{
-  val pinResponse = PinService.execute(account, tokenStore)
+  val pinResponse = PinService.execute(account)
 }}}
   */
-  object PinService {
-  implicit class PinServiceImpl[F[_] : Monad,M[_]](o : PinService.type) extends EcobeeJsonService[F,M,PinRequest[F],PinResponse] {
-    def execute(account: AccountID, tokenStore: Coeval[TokenStorage[F]])(implicit e : RequestExecutor[F,M], s : Settings): M[Either[ServiceError, PinResponse]] = 
-      this.execute(new PinRequest(account, tokenStore))
+object PinService {
+  implicit class PinServiceImpl(o : PinService.type) extends EcobeeJsonService[PinRequest,PinResponse] {
+    def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings): IO[ServiceError, PinResponse] = 
+      this.execute(new PinRequest(account))
   }
 }

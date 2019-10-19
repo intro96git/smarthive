@@ -3,11 +3,9 @@ package com.kelvaya.ecobee.client
 import scala.util.Random
 
 import com.kelvaya.ecobee.client.AccountID
-import com.kelvaya.ecobee.client.storage.{Tokens,TokenStorage,TokenStorageError}
+import com.kelvaya.ecobee.client.tokens.{Tokens,TokenStorage,TokenStorageError}
 import com.kelvaya.ecobee.test.BaseTestSpec
 
-import cats._
-import monix.eval.Coeval
 
 
 class EcobeeClientSpec extends BaseTestSpec {
@@ -50,19 +48,17 @@ class EcobeeClientSpec extends BaseTestSpec {
 }
 
 object EcobeeClientSpec {
-  class MemoryTokenStorage (t : Map[AccountID,Tokens] = Map(BaseTestSpec.DefaultAccount -> Tokens(None,None,None))) extends TokenStorage[Id] {
+  class MemoryTokenStorage (t : Map[AccountID,Tokens] = Map(BaseTestSpec.DefaultAccount -> Tokens(None,None,None))) extends TokenStorage {
     type Self = MemoryTokenStorage
 
-    type TokenId[A] = Id[Either[TokenStorageError,A]]
+    val tokenStorage : TokenStorage.Service[Any] = ???
 
     private val _tokens = new scala.collection.mutable.HashMap ++ t
 
-    private def pure[A] : A => Id[A] = implicitly[Monad[Id]].pure _
+    val close = ()
 
-    val close : TokenId[Unit] = pure(Right(()))
-
-    def getTokens(account: AccountID): cats.Id[Either[TokenStorageError,Tokens]] = pure(Right(_tokens(account)))
-    def storeTokens(account: AccountID,tokens: Tokens): cats.Id[Either[TokenStorageError,Unit]] = pure(Right(_tokens.update(account,tokens)))
+    def getTokens(account: AccountID) = ??? // : cats.Id[Either[TokenStorageError,Tokens]] = pure(Right(_tokens(account)))
+    def storeTokens(account: AccountID,tokens: Tokens) = ??? //: cats.Id[Either[TokenStorageError,Unit]] = pure(Right(_tokens.update(account,tokens)))
     
   }
 }

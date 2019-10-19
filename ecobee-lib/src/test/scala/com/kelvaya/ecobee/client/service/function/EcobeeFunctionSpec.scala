@@ -29,7 +29,7 @@ class EcobeeFunctionSpec extends BaseTestSpec {
 
   "An Ecobee function" must "implicitly convert to a ThermostatFunction" in {
     val tf = TestFunction("world")
-    val req = ThermostatPostRequest(account, store, Select(SelectType.Thermostats), None, Some(Seq(tf)))
+    val req = ThermostatPostRequest(account, Select(SelectType.Thermostats), None, Some(Seq(tf)))
 
     val expectedPayload = """
       {
@@ -38,9 +38,7 @@ class EcobeeFunctionSpec extends BaseTestSpec {
       }
       """.parseJson
 
-    import monix.execution.Scheduler.Implicits.global
-
-    val httpReq: HttpRequest = req.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val httpReq: HttpRequest = this.runtime.unsafeRun(req.createRequest.provide(store))
     val entity = Await.result(httpReq.entity.toStrict(Duration(1, "second")), Duration(1, "second"))
       .data
       .decodeString(StandardCharsets.UTF_8)
@@ -62,7 +60,7 @@ class EcobeeFunctionSpec extends BaseTestSpec {
     val uv = UnlinkVoice("voice")
     val us = UpdateSensor("sense", "rs:100", "1")
 
-    val req = ThermostatPostRequest(account, store, Select(SelectType.Thermostats), None, Some(Seq(ack, plug, vaca, dv, reset, resume, sm, sh, uv, us)))
+    val req = ThermostatPostRequest(account, Select(SelectType.Thermostats), None, Some(Seq(ack, plug, vaca, dv, reset, resume, sm, sh, uv, us)))
 
     val expectedPayload = """
       {
@@ -85,9 +83,7 @@ class EcobeeFunctionSpec extends BaseTestSpec {
       }
       """.parseJson
 
-    import monix.execution.Scheduler.Implicits.global
-
-    val httpReq: HttpRequest = req.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val httpReq: HttpRequest = this.runtime.unsafeRun(req.createRequest.provide(store))
     val entity = Await.result(httpReq.entity.toStrict(Duration(1, "second")), Duration(1, "second"))
       .data
       .decodeString(StandardCharsets.UTF_8)

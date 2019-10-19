@@ -3,10 +3,10 @@ package com.kelvaya.ecobee.client.service
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
 
-import scala.language.higherKinds
 import spray.json.JsonFormat
 
-import cats.Monad
+import zio.IO
+
 
 
 /** Response from the Ecobee API to an HTTP Request
@@ -24,13 +24,11 @@ trait EcobeeResponse[T]
   *
   * @tparam T The `Request` used to query the API
   * @tparam S The response type from the API
-  * @tparam F The monad type containing the request (from the chosen TokenStorage instance)
-  * @tparam M The container type that will hold the response (from dependency injection, `DI`)
   *
   * @define T T
   * @define S S
   */
-abstract class EcobeeService[F[_] : Monad, M[_], T <: Request[F,_], S] {
+abstract class EcobeeService[T <: Request[_], S] {
 
   /** Execute the given request, returning either a [[ServiceError]] or a response of type $S.
     *
@@ -39,7 +37,7 @@ abstract class EcobeeService[F[_] : Monad, M[_], T <: Request[F,_], S] {
     * @param req The $T used to query the API
     * @param exec (implicit) The executor responsible for sending the request to the Ecobee API  (from dependency injection, `DI`)
     */
-  def execute(req: T)(implicit exec : RequestExecutor[F,M]) : M[Either[ServiceError,S]]
+  def execute(req: T)(implicit exec : RequestExecutor) : IO[ServiceError,S]
 }
 
 // ---------------------
@@ -49,12 +47,10 @@ abstract class EcobeeService[F[_] : Monad, M[_], T <: Request[F,_], S] {
   *
   * @tparam T The `Request` used to query the API
   * @tparam S The JSON response type from the API
-  * @tparam F The monad type containing the request (from the chosen TokenStorage instance)
-  * @tparam M The monad container type that will hold the response  (from dependency injection, `DI`)
   *
   * @define T T
   * @define S JSON response
   */
-abstract class EcobeeJsonService[F[_] : Monad, M[_], T <: Request[F,_], S : JsonFormat] extends EcobeeService[F,M,T,S] {
-  final def execute(req: T)(implicit exec : RequestExecutor[F,M]) : M[Either[ServiceError,S]] = exec.executeRequest(req.createRequest)
+abstract class EcobeeJsonService[T <: Request[_], S : JsonFormat] extends EcobeeService[T,S] {
+  final def execute(req: T)(implicit exec : RequestExecutor) : IO[ServiceError,S] = exec.executeRequest(req.createRequest)
 }

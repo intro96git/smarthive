@@ -2,27 +2,24 @@ package com.kelvaya.ecobee.test
 
 import com.kelvaya.ecobee.client.AccountID
 
-import com.kelvaya.ecobee.client.storage._
+import com.kelvaya.ecobee.client.tokens._
+import zio.UIO
 
-import cats.Id
-import cats.Monad
 
 object TestStorage extends TestConstants {
   def apply(account: AccountID) = new TestStorage(Map(account -> Tokens(Some(AuthCode), Some(AccessToken), Some(RefreshToken))))
 }
 
-class TestStorage private (store : Map[AccountID,Tokens]) extends TokenStorage[Id] {
-  type Self = TestStorage
-
+class TestStorage private (store : Map[AccountID,Tokens]) extends TokenStorage {
+  val tokenStorage = new TokenStorage.Service[Any] {
     private var _tokens = store
 
-    private def pure[A] : A => Id[A] = implicitly[Monad[Id]].pure _
-
     // May throw exception...fix it!!
-    def getTokens(account : AccountID): Id[Either[TokenStorageError,Tokens]] = pure(Right(_tokens(account)))
+    def getTokens(account : AccountID): UIO[Tokens] = UIO(_tokens(account))
 
     // This won't handle parallelism or re-use.  Fix it!
-    def storeTokens(account : AccountID, tokens: Tokens): Id[Either[TokenStorageError,Unit]] = { _tokens = _tokens + ((account, tokens)); pure(Right(()))}
+    def storeTokens(account : AccountID, tokens: Tokens): UIO[Unit] = UIO { _tokens = _tokens + ((account, tokens)) }
 
-    val close : Id[Either[TokenStorageError,Unit]] = pure(Right(()))
+    val close : UIO[Unit] = UIO.unit
+  }
 }

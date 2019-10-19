@@ -2,6 +2,7 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.TokenType
+import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.test.BaseTestSpec
 
 import akka.http.scaladsl.model.HttpEntity
@@ -9,8 +10,6 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
-
-import monix.execution.Scheduler.Implicits.global
 
 import spray.json._
 
@@ -20,14 +19,14 @@ class AuthorizationRequestSpec extends BaseTestSpec {
   import deps.Implicits._
 
 
-  val store = this.createStorage()
+  val store : TokenStorage = this.createStorage()
 
   "Services" must "include support for registering a new application PIN" in {
-    val pinReq = new PinRequest(account, store)
+    val pinReq = new PinRequest(account)
     PinService.execute(pinReq)
 
     // Confirm generated HTTP request is validly structured
-    val req: HttpRequest = pinReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val req: HttpRequest = this.runtime.unsafeRun(pinReq.createRequest.provide(store))
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/authorize")
@@ -46,12 +45,12 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
 
   they must "include support for getting a new set of tokens using the application PIN" in {
-    val initTokenReq = new InitialTokensRequest(account, store)
+    val initTokenReq = new InitialTokensRequest(account)
     InitialTokensService.execute(initTokenReq)
-    InitialTokensService.execute(account, store)
+    InitialTokensService.execute(account)
 
     // Confirm generated HTTP request is validly structured
-    val req: HttpRequest = initTokenReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val req: HttpRequest = this.runtime.unsafeRun(initTokenReq.createRequest.provide(store))
     req.method shouldBe HttpMethods.POST
     req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/token")
@@ -70,11 +69,11 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
 
   they must "include support for getting a new access token using the refresh token" in {
-    val tokenReq = new RefreshTokensRequest(account, store)
+    val tokenReq = new RefreshTokensRequest(account)
     RefreshTokensService.execute(tokenReq)
 
     // Confirm generated HTTP request is validly structured
-    val req: HttpRequest = tokenReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
+    val req: HttpRequest = this.runtime.unsafeRun(tokenReq.createRequest.provide(store))
     req.method shouldBe HttpMethods.POST
     req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/token")
