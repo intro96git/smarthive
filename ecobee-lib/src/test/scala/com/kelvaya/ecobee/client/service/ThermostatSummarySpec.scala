@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.test.BaseTestSpec
@@ -15,14 +14,14 @@ class ThermostatSummarySpec extends BaseTestSpec {
 
   import deps.Implicits._
 
+  lazy val store = this.createStorage()
 
   "The thermostat summary service" must "serialize requests correctly" in {
 
-    val service = new ThermostatSummaryService()
-    service.execute(account, SelectType.Thermostats, true)
+    ThermostatSummaryService.execute(account, store, SelectType.Thermostats, true)
 
-    val thermReq = new ThermostatSummaryRequest(account, SelectType.Thermostats, true)
-    service.execute(thermReq)
+    val thermReq = new ThermostatSummaryRequest(account, store, SelectType.Thermostats, true)
+    ThermostatSummaryService.execute(thermReq)
 
     val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeEquipmentStatus":true}""".parseJson
 

@@ -9,7 +9,9 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
+
 import monix.execution.Scheduler.Implicits.global
+
 import spray.json._
 
 class AuthorizationRequestSpec extends BaseTestSpec {
@@ -18,8 +20,10 @@ class AuthorizationRequestSpec extends BaseTestSpec {
   import deps.Implicits._
 
 
+  val store = this.createStorage()
+
   "Services" must "include support for registering a new application PIN" in {
-    val pinReq = new PinRequest(account)
+    val pinReq = new PinRequest(account, store)
     PinService.execute(pinReq)
 
     // Confirm generated HTTP request is validly structured
@@ -42,9 +46,9 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
 
   they must "include support for getting a new set of tokens using the application PIN" in {
-    val initTokenReq = new InitialTokensRequest(account)
+    val initTokenReq = new InitialTokensRequest(account, store)
     InitialTokensService.execute(initTokenReq)
-    InitialTokensService.execute(account)
+    InitialTokensService.execute(account, store)
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = initTokenReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
@@ -66,7 +70,7 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
 
   they must "include support for getting a new access token using the refresh token" in {
-    val tokenReq = new RefreshTokensRequest(account)
+    val tokenReq = new RefreshTokensRequest(account, store)
     RefreshTokensService.execute(tokenReq)
 
     // Confirm generated HTTP request is validly structured

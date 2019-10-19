@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Electricity
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.ThermostatModification
@@ -26,8 +25,10 @@ class ThermostatPostSpec extends BaseTestSpec {
   lazy val TestThermostat = ThermostatModification("identifier", name = Some("Hello World"))
   lazy val TestFunction = ThermostatFunction("test", Electricity(Seq.empty))
 
+  lazy val store = this.createStorage()
+
   "The request" must "serialize correctly for HTTP" in {
-    val thermReq = ThermostatPostRequest(account, Select(SelectType.Thermostats), Some(TestThermostat), Some(Seq(TestFunction)))
+    val thermReq = ThermostatPostRequest(account, store, Select(SelectType.Thermostats), Some(TestThermostat), Some(Seq(TestFunction)))
 
     val expectedPayload = """
       {

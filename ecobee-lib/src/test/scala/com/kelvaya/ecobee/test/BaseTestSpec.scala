@@ -2,7 +2,6 @@ package com.kelvaya.ecobee.test
 
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.TestClient
-import com.kelvaya.ecobee.client.storage.TestStorage
 import com.kelvaya.ecobee.config.Settings
 
 import scala.language.implicitConversions
@@ -19,6 +18,7 @@ import spray.json._
 import spray.json.AdditionalFormats
 import spray.json.DefaultJsonProtocol
 import com.kelvaya.ecobee.config.DI
+import monix.eval.Coeval
 
 trait BaseTestSpec extends FlatSpec
 with Matchers
@@ -29,9 +29,11 @@ with DefaultJsonProtocol
 with AdditionalFormats {
 
   /** Creates default test dependencies.  Override to do something different */
-  val deps : DI[Id] = BaseTestSpec.createDependencies()
+  val deps : DI[Id,Id] = BaseTestSpec.createDependencies()
 
   val account = BaseTestSpec.DefaultAccount
+
+  def createStorage() = Coeval.pure(TestStorage(account))
 
   /*
    * Convenience test method to allow a quick conversion from the (frequent) return of an `EitherT` of the Identity type
@@ -47,8 +49,8 @@ object BaseTestSpec {
   final val DefaultAccount = new AccountID("test")
 
   /** Setup system dependencies.  Defaults to using `TestSettings` and `TestClient` */
-  def createDependencies(reqResp : Map[HttpRequest,JsObject] = Map.empty, deps: DI.Dependencies[Id] = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestSettings))) = {
-    val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient(TestStorage(DefaultAccount),reqResp)(deps.settings.get, deps.actorSystem))))
+  def createDependencies(reqResp : Map[HttpRequest,JsObject] = Map.empty, deps: DI.Dependencies[Id,Id] = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestSettings))) = {
+    val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient(reqResp)(deps.settings.get))))
     DI(newDeps)
   }
 

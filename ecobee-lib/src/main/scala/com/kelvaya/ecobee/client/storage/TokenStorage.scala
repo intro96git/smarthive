@@ -6,7 +6,7 @@ import scala.language.higherKinds
 
 /** Implementations of `TokenStorage` store and retrieve Ecobee API tokens to be used in requests by the [[Client]]
   *
-  * @tparam T The container holding all return values of the storage class operations
+  * @tparam F The tagless-final-style type holding all return values of the storage class operations
   */
 trait TokenStorage[F[_]] {
 
@@ -27,10 +27,17 @@ trait TokenStorage[F[_]] {
 
 
 
+/** Error encountered while accessing the [[TokenStorage]] */
 sealed trait TokenStorageError extends RuntimeException
 object TokenStorageError {
+  /** Cannot establish connection to Token storage */
   final val ConnectionError : TokenStorageError = new TokenStorageError {}
+
+  /** Cannot find the desired token in storage */
   final val MissingTokenError : TokenStorageError = new TokenStorageError {}
+
+  /** Given account is not a valid account in the token storage */
+  final val InvalidAccountError : TokenStorageError = new TokenStorageError {}
 }
 
 /** Tokens used for authorization against the Ecobee API.

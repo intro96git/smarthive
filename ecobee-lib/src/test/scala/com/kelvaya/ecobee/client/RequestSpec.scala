@@ -12,20 +12,21 @@ class RequestSpec extends BaseTestSpec {
 
   import deps.Implicits._
 
+  val storage = this.createStorage()
 
   "All requests" must "include a JSON HTTP header" in {
-    val req = Request(account, Uri.Path("/test-uri")).createRequest.runSyncUnsafe(Duration("1 second"))
+    val req = Request(account, storage, Uri.Path("/test-uri")).createRequest.runSyncUnsafe(Duration("1 second"))
     req.header[headers.`Content-Type`].value.toString shouldBe "Content-Type: application/json; charset=UTF-8"
   }
 
   they must "include an authorization header" in {
-    val req = Request(account, Uri.Path("/test-uri")).createRequest.runSyncUnsafe(Duration("1 second"))
+    val req = Request(account, storage, Uri.Path("/test-uri")).createRequest.runSyncUnsafe(Duration("1 second"))
 
     req.header[headers.`Authorization`].value.toString shouldBe "Authorization: Bearer " + AccessToken
   }
 
   they must "include the format querystring parameter set to 'json'" in {
-    val req = Request(account, Uri.Path("/test-uri")).createRequest.runSyncUnsafe(Duration("1 second"))
+    val req = Request(account, storage, Uri.Path("/test-uri")).createRequest.runSyncUnsafe(Duration("1 second"))
     req.uri.query().get("format").value shouldBe "json"
   }
 }

@@ -24,12 +24,13 @@ trait EcobeeResponse[T]
   *
   * @tparam T The `Request` used to query the API
   * @tparam S The response type from the API
-  * @tparam M The monad container type that will hold the response  (from dependency injection, `DI`)
+  * @tparam F The monad type containing the request (from the chosen TokenStorage instance)
+  * @tparam M The container type that will hold the response (from dependency injection, `DI`)
   *
   * @define T T
   * @define S S
   */
-abstract class EcobeeService[M[_] : Monad, T <: Request[M,_], S] {
+abstract class EcobeeService[F[_] : Monad, M[_], T <: Request[F,_], S] {
 
   /** Execute the given request, returning either a [[ServiceError]] or a response of type $S.
     *
@@ -38,7 +39,7 @@ abstract class EcobeeService[M[_] : Monad, T <: Request[M,_], S] {
     * @param req The $T used to query the API
     * @param exec (implicit) The executor responsible for sending the request to the Ecobee API  (from dependency injection, `DI`)
     */
-  def execute(req: T)(implicit exec : RequestExecutor[M]) : M[Either[ServiceError,S]]
+  def execute(req: T)(implicit exec : RequestExecutor[F,M]) : M[Either[ServiceError,S]]
 }
 
 // ---------------------
@@ -48,11 +49,12 @@ abstract class EcobeeService[M[_] : Monad, T <: Request[M,_], S] {
   *
   * @tparam T The `Request` used to query the API
   * @tparam S The JSON response type from the API
+  * @tparam F The monad type containing the request (from the chosen TokenStorage instance)
   * @tparam M The monad container type that will hold the response  (from dependency injection, `DI`)
   *
   * @define T T
   * @define S JSON response
   */
-abstract class EcobeeJsonService[M[_] : Monad, T <: Request[M,_], S : JsonFormat] extends EcobeeService[M,T,S] {
-  final def execute(req: T)(implicit exec : RequestExecutor[M]) : M[Either[ServiceError,S]] = exec.executeRequest(req.createRequest)
+abstract class EcobeeJsonService[F[_] : Monad, M[_], T <: Request[F,_], S : JsonFormat] extends EcobeeService[F,M,T,S] {
+  final def execute(req: T)(implicit exec : RequestExecutor[F,M]) : M[Either[ServiceError,S]] = exec.executeRequest(req.createRequest)
 }

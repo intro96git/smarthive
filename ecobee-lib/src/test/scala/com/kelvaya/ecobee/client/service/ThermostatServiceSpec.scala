@@ -1,6 +1,5 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Request
 
 import com.kelvaya.ecobee.test.BaseTestSpec
@@ -12,19 +11,19 @@ class ThermostatServiceSpec extends BaseTestSpec {
 
   import deps.Implicits._
 
+  lazy val store = this.createStorage()
 
   "The thermostat service" must "serialize requests correctly" in {
 
     val selection = Select(SelectType.Thermostats, includeRuntime=true)
 
-    val service = new ThermostatService(selection)
-    service.execute(account)
+    ThermostatService.execute(account, store, selection)
 
     // ############
 
     import monix.execution.Scheduler.Implicits.global
 
-    val thermReq = ThermostatRequest(account, selection)
+    val thermReq = ThermostatRequest(account, store, selection)
     val req: HttpRequest = thermReq.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
@@ -43,7 +42,7 @@ class ThermostatServiceSpec extends BaseTestSpec {
 
     // ############
 
-    val thermReq2 = ThermostatRequest(account, selection, 1)
+    val thermReq2 = ThermostatRequest(account, store, selection, 1)
     val req2: HttpRequest = thermReq2.createRequest.runSyncUnsafe(scala.concurrent.duration.Duration("5 seconds"))
 
     val expectedPage2 = """{"page":1}""".parseJson

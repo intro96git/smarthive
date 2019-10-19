@@ -13,11 +13,11 @@ import cats.Monad
   */
 object DI {
 
-  /** Create default dependencies using Monix's `Task` as the Monad to contain operational results */
-  def apply(actorSystem : ActorSystem) = new DI[monix.eval.Task](Dependencies(actorSystem))
+  /** Create default dependencies using Monix's `Task` as the Monad to contain token and operational results */
+  def apply(actorSystem : ActorSystem) = new DI[monix.eval.Task,monix.eval.Task](Dependencies(actorSystem))
 
   /** Use the given dependencies for application execution */
-  def apply[A[_] : Monad](options : Dependencies[A]) : DI[A] = new DI[A](options)
+  def apply[A[_] : Monad,B[_]](options : Dependencies[A,B]) : DI[A,B] = new DI[A,B](options)
 
 
   /** Dependencies that can be chosen to be used during application execution.
@@ -26,7 +26,7 @@ object DI {
     * @param settings The [[com.kelvaya.ecobee.config.Settings Settings]] to use for global application settings
     * @param executor The [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]] used to execute API requests
     */
-  case class Dependencies[A[_]](actorSystem : ActorSystem, settings : Option[Settings] = None, executor : Option[RequestExecutor[A]] = None)
+  case class Dependencies[A[_],B[_]](actorSystem : ActorSystem, settings : Option[Settings] = None, executor : Option[RequestExecutor[A,B]] = None)
 }
 
 
@@ -34,10 +34,11 @@ object DI {
   *
   * Sets the dependencies used by the application, including the [[com.kelvaya.ecobee.config.Settings Settings]], `ActorSystem`,
   * `LoggingBus`, [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]], and the Monad type that will be used
-  * to contain the results of the `RequestExecutor` (and other library calls).
+  * to contain the results of the `RequestExecutor`.
   *
   * @param di [[DI$.Dependencies]] to use in the application
-  * @tparam A The monad container type to hold results throughout the use of the library
+  * @tparam A The monad container type to hold requests throughout the use of the library
+  * @tparam B The monad container type to hold responses throughout the use of the library
   *
   * @example
 {{{
@@ -67,7 +68,7 @@ final class MyOverrideApp extends Application {
   * the `LoggingBus` directly off of the given `ActorSystem`, and [[com.kelvaya.ecobee.client.RequestExecutorImpl RequestExecutorImpl[Task]]]
   *
   */
-class DI[A[_] : Monad] (di : DI.Dependencies[A]) {
+class DI[A[_] : Monad,B[_]] (di : DI.Dependencies[A,B]) {
 
   /** Application settings */
   lazy val settings = di.settings.getOrElse(Settings)
@@ -79,7 +80,7 @@ class DI[A[_] : Monad] (di : DI.Dependencies[A]) {
   lazy val loggingBus = di.actorSystem.eventStream
 
   /** RequestExecutor used to execute all API requests */
-  lazy val executor = di.executor.getOrElse(new RequestExecutorImpl[A])
+  lazy val executor = di.executor.getOrElse(new RequestExecutorImpl[A,B])
 
   /** Exposes all dependencies implicitly
     *

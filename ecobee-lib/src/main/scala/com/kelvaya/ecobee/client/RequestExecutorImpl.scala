@@ -1,19 +1,14 @@
 package com.kelvaya.ecobee.client
 
+import com.kelvaya.ecobee.client.service.ServiceError
+
 import cats.Monad
+import spray.json.JsonFormat
+import monix.eval.Task
+import akka.http.scaladsl.model.HttpRequest
 
 import scala.language.higherKinds
 
-class RequestExecutorImpl[M[_] : Monad] extends RequestExecutor[M] {
-
-/** As seen from class RequestExecutorImpl, the missing signatures are as follows.
- *  For convenience, these are usable as stub implementations.
- */
-  protected val account: com.kelvaya.ecobee.client.AccountID = ???
-  def getAccessToken(account: com.kelvaya.ecobee.client.AccountID): M[scala.util.Either[com.kelvaya.ecobee.client.RequestError,String]] = ???
-  def getAuthCode(account: com.kelvaya.ecobee.client.AccountID): M[scala.util.Either[com.kelvaya.ecobee.client.RequestError,String]] = ???
-  def getRefreshToken(account: com.kelvaya.ecobee.client.AccountID): M[scala.util.Either[com.kelvaya.ecobee.client.RequestError,String]] = ???
-  def executeRequest[S](req: M[scala.util.Either[com.kelvaya.ecobee.client.RequestError,monix.eval.Task[akka.http.scaladsl.model.HttpRequest]]])(implicit evidence$1: spray.json.JsonFormat[S]): M[scala.util.Either[com.kelvaya.ecobee.client.service.ServiceError,S]] = ???
-  def getAppKey: String = ???
-
+class RequestExecutorImpl[F[_] : Monad,M[_]] extends RequestExecutor[F,M] {
+  def executeRequest[S:JsonFormat](req: Task[F[Either[RequestError,HttpRequest]]]) : M[Either[ServiceError,S]] = ???
 }

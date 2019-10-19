@@ -1,8 +1,8 @@
-package com.kelvaya.ecobee.client.storage
+package com.kelvaya.ecobee.test
 
 import com.kelvaya.ecobee.client.AccountID
 
-import com.kelvaya.ecobee.test.TestConstants
+import com.kelvaya.ecobee.client.storage._
 
 import cats.Id
 import cats.Monad
