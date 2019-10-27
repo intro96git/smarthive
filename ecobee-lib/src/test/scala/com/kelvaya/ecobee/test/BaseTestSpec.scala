@@ -8,6 +8,7 @@ import com.kelvaya.ecobee.config.Settings
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.OptionValues
+import org.scalatest.compatible.Assertion
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -18,6 +19,7 @@ import spray.json.AdditionalFormats
 import spray.json.DefaultJsonProtocol
 
 import zio.DefaultRuntime
+import zio.Task
 
 trait BaseTestSpec extends FlatSpec
 with Matchers
@@ -55,4 +57,16 @@ object BaseTestSpec {
       case (k,v) =>  (k.withUri(settings.EcobeeServerRoot),v.parseJson.asJsObject)
     }
   }
+}
+
+
+trait ZioTest extends BaseTestSpec {
+  import scala.language.implicitConversions
+  
+  implicit def toZio(a : => Assertion) = Task(a)
+  
+  final def run(t : Task[Assertion]) = this.runtime.unsafeRun(t.either).fold(
+        e => throw e,
+        s => s
+      )      
 }

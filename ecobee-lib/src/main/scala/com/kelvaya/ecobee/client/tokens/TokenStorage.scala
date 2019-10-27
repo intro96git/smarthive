@@ -45,13 +45,16 @@ object TokenStorage {
 sealed trait TokenStorageError extends RuntimeException
 object TokenStorageError {
   /** Cannot establish connection to Token storage */
-  final val ConnectionError : TokenStorageError = new TokenStorageError {}
+  object ConnectionError extends TokenStorageError
 
   /** Cannot find the desired token in storage */
-  final val MissingTokenError : TokenStorageError = new TokenStorageError {}
+  object MissingTokenError extends TokenStorageError
 
   /** Given account is not a valid account in the token storage */
-  final val InvalidAccountError : TokenStorageError = new TokenStorageError {}
+  object InvalidAccountError extends TokenStorageError
+  
+  /** The token storage handle has already been closed and cannot be used */
+  object StorageClosedError extends TokenStorageError
 }
 
 /** Tokens used for authorization against the Ecobee API.

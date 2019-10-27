@@ -13,6 +13,8 @@ libraryDependencies ++= Seq(
   AkkaSlf4j,
 
   "com.typesafe" % "config" % "1.3.3",
+
+  "com.github.pathikrit" %% "better-files" % "3.8.0",
   
   ZIO,
 
