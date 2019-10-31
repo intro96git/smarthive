@@ -11,6 +11,7 @@ import zio.Task
 import zio.UIO
 import org.scalatest.compatible.Assertion
 import com.kelvaya.ecobee.client.tokens.Tokens
+import com.kelvaya.ecobee.client.tokens.TokenStorageError
 
 class BasicFileTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior {
 
@@ -59,6 +60,28 @@ class BasicFileTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior {
     }
     
     this.run(test)
+  }
+
+
+  it must "fail with a ConnectionError if the file does not exist" in {
+    val test = Task(File.newTemporaryFile(prefix="btfs")).bracket(cleanup)  { file =>
+      file.append("GARBAGE")
+      
+      for {
+        _ <- BasicFileTokenStorage.connect(file)
+      } yield (fail("Creating token storage on a file with bad data should not succeed"))
+    }
+    
+    this.runtime.unsafeRun(test.either) shouldBe Left(TokenStorageError.ConnectionError)
+  }
+
+
+  it must "fail with a ConnectionError is the file contains malformed data" in {
+    val test = for {
+      _ <- BasicFileTokenStorage.connect(File("foobar.bad"))
+    } yield (fail("Creating token storage on a bad file should not succeed"))
+    
+    this.runtime.unsafeRun(test.either) shouldBe Left(TokenStorageError.ConnectionError)
   }
 
 

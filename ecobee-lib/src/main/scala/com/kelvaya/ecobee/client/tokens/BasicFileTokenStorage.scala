@@ -17,7 +17,7 @@ import zio.Ref
   * @note This storage is not suited for production-level code.
   *
   * @param file The file containing all of the tokens
-  * @param tokens Tuple of list of tokens loaded from the file and closed status of storage handle
+  * @param tokensRef Tuple of list of tokens loaded from the file and closed status of storage handle
   * @param lb (implicit) Used for logging
   */
 class BasicFileTokenStorage private (file : better.files.File, tokensRef : Ref[(Map[AccountID,Tokens],Boolean)])(implicit lb : LoggingBus)
@@ -109,7 +109,7 @@ object BasicFileTokenStorage {
           Right(map.toMap)
         }
         catch {
-          case _ : DeserializationException => {
+          case _ : DeserializationException | _ : JsonParser.ParsingException => {
             log.error(s"Invalid file found for token storage: $file.  Consider removing it.")
             Left(TokenStorageError.ConnectionError)
           }
