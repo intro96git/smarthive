@@ -1,6 +1,6 @@
 import Dependencies._
 
-lazy val akkaHttpVersion = "10.1.5"
+lazy val akkaHttpVersion = "10.1.10"
 
 name := "ecobee-lib"
 
@@ -15,8 +15,14 @@ libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.3",
 
   "com.github.pathikrit" %% "better-files" % "3.8.0",
-  
+
+  "com.h2database" % "h2" % "1.4.199",
+
   ZIO,
+
+  "org.tpolecat" %% "doobie-core"      % DoobieVersion,
+  "org.tpolecat" %% "doobie-h2"        % DoobieVersion,
+  "org.tpolecat" %% "doobie-scalatest" % DoobieVersion,
 
   Slf4j,
 
