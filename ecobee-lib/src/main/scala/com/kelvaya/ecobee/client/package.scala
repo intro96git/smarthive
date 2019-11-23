@@ -9,12 +9,7 @@ import com.kelvaya.util.jsonenum.JsonEnum
 /** API client to access the Ecobee thermostat's web services.
   *
   =Setup=
-  * Many of the classes participating in these API's use Cats Monads to track IO operations.  This allows
-  * proper unit tests (whereby the monad used is usually Cats's `Id` Identity monad).  However, for production code,
-  * choose a more appropriate IO monad (such as Cats's `IO` monad, Scala's `Future`, or Monix's `Task`).
-  * Please note that the Monix `Task` is used within some code already when working
-  * with Akka.  Akka tends to returns `Future` for many of its operations, so the `Task` is used to defer those
-  * operations.
+  * Many of the classes participating in these API's use ZIO to track IO operations.
   *
   * To start using the API client, you must declare implicitly a number of options:
   - The [[com.kelvaya.ecobee.config.Settings Settings]] instance that reads global application settings.
@@ -24,8 +19,7 @@ import com.kelvaya.util.jsonenum.JsonEnum
   *
   * This can be done through the [[com.kelvaya.ecobee.config.DI DI]] class for ease-of-use.  It has sane defaults,
   * and allows overriding of the [[com.kelvaya.ecobee.config.Settings Settings]] and [[RequestExecutor]] for individual situations through the
-  * [[com.kelvaya.ecobee.config.DI.Dependencies Dependencies]] case class.  These defaults include using
-  * the Cats IO monad for its IO operations.
+  * [[com.kelvaya.ecobee.config.DI.Dependencies Dependencies]] case class.
   *
   * Please note that there is no default set for the `ActorSystem`. You will always need to pass that in.
   *
@@ -57,8 +51,6 @@ package object client {
       SensorCapability.Type, VentilatorMode, VentilatorType, WeatherForecast.WeatherIcon, WeatherForecast.CloudCover)
 
   // #######################
-
-  type ServiceResponse[T] = Either[HttpResponse,T]
 
   /** Type used for API calls that have no [[ApiObject parameters]]. */
   type ParameterlessApi = EmptyApiObject.type
