@@ -19,7 +19,5 @@ class TestStorage private (store : Map[AccountID,Tokens]) extends TokenStorage {
 
     // This won't handle parallelism or re-use.  Fix it!
     def storeTokens(account : AccountID, tokens: Tokens): UIO[Unit] = UIO { _tokens = _tokens + ((account, tokens)) }
-
-    val close : UIO[Unit] = UIO.unit
   }
 }
