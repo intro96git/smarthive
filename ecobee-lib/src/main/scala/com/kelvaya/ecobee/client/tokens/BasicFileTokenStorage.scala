@@ -20,26 +20,18 @@ import zio.Ref
   * @param tokensRef Tuple of list of tokens loaded from the file and closed status of storage handle
   * @param lb (implicit) Used for logging
   */
-class BasicFileTokenStorage private (file : better.files.File, tokensRef : Ref[(Map[AccountID,Tokens],Boolean)])(implicit lb : LoggingBus)
+class BasicFileTokenStorage private (file : better.files.File, tokensRef : Ref[Map[AccountID,Tokens]])(implicit lb : LoggingBus)
 extends TokenStorage {
   import BasicFileTokenStorage._
 
   val tokenStorage = new TokenStorage.Service[Any] {
 
-    def close(): IO[TokenStorageError,Unit] = 
-      for {
-        _ <- tokensRef.update(r => (r._1,true))
-      } yield (())
-
     def getTokens(account: AccountID): IO[TokenStorageError,Tokens] = {
       for {
         tr   <- tokensRef.get
         tok  <- {
-          if (tr._2) IO.fail(TokenStorageError.StorageClosedError)
-          else {
-            val opt = tr._1.get(account)
-            opt.map(IO.succeed).getOrElse(IO.fail(TokenStorageError.InvalidAccountError))
-          }
+          val opt = tr.get(account)
+          opt.map(IO.succeed).getOrElse(IO.fail(TokenStorageError.InvalidAccountError))
         }
       } 
       yield tok
@@ -47,9 +39,8 @@ extends TokenStorage {
 
     def storeTokens(account: AccountID, tokens: Tokens): IO[TokenStorageError,Unit] = {
       for {
-        tr  <- tokensRef.get
-        tok <- if (!tr._2) tokensRef.update(r => (r._1.updated(account, tokens),r._2)) else IO.fail(TokenStorageError.StorageClosedError)
-        _   <- storeToDirectory(file, tok._1)
+        tok <- tokensRef.update(_.updated(account, tokens))
+        _   <- storeToDirectory(file, tok)
       } yield (())
     }
   }
@@ -116,7 +107,7 @@ object BasicFileTokenStorage {
         }
       }
     }
-    .flatMap(t => Ref.make((t,false)))
+    .flatMap(t => Ref.make(t))
     .map(new BasicFileTokenStorage(file, _))
   }
 

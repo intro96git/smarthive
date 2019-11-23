@@ -1,17 +1,12 @@
-package com.kelvaya.ecobee.client.storage
+package com.kelvaya.ecobee.client.tokens
 
 import com.kelvaya.ecobee.test._
-import com.kelvaya.ecobee.client.tokens.BasicFileTokenStorage
-import com.kelvaya.ecobee.client.tokens.TokenStorage
-import com.kelvaya.ecobee.client.tokens.TokenStorageBehavior
 
 import better.files.File
 
 import zio.Task
 import zio.UIO
 import org.scalatest.compatible.Assertion
-import com.kelvaya.ecobee.client.tokens.Tokens
-import com.kelvaya.ecobee.client.tokens.TokenStorageError
 
 class BasicFileTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior {
 
@@ -93,8 +88,7 @@ class BasicFileTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior {
       file.append(InitialFile)
       BasicFileTokenStorage.connect(file).flatMap { st =>
         val store = st.tokenStorage
-        try actions(store)
-        finally { store.close() ; () }
+        actions(store)
       }
     }
 

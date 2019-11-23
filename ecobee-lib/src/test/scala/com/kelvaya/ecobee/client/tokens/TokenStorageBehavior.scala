@@ -70,19 +70,5 @@ trait TokenStorageBehavior extends BaseTestSpec with ZioTest {
 
       run(test)      
     }
-
-    it must "be closeable" in {
- 
-      val test = connect { store => 
-        for {
-          _ <- store.getTokens(this.account)
-          _ <- store.close()
-          t <- store.getTokens(this.account).either
-          a <- t shouldBe Left(TokenStorageError.StorageClosedError)
-        } yield a
-      }
-
-      run(test)      
-    }
   }
 }

@@ -7,7 +7,7 @@ import zio.ZIO
 /** Implementations of `TokenStorage` store and retrieve Ecobee API tokens to be used in requests by the [[Client]]
   *
   * @note Uses the "module" pattern of ZIO environments.  The tokenStorage member contains the actual service that will
-  * provide access to the underlying token storage medium. 
+  * provide access to the underlying token storage medium.
   */
 trait TokenStorage {
   val tokenStorage : TokenStorage.Service[Any]
@@ -28,15 +28,7 @@ object TokenStorage {
 
     /** Returns a `TokenStorage` with all tokens updated to the given value */
     def storeTokens(account : AccountID, tokens : Tokens) : ZIO[R,TokenStorageError,Unit]
-
-
-    /** Shut down the storage connection.
-      *
-      * @note Access to the same instance after calling this method results in
-      * undefined behavior.
-      */
-    def close() : ZIO[R,TokenStorageError,Unit]
-  }
+ }
 }
 
 
@@ -52,9 +44,6 @@ object TokenStorageError {
 
   /** Given account is not a valid account in the token storage */
   object InvalidAccountError extends TokenStorageError
-  
-  /** The token storage handle has already been closed and cannot be used */
-  object StorageClosedError extends TokenStorageError
 }
 
 /** Tokens used for authorization against the Ecobee API.
