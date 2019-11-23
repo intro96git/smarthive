@@ -23,8 +23,7 @@ import zio.interop.catz._
   *
   * @note This storage is not suited for large sites that need high-availability or distributed storage.
   *
-  * @param file The H2 database file
-  * @param tokens Tuple of list of tokens loaded from the file and closed status of storage handle
+  * @param xa The Doobie `Transactor` for executing queries against H2
   * @param lb (implicit) Used for logging
   */
 class H2DbTokenStorage private (private[tokens] val xa : Transactor[Task]) (implicit lb : LoggingBus)
@@ -79,11 +78,19 @@ extends TokenStorage {
 object H2DbTokenStorage {
 
 
-  /** Returns a handle to the configured [[H2DbTokenStorage]] */
+  /** Returns a handle to a configured [[H2DbTokenStorage]] 
+    *
+    * @param settings (implicit) The application global settings
+    * @param lb (implicit) Used for logging
+    */
   def connect(implicit settings : Settings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
     createConn(false).map(_.map(new H2DbTokenStorage(_)))
 
-
+  /** Returns a handle to a configured [[H2DbTokenStorage]]
+    *
+    * @param settings (implicit) The application global settings
+    * @param lb (implicit) Used for logging
+    */
   def initDb(implicit settings : Settings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
     val create = sql"""
     create table token (
