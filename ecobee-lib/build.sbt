@@ -19,6 +19,7 @@ libraryDependencies ++= Seq(
   "com.h2database" % "h2" % "1.4.199",
 
   ZIO,
+  ZIOCats,
 
   "org.tpolecat" %% "doobie-core"      % DoobieVersion,
   "org.tpolecat" %% "doobie-h2"        % DoobieVersion,

@@ -3,6 +3,8 @@ package com.kelvaya.ecobee.test
 import com.kelvaya.ecobee.config.Settings
 import com.typesafe.config.ConfigFactory
 
-object TestSettings extends Settings(ConfigFactory.load()) {
+object TestSettings extends TestSettings
+
+abstract class TestSettings extends Settings(ConfigFactory.load()) {
   override lazy val EcobeeAppKey = TestConstants.ClientId
 }
