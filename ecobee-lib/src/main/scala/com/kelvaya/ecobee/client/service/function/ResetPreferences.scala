@@ -9,5 +9,5 @@ case class ResetPreferences() extends EcobeeFunction[ResetPreferences] {
 }
 
 object ResetPreferences {
-  private lazy val Format = spray.json.DefaultJsonProtocol.jsonFormat0(ResetPreferences.apply)
+  private lazy val Format = spray.json.DefaultJsonProtocol.jsonFormat0(() => ResetPreferences.apply)
 }
