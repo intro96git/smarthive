@@ -47,8 +47,8 @@ object BaseTestSpec {
   final val DefaultAccount = new AccountID("test")
 
   /** Setup system dependencies.  Defaults to using `TestSettings` and `TestClient` */
-  def createDependencies(reqResp : Map[HttpRequest,JsObject] = Map.empty, deps: DI.Dependencies = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestSettings))) = {
-    val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient(TestStorage(DefaultAccount), reqResp)(deps.settings.get))))
+  def createDependencies(deps: DI.Dependencies = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestSettings))) = {
+    val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient)))
     DI(newDeps)
   }
 

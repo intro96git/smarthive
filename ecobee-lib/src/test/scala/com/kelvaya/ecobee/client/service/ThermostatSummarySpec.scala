@@ -8,6 +8,9 @@ import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.headers.Authorization
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
+
 import spray.json._
 
 class ThermostatSummarySpec extends BaseTestSpec {
@@ -18,10 +21,10 @@ class ThermostatSummarySpec extends BaseTestSpec {
 
   "The thermostat summary service" must "serialize requests correctly" in {
 
-    ThermostatSummaryService.execute(account, SelectType.Thermostats, true)
+    "ThermostatSummaryService.execute(account, SelectType.Thermostats, true)" should compile
 
     val thermReq = new ThermostatSummaryRequest(account, SelectType.Thermostats, true)
-    ThermostatSummaryService.execute(thermReq)
+    "ThermostatSummaryService.execute(thermReq)" should compile
 
     val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeEquipmentStatus":true}""".parseJson
 
@@ -33,6 +36,8 @@ class ThermostatSummarySpec extends BaseTestSpec {
     qsSelection.value.parseJson shouldBe expectedSelectionQs
 
     req.uri.query().size shouldBe 2
+    req.header[Authorization] shouldBe 'defined
+    req.header[Authorization].get shouldBe Authorization(OAuth2BearerToken(this.AccessToken))
   }
 
 
@@ -43,7 +48,7 @@ class ThermostatSummarySpec extends BaseTestSpec {
       RevisionListItem("id2", None, true, "therm2345", "alert2345", "runtime2345", "interval2345")
     )
 
-    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=2, None, Status(Some(200), Some("OK")))
+    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=2, None, Status(200, "OK"))
     val serialized = """{
       "revisionList" : [
         "id1:name1:true:therm1123:alert1123:runtime1123:interval1123",
@@ -68,7 +73,7 @@ class ThermostatSummarySpec extends BaseTestSpec {
       EquipmentStatusListItem("id1", Seq(Equipment.AC1, Equipment.Fan))
     )
 
-    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=1, Some(equipResponse), Status(Some(200), Some("OK")))
+    val deserialized = ThermostatSummaryResponse(csvResponse, thermostatCount=1, Some(equipResponse), Status(200, "OK"))
     val serialized = """{
     "revisionList" : [
       "id1:name1:true:therm1123:alert1123:runtime1123:interval1123"

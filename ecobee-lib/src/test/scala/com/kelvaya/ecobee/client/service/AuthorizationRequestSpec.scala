@@ -23,7 +23,7 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
   "Services" must "include support for registering a new application PIN" in {
     val pinReq = new PinRequest(account)
-    PinService.execute(pinReq)
+    "PinService.execute(pinReq)" should compile
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = this.runtime.unsafeRun(pinReq.createRequest.provide(store))
@@ -46,8 +46,8 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
   they must "include support for getting a new set of tokens using the application PIN" in {
     val initTokenReq = new InitialTokensRequest(account)
-    InitialTokensService.execute(initTokenReq)
-    InitialTokensService.execute(account)
+    "InitialTokensService.execute(initTokenReq)" should compile
+    "InitialTokensService.execute(account)" should compile
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = this.runtime.unsafeRun(initTokenReq.createRequest.provide(store))
@@ -70,7 +70,7 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
   they must "include support for getting a new access token using the refresh token" in {
     val tokenReq = new RefreshTokensRequest(account)
-    RefreshTokensService.execute(tokenReq)
+    "RefreshTokensService.execute(tokenReq)" should compile
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = this.runtime.unsafeRun(tokenReq.createRequest.provide(store))
@@ -92,7 +92,7 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
 
   they must "handle error statuses" in {
-    val TestError = ServiceError("not_supported", "test error message", "http://example.org/testme")
+    val TestError = AuthError("not_supported", "test error message", "http://example.org/testme")
     TestError.toJson shouldBe """{
       "error" : "not_supported",
       "error_description" : "test error message",
@@ -113,10 +113,10 @@ class AuthorizationRequestSpec extends BaseTestSpec {
     "authorization_pending"-> StatusCodes.Unauthorized,
     "slow_down"-> StatusCodes.Unauthorized
     ).map {
-      case (e,s) => ServiceError(e, "", "").statusCode shouldBe s
+      case (e,s) => AuthError(e, "", "").statusCode shouldBe s
     }
 
-    val bad = ServiceError("bad_error", "", "")
+    val bad = AuthError("bad_error", "", "")
     intercept[NoSuchElementException] {
       bad.statusCode
     }

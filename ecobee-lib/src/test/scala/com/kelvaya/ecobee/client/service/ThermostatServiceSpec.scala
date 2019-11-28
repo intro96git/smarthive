@@ -1,10 +1,12 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.Request
-
 import com.kelvaya.ecobee.test.BaseTestSpec
 
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.Authorization
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
+
 import spray.json._
 
 class ThermostatServiceSpec extends BaseTestSpec {
@@ -17,7 +19,7 @@ class ThermostatServiceSpec extends BaseTestSpec {
 
     val selection = Select(SelectType.Thermostats, includeRuntime=true)
 
-    ThermostatService.execute(account, selection)
+    "ThermostatService.execute(account, selection)" should compile
 
     // ############
 
@@ -26,6 +28,8 @@ class ThermostatServiceSpec extends BaseTestSpec {
     req.method shouldBe HttpMethods.GET
     req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
     req.uri.path shouldBe Uri.Path("/thermostat")
+    req.header[Authorization] shouldBe 'defined
+    req.header[Authorization].get shouldBe Authorization(OAuth2BearerToken(this.AccessToken))
 
 
     val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeRuntime":true}""".parseJson

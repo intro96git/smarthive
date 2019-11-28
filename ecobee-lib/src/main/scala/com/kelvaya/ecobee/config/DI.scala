@@ -76,7 +76,7 @@ class DI (di : DI.Dependencies) {
   lazy val loggingBus = di.actorSystem.eventStream
 
   /** RequestExecutor used to execute all API requests */
-  lazy val executor = di.executor.getOrElse(new RequestExecutorImpl)
+  lazy val executor = di.executor.getOrElse(new RequestExecutorImpl()(actorSys))
 
   /** Exposes all dependencies implicitly
     *

@@ -1,12 +1,16 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.AccountID
+import com.kelvaya.ecobee.client.AuthorizedRequest
 import com.kelvaya.ecobee.client.Page
+import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.RequestNoEntity
+import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.Thermostat
+import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.config.Settings
 
 import akka.event.LoggingBus
@@ -14,8 +18,9 @@ import akka.http.scaladsl.model.Uri
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import zio.{IO,UIO}
 
+import zio.UIO
+import zio.ZIO
 
 /** Factories for [[ThermostatRequest]] */
 object ThermostatRequest {
@@ -48,7 +53,7 @@ object ThermostatRequest {
   * @param s (implicit) The application global settings
   */
 case class ThermostatRequest(override val account: AccountID, selection : Select, page : Option[Int] = None)
-(implicit s : Settings) extends RequestNoEntity(account) {
+(implicit s : Settings) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
 
   val pageQS : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
 
@@ -113,13 +118,13 @@ object ThermostatService {
     */
   implicit class ThermostatServiceImpl(o : ThermostatService.type)(implicit ev : LoggingBus, s : Settings) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
 
-    def execute(account : AccountID, selection : Select)(implicit e : RequestExecutor): IO[ServiceError, ThermostatResponse] =
+    def execute(account : AccountID, selection : Select)(implicit e : RequestExecutor): ZIO[TokenStorage, ServiceError, ThermostatResponse] =
       pexecute(account, selection, None)
 
-    def execute(account : AccountID, selection : Select, page : Int)(implicit e : RequestExecutor): IO[ServiceError, ThermostatResponse] =
+    def execute(account : AccountID, selection : Select, page : Int)(implicit e : RequestExecutor): ZIO[TokenStorage, ServiceError, ThermostatResponse] =
       pexecute(account, selection, Some(page))
 
-    private def pexecute(account : AccountID, selection : Select, page : Option[Int])(implicit e : RequestExecutor): IO[ServiceError, ThermostatResponse] =
+    private def pexecute(account : AccountID, selection : Select, page : Option[Int])(implicit e : RequestExecutor): ZIO[TokenStorage, ServiceError, ThermostatResponse] =
       execute(ThermostatRequest(account, selection, page))
   }
 }

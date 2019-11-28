@@ -1,6 +1,7 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client._
+import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.Querystrings._
 import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.config.Settings
@@ -10,7 +11,8 @@ import spray.json.DefaultJsonProtocol._
 
 import akka.http.scaladsl.model.Uri
 
-import zio.{IO,UIO}
+import zio.UIO
+import zio.ZIO
 
 
 /** Contains constants used by [[PinRequest]] */
@@ -69,8 +71,8 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
 }}}
   */
 object PinService {
-  implicit class PinServiceImpl(o : PinService.type) extends EcobeeJsonService[PinRequest,PinResponse] {
-    def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings): IO[ServiceError, PinResponse] = 
+  implicit class PinServiceImpl(o : PinService.type) extends EcobeeJsonAuthService[PinRequest,PinResponse] {
+    def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings): ZIO[TokenStorage,ServiceError,PinResponse] = 
       this.execute(new PinRequest(account))
   }
 }

@@ -1,12 +1,15 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.AccountID
+import com.kelvaya.ecobee.client.AuthorizedRequest
 import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
+import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.ThermostatModification
+import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.WriteableApiObject
 import com.kelvaya.ecobee.config.Settings
 
@@ -16,7 +19,9 @@ import akka.http.scaladsl.model.Uri
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import zio.{IO,UIO}
+
+import zio.UIO
+import zio.ZIO
 
 
 /** Contains constants and supporting case classes for [[ThermostatPostRequest]] */
@@ -47,7 +52,9 @@ case class ThermostatPostRequest(
   thermostat : Option[ThermostatModification], 
   functions : Option[Seq[ThermostatFunction]])(implicit s : Settings, log : LoggingBus)
 extends Request[ThermostatPostRequest.RequestBody](account)
-with PostRequest[ThermostatPostRequest.RequestBody] {
+with PostRequest[ThermostatPostRequest.RequestBody]
+with AuthorizedRequest[ThermostatPostRequest.RequestBody]
+{
 
   import ThermostatPostRequest._
 
@@ -95,6 +102,6 @@ class ThermostatPostService(implicit ev : LoggingBus) extends EcobeeJsonService[
     selectType : SelectType, 
     thermostat : Option[ThermostatModification] = None, 
     functions : Option[Seq[ThermostatFunction]] = None
-  )(implicit e : RequestExecutor, s : Settings) : IO[ServiceError, ThermostatPostResponse] = 
+  )(implicit e : RequestExecutor, s : Settings) : ZIO[TokenStorage, ServiceError, ThermostatPostResponse] = 
     execute(ThermostatPostRequest(account, Select(selectType), thermostat, functions))
 }

@@ -6,6 +6,7 @@ import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
+import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.tokens.TokenStorageError
@@ -16,7 +17,6 @@ import akka.http.scaladsl.model.Uri
 
 import spray.json.DefaultJsonProtocol
 
-import zio.IO
 import zio.ZIO
 
 
@@ -66,7 +66,7 @@ case class TokensResponse(access_token : String, token_type : TokenType, expires
 
 
 /** Service to handle requests for news set of [[com.kelvaya.ecobee.client.tokens.Tokens tokens]]  */ 
-abstract class TokensService[T <: TokensRequest] extends EcobeeJsonService[T,TokensResponse] {
+abstract class TokensService[T <: TokensRequest] extends EcobeeJsonAuthService[T,TokensResponse] {
 
   /** Return the new tokens by executing the given request
     * 
@@ -74,7 +74,7 @@ abstract class TokensService[T <: TokensRequest] extends EcobeeJsonService[T,Tok
     * @param e (implicit) The executor that will execute the request against the API
     * @param s (implicit) Global application settings
     */
-  def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings) : IO[ServiceError, TokensResponse] =
+  def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings) : ZIO[TokenStorage,ServiceError,TokensResponse] =
     this.execute(this.newTokenRequest(account))
 
   /** Create the tokens request for this service

@@ -1,11 +1,19 @@
 package com.kelvaya.ecobee.client.service
 
+import com.kelvaya.ecobee.client.AuthorizedRequest
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.RequestExecutor
+import com.kelvaya.ecobee.client.ApiError
+import com.kelvaya.ecobee.client.AuthError
+import com.kelvaya.ecobee.client.ServiceError
+import com.kelvaya.ecobee.client.Status
+import com.kelvaya.ecobee.client.tokens.TokenStorage
 
-import spray.json.JsonFormat
+import spray.json._
 
-import zio.IO
+import zio.ZIO
+
+import akka.http.scaladsl.model.HttpResponse
 
 
 
@@ -37,13 +45,45 @@ abstract class EcobeeService[T <: Request[_], S] {
     * @param req The $T used to query the API
     * @param exec (implicit) The executor responsible for sending the request to the Ecobee API  (from dependency injection, `DI`)
     */
-  def execute(req: T)(implicit exec : RequestExecutor) : IO[ServiceError,S]
+  def execute(req: T)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S]
 }
 
 // ---------------------
 
 
-/** JSON Web service supported by the Ecobee Thermostat API
+/** Helper function for [[EcobeeJsonService]] and [[EcobeeJsonAuthService]] */
+object EcobeeJsonService {
+  private[service] def exec[T <: Request[_], S : JsonFormat,E <: ServiceError](request: T, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S] =     
+    for {
+      req <- request.createRequest
+      rez <- exec.executeRequest(req, err, fail)
+    } yield rez
+}
+
+/** JSON Web service supported by the Ecobee Thermostat API for authorized requests
+  *
+  * @tparam T The `AuthorizedRequest` used to query the API
+  * @tparam S The JSON response type from the API
+  *
+  * @define T T
+  * @define S JSON response
+  */
+abstract class EcobeeJsonService[T <: AuthorizedRequest[_], S : JsonFormat] extends EcobeeService[T,S] {
+  final def execute(request: T)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S] = {
+    
+    val fn : ((Throwable,Option[HttpResponse]) => ApiError) = { (t,rsp) =>
+      rsp
+        .map { r => ApiError(Status(-1, s"Unexpected response, $r, during API request processing at ${request}: [${t.getClass.getName}] ${t.getMessage()}")) }
+        .getOrElse { ApiError(Status(-1, s"Unexpected error during API request processing at ${request}: [${t.getClass.getName}] ${t.getMessage()}")) }
+    }
+    
+    EcobeeJsonService.exec(request, parseErrorResponse, fn)
+  }
+
+  private def parseErrorResponse(r : JsObject) : ApiError = r.convertTo[ApiError]
+}
+
+/** Authorization endpoints against the Ecobee API
   *
   * @tparam T The `Request` used to query the API
   * @tparam S The JSON response type from the API
@@ -51,6 +91,17 @@ abstract class EcobeeService[T <: Request[_], S] {
   * @define T T
   * @define S JSON response
   */
-abstract class EcobeeJsonService[T <: Request[_], S : JsonFormat] extends EcobeeService[T,S] {
-  final def execute(req: T)(implicit exec : RequestExecutor) : IO[ServiceError,S] = exec.executeRequest(req.createRequest)
+abstract class EcobeeJsonAuthService[T <: Request[_], S : JsonFormat] extends EcobeeService[T,S] {
+  final def execute(request: T)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S] = { 
+    
+    val fn : ((Throwable,Option[HttpResponse]) => AuthError) = { (t,rsp) => 
+      rsp
+        .map { r => AuthError(s"Unexpected Authorization Response $r", s"[${t.getClass}] ${t.getMessage}", request.toString) }
+        .getOrElse { AuthError("Unexpected Authorization Error", s"[${t.getClass}] ${t.getMessage}", request.toString) } 
+    }
+    
+    EcobeeJsonService.exec(request, parseErrorResponse, fn)
+  }
+
+  private def parseErrorResponse(r : JsObject) : AuthError = r.convertTo[AuthError]
 }

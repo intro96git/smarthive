@@ -1,9 +1,9 @@
 package com.kelvaya.ecobee
 
+import com.kelvaya.util.jsonenum.JsonEnum
+
 import spray.json.RootJsonFormat
 import spray.json._
-import akka.http.scaladsl.model.HttpResponse
-import com.kelvaya.util.jsonenum.JsonEnum
 
 
 /** API client to access the Ecobee thermostat's web services.

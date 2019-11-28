@@ -169,9 +169,8 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
     }
   }
 
-  /** Return a new Akka `AuthoriTokensRequestzation` OAuth Bearer Token HTTP header */
-  protected def generateAuthorizationTokensRequestHeader()
-      : ZIO[TokenStorage, RequestError, Authorization] = {
+  /** Return a new Akka `AuthorizationTokensRequest` OAuth Bearer Token HTTP header */
+  protected def generateAuthorizationTokensRequestHeader(): ZIO[TokenStorage, RequestError, Authorization] = {
 
     def getAccessToken(tokens: Tokens) = tokens.accessToken match {
       case None    => ZIO.fail(TokenStorageError.MissingTokenError)

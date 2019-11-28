@@ -1,20 +1,23 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Electricity
-import com.kelvaya.ecobee.client.Request
-import com.kelvaya.ecobee.client.ThermostatModification
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.headers.Authorization
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import akka.stream.ActorMaterializer
+
+import com.kelvaya.ecobee.client.Electricity
+import com.kelvaya.ecobee.client.Request
+import com.kelvaya.ecobee.client.ThermostatModification
 import com.kelvaya.ecobee.test.BaseTestSpec
 
 import spray.json._
 
-import akka.stream.ActorMaterializer
+import java.nio.charset.StandardCharsets
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
-import java.nio.charset.StandardCharsets
 
 class ThermostatPostSpec extends BaseTestSpec {
 
@@ -42,6 +45,8 @@ class ThermostatPostSpec extends BaseTestSpec {
     req.method shouldBe HttpMethods.POST
     req.uri.path shouldBe Uri.Path("/thermostat")
     req.uri.query().size shouldBe 1
+    req.header[Authorization] shouldBe 'defined
+    req.header[Authorization].get shouldBe Authorization(OAuth2BearerToken(this.AccessToken))
 
     req.entity.contentType shouldBe Request.ContentTypeJson
 
