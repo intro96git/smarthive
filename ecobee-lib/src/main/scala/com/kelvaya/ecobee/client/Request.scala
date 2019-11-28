@@ -161,12 +161,13 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
   /** Returns the refresh token querystring parameter used during token refreshes */
   def getRefreshTokenQS: TokenStorage.IO[Querystrings.Entry] = {
     for {
-      ts <- ZIO.environment[TokenStorage]
-      tok <- ts.tokenStorage.getTokens(account)
-    } yield tok match {
-      case Tokens(_, _, Some(token)) => (("refresh_token", token))
-      case _                         => (("refresh_token", "")) // TODO: log error!
-    }
+      ts  <-  ZIO.environment[TokenStorage]
+      tok <-  ts.tokenStorage.getTokens(account)
+      qs  <-  IO.fromEither { tok match {
+                case Tokens(_, _, Some(token)) => Right((("refresh_token", token)))
+                case _                         => Left(TokenStorageError.MissingTokenError)
+              }}
+    } yield qs
   }
 
   /** Return a new Akka `AuthorizationTokensRequest` OAuth Bearer Token HTTP header */
