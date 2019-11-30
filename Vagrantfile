@@ -46,7 +46,7 @@ Vagrant.configure("2") do |config|
   # config.vm.synced_folder "../data", "/vagrant_data"
   #config.vm.synced_folder ".", "/vagrant", type: "rsync"
   config.vm.synced_folder "/srv/nfs/proj/ecobee/ecobee", "/vagrant", type: "nfs", nfs_export: false, #nfs_udp: false, nfs_version: 3
-    mount_options: ['rw', 'vers=3', 'tcp', 'fsc' ,'actimeo=1']
+    mount_options: ['rw', 'vers=3', 'tcp', 'fsc' , 'nolock', 'actimeo=1']
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.

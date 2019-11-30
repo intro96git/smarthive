@@ -25,7 +25,6 @@ fi
 curl -L https://github.com/lihaoyi/Ammonite/releases/download/1.8.1/2.12-1.8.1 > /usr/local/bin/amm && chmod +x /usr/local/bin/amm
 cat >>/home/vagrant/.bashrc <<EOF
 export PATH=/vagrant:$PATH
-mkdir -p ~vagrant/out && mkdir -p vagrant/out && ln -s ~vagrant/out /vagrant/out
 EOF
 echo ==== Run 'vagrant up' again to start using the machine ====
 poweroff
