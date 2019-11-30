@@ -175,4 +175,6 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
 
 class H2DbTokenStorageTestSettings(jdbcConnection : String) extends TestSettings {
   override lazy val JdbcConnection = jdbcConnection
+  override lazy val JdbcUsername: String = ""
+  override lazy val JdbcPassword: String = ""
 }

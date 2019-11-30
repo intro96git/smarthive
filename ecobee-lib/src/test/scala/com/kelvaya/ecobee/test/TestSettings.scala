@@ -6,5 +6,5 @@ import com.typesafe.config.ConfigFactory
 object TestSettings extends TestSettings
 
 abstract class TestSettings extends Settings(ConfigFactory.load()) {
-  override lazy val EcobeeAppKey = TestConstants.ClientId
+  override val EcobeeAppKey = TestConstants.ClientId
 }

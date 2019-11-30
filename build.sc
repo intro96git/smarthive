@@ -3,6 +3,11 @@ import $file.util.{build => u}
 import $file.util.{dependencies => d}
 import d.Dependencies._
 
+// uncomment when you need to rebuild Bloop config files for standalone Bloop server
+// Then run "mill mill.contrib.Bloop/install"
+// Note: this will overwrite any files arleady in the .bloop directory!
+// import $ivy.`com.lihaoyi::mill-contrib-bloop:0.5.2` 
+
 object util extends Module {
   object util extends u.util
 }

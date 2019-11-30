@@ -9,7 +9,7 @@ target
 .vagrant
 /util/
 /.bashrc
-.bloop
+.bloop*
 .metals
 *.scalafmt.conf
 out

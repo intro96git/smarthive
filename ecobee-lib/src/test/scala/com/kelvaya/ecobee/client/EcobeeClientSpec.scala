@@ -73,7 +73,7 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
 
   // Settings pointing to the test REST web service
   implicit object LocalServerSettings extends TestSettings {
-    override lazy val EcobeeServerRoot: Uri = Uri("http://localhost:6789")
+    override val EcobeeServerRoot: Uri = Uri("http://localhost:6789")
   }
   
   // ##################################################################################################################
