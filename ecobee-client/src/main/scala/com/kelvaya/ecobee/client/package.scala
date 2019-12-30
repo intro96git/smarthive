@@ -36,7 +36,7 @@ final class MyApp extends Application {
   = Working with the Client =
   * DOCS INCOMPLETE ... need more info!
   */
-package object client {
+package object client extends ClientEnvDefinition {
 
   /*
    * Workaround for an issue loading available JSON-serializable enumerations.  These enumerations must be loaded

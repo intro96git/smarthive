@@ -84,7 +84,7 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
     val request1 = new TestApiRequest(this.account, "/test1")
     val request2 = new TestAuthRequest(this.account, "/auth1")
 
-    val exec = new RequestExecutorImpl
+    val exec = (new RequestExecutorImpl).requestExecutor
     val test1 = for {
       req <- request1.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
       rsp <- exec.executeRequest[Response,ApiError](req, _.convertTo[ApiError], apiFn(_,_))
@@ -105,7 +105,7 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
   it must "be able to handle failed web service calls" in {
     val request1 = new TestApiRequest(this.account, "/test2")
     val request2 = new TestAuthRequest(this.account, "/auth2")
-    val exec = new RequestExecutorImpl
+    val exec = (new RequestExecutorImpl).requestExecutor
     
     val test1 = for {
       req <- request1.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)

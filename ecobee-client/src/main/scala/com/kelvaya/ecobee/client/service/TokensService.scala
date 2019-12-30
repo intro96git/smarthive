@@ -5,7 +5,6 @@ import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.Request
-import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.client.tokens.TokenStorage
@@ -71,10 +70,9 @@ abstract class TokensService[T <: TokensRequest] extends EcobeeJsonAuthService[T
   /** Return the new tokens by executing the given request
     * 
     * @param account The ID of the account for which the token request will be made
-    * @param e (implicit) The executor that will execute the request against the API
     * @param s (implicit) Global application settings
     */
-  def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings) : ZIO[TokenStorage,ServiceError,TokensResponse] =
+  def execute(account: AccountID)(implicit s : Settings) : ZIO[ClientEnv,ServiceError,TokensResponse] =
     this.execute(this.newTokenRequest(account))
 
   /** Create the tokens request for this service

@@ -5,11 +5,9 @@ import com.kelvaya.ecobee.client.AuthorizedRequest
 import com.kelvaya.ecobee.client.PostRequest
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Request
-import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.ThermostatModification
-import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.WriteableApiObject
 import com.kelvaya.ecobee.config.Settings
 
@@ -102,6 +100,6 @@ class ThermostatPostService(implicit ev : LoggingBus) extends EcobeeJsonService[
     selectType : SelectType, 
     thermostat : Option[ThermostatModification] = None, 
     functions : Option[Seq[ThermostatFunction]] = None
-  )(implicit e : RequestExecutor, s : Settings) : ZIO[TokenStorage, ServiceError, ThermostatPostResponse] = 
+  )(implicit s : Settings) : ZIO[ClientEnv, ServiceError, ThermostatPostResponse] = 
     execute(ThermostatPostRequest(account, Select(selectType), thermostat, functions))
 }

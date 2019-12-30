@@ -4,11 +4,9 @@ import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.AuthorizedRequest
 import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.Querystrings
-import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
-import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.config.Settings
 
 import akka.event.LoggingBus
@@ -95,7 +93,7 @@ object ThermostatSummaryService {
     * an `ThermostatSummaryRequest` and pass it explicitly to a new `ThermostatSummaryServiceImpl`.
     */
   implicit class ThermostatSummaryServiceImpl(o : ThermostatSummaryService.type)(implicit lb : LoggingBus, s : Settings) extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
-    def execute(account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false)(implicit e : RequestExecutor): ZIO[TokenStorage,ServiceError,ThermostatSummaryResponse] =
+    def execute(account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false): ZIO[ClientEnv,ServiceError,ThermostatSummaryResponse] =
       execute(ThermostatSummaryRequest(account, selectType, includeEquipStatus))
   }
 }

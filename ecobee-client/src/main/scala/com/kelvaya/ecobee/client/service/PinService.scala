@@ -1,9 +1,7 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client._
-import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.Querystrings._
-import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.config.Settings
 
 import spray.json.DefaultJsonProtocol
@@ -72,7 +70,7 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
   */
 object PinService {
   implicit class PinServiceImpl(o : PinService.type) extends EcobeeJsonAuthService[PinRequest,PinResponse] {
-    def execute(account: AccountID)(implicit e : RequestExecutor, s : Settings): ZIO[TokenStorage,ServiceError,PinResponse] = 
+    def execute(account: AccountID)(implicit s : Settings): ZIO[ClientEnv,ServiceError,PinResponse] = 
       this.execute(new PinRequest(account))
   }
 }

@@ -7,7 +7,6 @@ import com.kelvaya.ecobee.client.ApiError
 import com.kelvaya.ecobee.client.AuthError
 import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
-import com.kelvaya.ecobee.client.tokens.TokenStorage
 
 import spray.json._
 
@@ -43,9 +42,8 @@ abstract class EcobeeService[T <: Request[_], S] {
     * Will return a [[ServiceError]] if the Ecobee API request fails.
     *
     * @param req The $T used to query the API
-    * @param exec (implicit) The executor responsible for sending the request to the Ecobee API  (from dependency injection, `DI`)
     */
-  def execute(req: T)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S]
+  def execute(req: T) : ZIO[ClientEnv,ServiceError,S]
 }
 
 // ---------------------
@@ -53,10 +51,10 @@ abstract class EcobeeService[T <: Request[_], S] {
 
 /** Helper function for [[EcobeeJsonService]] and [[EcobeeJsonAuthService]] */
 object EcobeeJsonService {
-  private[service] def exec[T <: Request[_], S : JsonFormat,E <: ServiceError](request: T, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S] =     
+  private[service] def exec[T <: Request[_], S : JsonFormat,E <: ServiceError](request: T, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : ZIO[ClientEnv,ServiceError,S] =     
     for {
-      req <- request.createRequest
-      rez <- exec.executeRequest(req, err, fail)
+      req  <- request.createRequest
+      rez  <- ZIO.accessM[RequestExecutor](_.requestExecutor.executeRequest(req, err, fail))
     } yield rez
 }
 
@@ -69,7 +67,7 @@ object EcobeeJsonService {
   * @define S JSON response
   */
 abstract class EcobeeJsonService[T <: AuthorizedRequest[_], S : JsonFormat] extends EcobeeService[T,S] {
-  final def execute(request: T)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S] = {
+  final def execute(request: T) : ZIO[ClientEnv,ServiceError,S] = {
     
     val fn : ((Throwable,Option[HttpResponse]) => ApiError) = { (t,rsp) =>
       rsp
@@ -92,7 +90,7 @@ abstract class EcobeeJsonService[T <: AuthorizedRequest[_], S : JsonFormat] exte
   * @define S JSON response
   */
 abstract class EcobeeJsonAuthService[T <: Request[_], S : JsonFormat] extends EcobeeService[T,S] {
-  final def execute(request: T)(implicit exec : RequestExecutor) : ZIO[TokenStorage,ServiceError,S] = { 
+  final def execute(request: T) : ZIO[ClientEnv,ServiceError,S] = { 
     
     val fn : ((Throwable,Option[HttpResponse]) => AuthError) = { (t,rsp) => 
       rsp

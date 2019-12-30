@@ -24,33 +24,35 @@ import akka.event.Logging
   */
 class RequestExecutorImpl(implicit system : ActorSystem) extends RequestExecutor with SprayJsonSupport {
 
-  private implicit val _materializer = ActorMaterializer()
-  private lazy val _log = Logging(system, classOf[RequestExecutorImpl])
+  val requestExecutor = new RequestExecutor.Service[Any] {
+    private implicit val _materializer = ActorMaterializer()
+    private lazy val _log = Logging(system, classOf[RequestExecutorImpl])
 
-  def executeRequest[S:JsonFormat,E<:ServiceError](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
-    val reqExec = Task.fromFuture { _ => 
-      _log.info(s"Connecting to ${request.uri}")
-      Http().singleRequest(request) 
+    def executeRequest[S:JsonFormat,E<:ServiceError](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
+      val reqExec = Task.fromFuture { _ => 
+        _log.info(s"Connecting to ${request.uri}")
+        Http().singleRequest(request) 
+      }
+      
+      val response : IO[E,S] = 
+        reqExec
+          .map { r => _log.info(s"Response to ${request.uri} completed with status ${r.status}"); r }
+          .foldM(
+            e  => ZIO.fail(fail(e,None)),
+            hr => hr match {
+              case r @ HttpResponse(StatusCodes.OK, _, _, _) => 
+                Task.fromFuture(implicit ec => Unmarshal(r.entity).to[JsObject])
+                  .map(_.convertTo[S])
+                  .mapError(e => fail(e, Some(r))) : IO[E,S]
+              case r =>
+                Task.fromFuture(implicit ec => Unmarshal(r.entity).to[JsObject])
+                  .map(err)
+                  .mapError(e => fail(e, Some(r)))
+                  .flatMap(r => ZIO.fail(r)) : IO[E,S]
+            }
+      )
+      
+      response
     }
-    
-    val response : IO[E,S] = 
-      reqExec
-        .map { r => _log.info(s"Response to ${request.uri} completed with status ${r.status}"); r }
-        .foldM(
-          e  => ZIO.fail(fail(e,None)),
-          hr => hr match {
-            case r @ HttpResponse(StatusCodes.OK, _, _, _) => 
-              Task.fromFuture(implicit ec => Unmarshal(r.entity).to[JsObject])
-                .map(_.convertTo[S])
-                .mapError(e => fail(e, Some(r))) : IO[E,S]
-            case r =>
-              Task.fromFuture(implicit ec => Unmarshal(r.entity).to[JsObject])
-                .map(err)
-                .mapError(e => fail(e, Some(r)))
-                .flatMap(r => ZIO.fail(r)) : IO[E,S]
-          }
-    )
-    
-    response
   }
 }

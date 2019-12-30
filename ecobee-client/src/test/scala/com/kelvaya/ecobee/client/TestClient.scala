@@ -11,7 +11,9 @@ import zio.IO
 /** Empty RequestExecutor used for mocking tests.  Should never be called. */
 class TestClient extends RequestExecutor {
 
-  def executeRequest[S:JsonFormat,E<:ServiceError](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
-    ???
+  val requestExecutor = new RequestExecutor.Service[Any] {
+    def executeRequest[S:JsonFormat,E<:ServiceError](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
+      ???
+    }
   }
 }

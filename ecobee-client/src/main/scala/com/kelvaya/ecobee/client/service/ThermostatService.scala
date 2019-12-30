@@ -5,12 +5,10 @@ import com.kelvaya.ecobee.client.AuthorizedRequest
 import com.kelvaya.ecobee.client.Page
 import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.Querystrings
-import com.kelvaya.ecobee.client.RequestExecutor
 import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.Thermostat
-import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.config.Settings
 
 import akka.event.LoggingBus
@@ -118,13 +116,13 @@ object ThermostatService {
     */
   implicit class ThermostatServiceImpl(o : ThermostatService.type)(implicit ev : LoggingBus, s : Settings) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
 
-    def execute(account : AccountID, selection : Select)(implicit e : RequestExecutor): ZIO[TokenStorage, ServiceError, ThermostatResponse] =
+    def execute(account : AccountID, selection : Select): ZIO[ClientEnv, ServiceError, ThermostatResponse] =
       pexecute(account, selection, None)
 
-    def execute(account : AccountID, selection : Select, page : Int)(implicit e : RequestExecutor): ZIO[TokenStorage, ServiceError, ThermostatResponse] =
+    def execute(account : AccountID, selection : Select, page : Int): ZIO[ClientEnv, ServiceError, ThermostatResponse] =
       pexecute(account, selection, Some(page))
 
-    private def pexecute(account : AccountID, selection : Select, page : Option[Int])(implicit e : RequestExecutor): ZIO[TokenStorage, ServiceError, ThermostatResponse] =
+    private def pexecute(account : AccountID, selection : Select, page : Option[Int]): ZIO[ClientEnv, ServiceError, ThermostatResponse] =
       execute(ThermostatRequest(account, selection, page))
   }
 }
