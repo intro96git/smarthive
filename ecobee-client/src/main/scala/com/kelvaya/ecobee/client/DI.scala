@@ -57,14 +57,14 @@ final class MyOverrideApp extends Application {
 }}}
   *
   * @note To setup Dependency Injection, call an `apply` method of [[DI$]] and then import the implicit values from the created instance.
-  * If no dependencies are explicitly requested, it will use the following defaults: [[com.kelvaya.ecobee.client.ClientSettings$]],
+  * If no dependencies are explicitly requested, it will use the following defaults: [[com.kelvaya.ecobee.client.ClientSettings$LiveService]],
   * the `LoggingBus` directly off of the given `ActorSystem`, and [[com.kelvaya.ecobee.client.RequestExecutorImpl RequestExecutorImpl]]
   *
   */
 class DI (di : DI.Dependencies) {
 
   /** Application settings */
-  lazy val settings = di.settings.getOrElse(ClientSettings)
+  lazy val settings = di.settings.getOrElse(ClientSettings.Live).settings
 
   /** Akka Actor system */
   lazy val actorSys = di.actorSystem

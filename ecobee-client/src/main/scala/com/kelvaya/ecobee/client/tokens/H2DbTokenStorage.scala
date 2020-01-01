@@ -22,21 +22,23 @@ import zio.interop.catz._
 /** [[TokenStorage]] backed by an H2 database.
   *
   * @note This storage is not suited for large sites that need high-availability or distributed storage.
-  *
-  * @param xa The Doobie `Transactor` for executing queries against H2
-  * @param lb (implicit) Used for logging
   */
-class H2DbTokenStorage private (private[tokens] val xa : Transactor[Task]) (implicit lb : LoggingBus)
-extends TokenStorage {
+trait H2DbTokenStorage extends TokenStorage {
+  
+  /** Used for logging */
+  implicit val loggingBus : LoggingBus
+  
+  /** The Doobie `Transactor` for executing queries against H2 */
+  val transactor : Transactor[Task]
 
   val tokenStorage = new TokenStorage.Service[Any] {
 
     def getTokens(account: AccountID): IO[TokenStorageError,Tokens] = {
-      val sql = getSql(account).query[Tokens].option.transact(xa)
+      val sql = getSql(account).query[Tokens].option.transact(transactor)
       
       sql
         .mapError { error =>
-            val log = Logging(lb, classOf[H2DbTokenStorage])
+            val log = Logging(loggingBus, classOf[H2DbTokenStorage])
             log.warning(s"Error returned by DB: $error")
             TokenStorageError.ConnectionError
         }
@@ -51,9 +53,9 @@ extends TokenStorage {
     }
 
     def storeTokens(account: AccountID, tokens: Tokens): IO[TokenStorageError,Unit] = {
-      storeSql(account, tokens).update.run.transact(xa)
+      storeSql(account, tokens).update.run.transact(transactor)
         .mapError { e => 
-          val log = Logging(lb, classOf[H2DbTokenStorage])
+          val log = Logging(loggingBus, classOf[H2DbTokenStorage])
           log.warning(s"Unexpected database error: $e")
           TokenStorageError.ConnectionError
         }
@@ -78,20 +80,33 @@ extends TokenStorage {
 object H2DbTokenStorage {
 
 
+  /** [[TokenStorage]] backed by an H2 database.
+    *
+    * @note This storage is not suited for large sites that need high-availability or distributed storage.
+    *
+    * @param xa The Doobie `Transactor` for executing queries against H2
+    * @param lb (implicit) Used for logging
+    */
+  class Live (private[tokens] val xa : Transactor[Task])(implicit lb : LoggingBus) extends H2DbTokenStorage {
+    implicit val loggingBus: LoggingBus = lb
+    val transactor: Transactor[zio.Task] = xa
+  }
+
+
   /** Returns a handle to a configured [[H2DbTokenStorage]] 
     *
     * @param settings (implicit) The application global settings
     * @param lb (implicit) Used for logging
     */
-  def connect(implicit settings : ClientSettings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
-    createConn(false).map(_.map(new H2DbTokenStorage(_)))
+  def connect(implicit settings : ClientSettings.Service[Any], lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
+    createConn(false).map(_.map(new Live(_)))
 
   /** Returns a handle to a configured [[H2DbTokenStorage]]
     *
     * @param settings (implicit) The application global settings
     * @param lb (implicit) Used for logging
     */
-  def initDb(implicit settings : ClientSettings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
+  def initDb(implicit settings : ClientSettings.Service[Any], lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
     val create = sql"""
     create table token (
       id IDENTITY, 
@@ -105,20 +120,20 @@ object H2DbTokenStorage {
       .run
 
     createConn(true).map { _.flatMap { xa => 
-      Resource.liftF { create.transact(xa).map(_ => new H2DbTokenStorage(xa)) }
+      Resource.liftF { create.transact(xa).map(_ => new Live(xa)) }
     }}
   }
 
 
-  private[tokens] def createConn(createIfMissing : Boolean)(implicit settings : ClientSettings) : Either[DbError,Resource[Task,H2Transactor[Task]]] = {
-    parseConnectionString(settings.JdbcConnection, createIfMissing) map { connString => 
+  private[tokens] def createConn(createIfMissing : Boolean)(implicit s : ClientSettings.Service[Any]) : Either[DbError,Resource[Task,H2Transactor[Task]]] = {
+    parseConnectionString(s.JdbcConnection, createIfMissing) map { connString => 
       for {
-        connWaitPool <- doobie.util.ExecutionContexts.fixedThreadPool[Task](settings.H2DbThreadPoolSize)
+        connWaitPool <- doobie.util.ExecutionContexts.fixedThreadPool[Task](s.H2DbThreadPoolSize)
         queryThread  <- Blocker[Task]
         xa           <- H2Transactor.newH2Transactor[Task](
           connString,
-          settings.JdbcUsername,                  
-          settings.JdbcPassword,                  
+          s.JdbcUsername,                  
+          s.JdbcPassword,                  
           connWaitPool,
           queryThread                                      
         )

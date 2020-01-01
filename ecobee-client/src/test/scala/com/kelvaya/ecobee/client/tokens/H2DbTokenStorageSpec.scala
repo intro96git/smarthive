@@ -152,29 +152,31 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
 
   private def cleanup(f : File) = UIO(f.delete())
 
-  private def createTempDb(fn : ClientSettings => Task[Assertion]) : Task[Assertion] = {
+  private def createTempDb(fn : ClientSettings.Service[Any] => Task[Assertion]) : Task[Assertion] = {
     Task(File.newTemporaryDirectory(prefix=s"h2dts")).bracket(cleanup)  { dir => 
       val settings = new H2DbTokenStorageTestSettings(s"jdbc:h2:${dir.toString}/test.db")
-      fn(settings)
+      fn(settings.settings)
     }
   }
 
 
-  private def withTestStore[S](fn : TokenStorage.Service[Any] => Task[S])(implicit s : ClientSettings) = {
+  private def withTestStore[S](fn : TokenStorage.Service[Any] => Task[S])(implicit s : ClientSettings.Service[Any]) = {
     val conn = H2DbTokenStorage.initDb
     conn.map(_.use { store =>
       val sql = 
         sql"insert into token (account, authToken, accessToken, refreshToken) values ($account, $AuthCode, $AccessToken, $RefreshToken)"
         .update
 
-      sql.run.transact(store.xa).flatMap(_ => fn(store.tokenStorage))
+      sql.run.transact(store.transactor).flatMap(_ => fn(store.tokenStorage))
     })
   }
 }
 
 
-class H2DbTokenStorageTestSettings(jdbcConnection : String) extends TestSettings {
-  override lazy val JdbcConnection = jdbcConnection
-  override lazy val JdbcUsername: String = ""
-  override lazy val JdbcPassword: String = ""
+class H2DbTokenStorageTestSettings(jdbcConnection : String) extends ClientSettings {
+  val settings = new TestClientSettings.TestClientService {
+    override lazy val JdbcConnection = jdbcConnection
+    override lazy val JdbcUsername: String = ""
+    override lazy val JdbcPassword: String = ""
+  }
 }

@@ -57,7 +57,7 @@ class NotificationSettingsSpec extends BaseTestSpec {
   // ########################################################################################
   // ########################################################################################
 
-  "Notification ClientSettings JSON serialization GET requests" must "capture full objects" in {
+  "Notification settings JSON serialization GET requests" must "capture full objects" in {
     val expected = s"""{
       $emailAddresses,
       $emailNotifications,

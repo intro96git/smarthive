@@ -21,7 +21,7 @@ import com.kelvaya.ecobee.client.tokens.TokenStorage
   *
   * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class RefreshTokensRequest(override val account: AccountID)(implicit s : ClientSettings) extends TokensRequest(account) {
+class RefreshTokensRequest(override val account: AccountID)(implicit s : ClientSettings.Service[Any]) extends TokensRequest(account) {
   final def authTokenQS : TokenStorage.IO[Option[Querystrings.Entry]] = this.getRefreshTokenQS.map(Some(_))
   final def grantTypeQS : Querystrings.Entry = GrantType.RefreshToken
 }
@@ -42,6 +42,6 @@ class RefreshTokensRequest(override val account: AccountID)(implicit s : ClientS
   */
 object RefreshTokensService {
   implicit class RefreshTokensServiceImpl(o : RefreshTokensService.type) extends TokensService[RefreshTokensRequest] {
-    def newTokenRequest(account: AccountID)(implicit s : ClientSettings) = new RefreshTokensRequest(account)
+    def newTokenRequest(account: AccountID)(implicit s : ClientSettings.Service[Any]) = new RefreshTokensRequest(account)
   }
 }

@@ -36,4 +36,10 @@ object RequestExecutor {
       err: JsObject => E, 
       fail: (Throwable,Option[HttpResponse]) => E) : ZIO[R,E,S]
   }
+
+  object > extends Service[RequestExecutor] {
+    def executeRequest[S: JsonFormat, E <: ServiceError](req: HttpRequest, err: JsObject => E, fail: (Throwable, Option[HttpResponse]) => E): ZIO[RequestExecutor,E,S] = {
+      ZIO.accessM[RequestExecutor](_.requestExecutor.executeRequest[S,E](req,err,fail))
+    }
+  }
 }

@@ -25,7 +25,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import spray.json._
-import com.kelvaya.ecobee.test.client.TestSettings
+import com.kelvaya.ecobee.test.client.TestClientSettings
 import com.kelvaya.ecobee.client.service.PinResponse
 import org.scalatest.exceptions.TestFailedException
 
@@ -71,8 +71,8 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
 
 
   // ClientSettings pointing to the test REST web service
-  implicit object LocalServerSettings extends TestSettings {
-    override val EcobeeServerRoot: Uri = Uri("http://localhost:6789")
+  implicit object LocalServerSettings extends TestClientSettings.TestClientService {
+    override lazy val EcobeeServerRoot: Uri = Uri("http://localhost:6789")
   }
   
   // ##################################################################################################################
@@ -199,12 +199,12 @@ object EcobeeClientSpec extends TestConstants {
     Http().bindAndHandle(route, "localhost", 6789)
   }
 
-  private class TestApiRequest(account : AccountID, path : String)(implicit s : ClientSettings) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
+  private class TestApiRequest(account : AccountID, path : String)(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
     val query: TokenStorage.IO[List[Querystrings.Entry]] = UIO(List.empty)
     val uri: Uri.Path = Uri.Path(path)
   }
   
-  private class TestAuthRequest(account : AccountID, path : String)(implicit s : ClientSettings) extends RequestNoEntity(account) {
+  private class TestAuthRequest(account : AccountID, path : String)(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity(account) {
     val query: TokenStorage.IO[List[Querystrings.Entry]] = UIO(List.empty)
     val uri: Uri.Path = Uri.Path(path)
   }

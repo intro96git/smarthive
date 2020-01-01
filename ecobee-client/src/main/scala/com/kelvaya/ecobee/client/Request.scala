@@ -51,7 +51,7 @@ object Request {
       reqUri: Uri.Path,
       querystring: List[Querystrings.Entry],
       reqEntity: T
-  )(implicit settings: ClientSettings): Request[T] =
+  )(implicit settings: ClientSettings.Service[Any]): Request[T] =
     apply(account, reqUri, querystring, Some(reqEntity))
 
   /** Create a new [[AuthorizedRequest]] at the given URI with an empty request body.
@@ -65,7 +65,7 @@ object Request {
       account: AccountID,
       reqUri: Uri.Path,
       querystring: List[Querystrings.Entry] = List.empty
-  )(implicit settings: ClientSettings): Request[ParameterlessApi] =
+  )(implicit settings: ClientSettings.Service[Any]): Request[ParameterlessApi] =
     apply(account, reqUri, querystring, None)
 
   private def apply[T <: ApiObject: ToEntityMarshaller](
@@ -73,7 +73,7 @@ object Request {
       reqUri: Uri.Path,
       querystring: List[Querystrings.Entry],
       reqEntity: Option[T]
-  )(implicit s: ClientSettings) =
+  )(implicit s: ClientSettings.Service[Any]) =
     new Request[T](account) with AuthorizedRequest[T] {
       val uri = reqUri
       val query = UIO(querystring)
@@ -95,10 +95,10 @@ object Request {
   *
   * @tparam T Request entity type, which must be an `ApiObject`
   */
-abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account: AccountID)(implicit settings: ClientSettings) {
+abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account: AccountID)(implicit s: ClientSettings.Service[Any]) {
   import Request._
 
-  private lazy val _serverRoot = settings.EcobeeServerRoot
+  private lazy val _serverRoot = s.EcobeeServerRoot
 
   /** The service endpoint */
   val uri: Uri.Path
@@ -193,7 +193,7 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
 // ---------------------
 
 /** [[Request]] with no entity */
-abstract class RequestNoEntity(account: AccountID)(implicit s: ClientSettings)
+abstract class RequestNoEntity(account: AccountID)(implicit s: ClientSettings.Service[Any])
     extends Request[ParameterlessApi](account) {
   val entity: Option[ParameterlessApi] = None
 }

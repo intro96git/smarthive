@@ -48,7 +48,7 @@ case class ThermostatPostRequest(
   override val account: AccountID, 
   selection : Select, 
   thermostat : Option[ThermostatModification], 
-  functions : Option[Seq[ThermostatFunction]])(implicit s : ClientSettings, log : LoggingBus)
+  functions : Option[Seq[ThermostatFunction]])(implicit s : ClientSettings.Service[Any], log : LoggingBus)
 extends Request[ThermostatPostRequest.RequestBody](account)
 with PostRequest[ThermostatPostRequest.RequestBody]
 with AuthorizedRequest[ThermostatPostRequest.RequestBody]
@@ -100,6 +100,6 @@ class ThermostatPostService(implicit ev : LoggingBus) extends EcobeeJsonService[
     selectType : SelectType, 
     thermostat : Option[ThermostatModification] = None, 
     functions : Option[Seq[ThermostatFunction]] = None
-  )(implicit s : ClientSettings) : ZIO[ClientEnv, ServiceError, ThermostatPostResponse] = 
+  )(implicit s : ClientSettings.Service[Any]) : ZIO[ClientEnv, ServiceError, ThermostatPostResponse] = 
     execute(ThermostatPostRequest(account, Select(selectType), thermostat, functions))
 }

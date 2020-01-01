@@ -21,7 +21,7 @@ import com.kelvaya.ecobee.client.tokens.TokenStorage
   *
   * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class InitialTokensRequest(override protected val account: AccountID)(implicit s : ClientSettings) extends TokensRequest(account) {
+class InitialTokensRequest(override protected val account: AccountID)(implicit s : ClientSettings.Service[Any]) extends TokensRequest(account) {
   final def authTokenQS : TokenStorage.IO[Option[Querystrings.Entry]] = this.getAuthCodeQS
   final def grantTypeQS : Querystrings.Entry = GrantType.Pin
 }
@@ -49,6 +49,6 @@ object InitialTokensService {
     * an `InitialTokensRequest` and pass it explicitly to a new `InitialTokensServiceImpl`.
     */
   implicit class InitialTokensServiceImpl(o : InitialTokensService.type) extends TokensService[InitialTokensRequest] {
-    def newTokenRequest(account: AccountID)(implicit s : ClientSettings) = new InitialTokensRequest(account)
+    def newTokenRequest(account: AccountID)(implicit s : ClientSettings.Service[Any]) = new InitialTokensRequest(account)
   }
 }

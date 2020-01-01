@@ -30,7 +30,7 @@ object PinRequest {
   *
   * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class PinRequest(override val account: AccountID)(implicit settings: ClientSettings) extends RequestNoEntity(account) {
+class PinRequest(override val account: AccountID)(implicit settings: ClientSettings.Service[Any]) extends RequestNoEntity(account) {
   val uri = PinRequest.Endpoint
   val query = UIO(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil)
 }
@@ -70,7 +70,7 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
   */
 object PinService {
   implicit class PinServiceImpl(o : PinService.type) extends EcobeeJsonAuthService[PinRequest,PinResponse] {
-    def execute(account: AccountID)(implicit s : ClientSettings): ZIO[ClientEnv,ServiceError,PinResponse] = 
+    def execute(account: AccountID)(implicit s : ClientSettings.Service[Any]): ZIO[ClientEnv,ServiceError,PinResponse] = 
       this.execute(new PinRequest(account))
   }
 }

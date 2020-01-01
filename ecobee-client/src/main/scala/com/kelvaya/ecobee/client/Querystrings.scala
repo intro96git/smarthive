@@ -20,8 +20,8 @@ object Querystrings {
   }
 
   private var _clientId: Option[Entry] = None
-  def ClientId(implicit settings: ClientSettings) = _clientId.getOrElse {
-    _clientId = Some(("client_id", settings.EcobeeAppKey))
+  def ClientId(implicit s: ClientSettings.Service[Any]) = _clientId.getOrElse {
+    _clientId = Some(("client_id", s.EcobeeAppKey))
     _clientId.get
   }
 }

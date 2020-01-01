@@ -35,7 +35,7 @@ object ThermostatSummaryRequest {
   * @param equipStatus True if the equipment status should also be returned
   */
 case class ThermostatSummaryRequest(override val account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false)
-(implicit s : ClientSettings) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
+(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
   import ThermostatSummaryRequest._
 
   val query: UIO[List[Querystrings.Entry]] = UIO( (("selection", getJson(selectType, includeEquipStatus))) :: Nil )
@@ -92,7 +92,7 @@ object ThermostatSummaryService {
     * This allows the syntax, `ThermostatSummaryService.execute`, to work instead of having to create both
     * an `ThermostatSummaryRequest` and pass it explicitly to a new `ThermostatSummaryServiceImpl`.
     */
-  implicit class ThermostatSummaryServiceImpl(o : ThermostatSummaryService.type)(implicit lb : LoggingBus, s : ClientSettings) extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
+  implicit class ThermostatSummaryServiceImpl(o : ThermostatSummaryService.type)(implicit lb : LoggingBus, s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
     def execute(account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false): ZIO[ClientEnv,ServiceError,ThermostatSummaryResponse] =
       execute(ThermostatSummaryRequest(account, selectType, includeEquipStatus))
   }

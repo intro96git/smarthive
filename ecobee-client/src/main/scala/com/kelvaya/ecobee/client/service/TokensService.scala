@@ -23,7 +23,7 @@ import zio.ZIO
   * 
   * @param account The ID of the account for which the token request will be made
   */ 
-abstract class TokensRequest(override protected val account: AccountID)(implicit s : ClientSettings) 
+abstract class TokensRequest(override protected val account: AccountID)(implicit s : ClientSettings.Service[Any]) 
 extends Request[ParameterlessApi](account) with PostRequest[ParameterlessApi] {
   import com.kelvaya.ecobee.client.Querystrings._
 
@@ -72,7 +72,7 @@ abstract class TokensService[T <: TokensRequest] extends EcobeeJsonAuthService[T
     * @param account The ID of the account for which the token request will be made
     * @param s (implicit) Global application settings
     */
-  def execute(account: AccountID)(implicit s : ClientSettings) : ZIO[ClientEnv,ServiceError,TokensResponse] =
+  def execute(account: AccountID)(implicit s : ClientSettings.Service[Any]) : ZIO[ClientEnv,ServiceError,TokensResponse] =
     this.execute(this.newTokenRequest(account))
 
   /** Create the tokens request for this service
@@ -80,5 +80,5 @@ abstract class TokensService[T <: TokensRequest] extends EcobeeJsonAuthService[T
     * @param account The ID of the account for which the token request will be made
     * @param s (implicit) Global application settings
     */
-  protected def newTokenRequest(account: AccountID)(implicit s : ClientSettings) : T
+  protected def newTokenRequest(account: AccountID)(implicit s : ClientSettings.Service[Any]) : T
 }

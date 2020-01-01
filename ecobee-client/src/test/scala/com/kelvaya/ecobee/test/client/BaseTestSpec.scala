@@ -47,14 +47,14 @@ object BaseTestSpec {
   final val DefaultAccount = new AccountID("test")
 
   /** Setup system dependencies.  Defaults to using `TestSettings` and `TestClient` */
-  def createDependencies(deps: DI.Dependencies = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestSettings))) = {
+  def createDependencies(deps: DI.Dependencies = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestClientSettings.Default))) = {
     val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient)))
     DI(newDeps)
   }
 
-  def createRequestMap(mapping : Map[HttpRequest, String])(implicit settings : ClientSettings) : Map[HttpRequest, JsObject] = {
+  def createRequestMap(mapping : Map[HttpRequest, String])(implicit s : ClientSettings.Service[Any]) : Map[HttpRequest, JsObject] = {
     mapping.map {
-      case (k,v) =>  (k.withUri(settings.EcobeeServerRoot),v.parseJson.asJsObject)
+      case (k,v) =>  (k.withUri(s.EcobeeServerRoot),v.parseJson.asJsObject)
     }
   }
 }

@@ -9,12 +9,12 @@ trait ClientEnvDefinition {
     * 
     * Includes [[RequestExecutor]] and [[ClientSettings]]
     */
-  type ClientRuntimeEnv = RequestExecutor
+  type ClientRuntimeEnv = RequestExecutor with TokenStorage
   
   
   /** `ZIO` effectful type environment for the Ecobee API client.
     * 
     * Includes [[RequestExecutor]], [[ClientSettings]], and [[TokenStorage]]
     */
-  type ClientEnv = ClientRuntimeEnv with TokenStorage with ClientSettings
+  type ClientEnv = ClientRuntimeEnv with ClientSettings
 }
