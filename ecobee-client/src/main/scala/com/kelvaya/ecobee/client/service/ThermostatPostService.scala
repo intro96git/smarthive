@@ -9,7 +9,7 @@ import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.ThermostatModification
 import com.kelvaya.ecobee.client.WriteableApiObject
-import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.ClientSettings
 
 import akka.event.LoggingBus
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
@@ -48,7 +48,7 @@ case class ThermostatPostRequest(
   override val account: AccountID, 
   selection : Select, 
   thermostat : Option[ThermostatModification], 
-  functions : Option[Seq[ThermostatFunction]])(implicit s : Settings, log : LoggingBus)
+  functions : Option[Seq[ThermostatFunction]])(implicit s : ClientSettings, log : LoggingBus)
 extends Request[ThermostatPostRequest.RequestBody](account)
 with PostRequest[ThermostatPostRequest.RequestBody]
 with AuthorizedRequest[ThermostatPostRequest.RequestBody]
@@ -100,6 +100,6 @@ class ThermostatPostService(implicit ev : LoggingBus) extends EcobeeJsonService[
     selectType : SelectType, 
     thermostat : Option[ThermostatModification] = None, 
     functions : Option[Seq[ThermostatFunction]] = None
-  )(implicit s : Settings) : ZIO[ClientEnv, ServiceError, ThermostatPostResponse] = 
+  )(implicit s : ClientSettings) : ZIO[ClientEnv, ServiceError, ThermostatPostResponse] = 
     execute(ThermostatPostRequest(account, Select(selectType), thermostat, functions))
 }

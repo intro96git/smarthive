@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 
 import spray.json._
 import com.kelvaya.util.Time.DateOnly
@@ -57,7 +57,7 @@ class NotificationSettingsSpec extends BaseTestSpec {
   // ########################################################################################
   // ########################################################################################
 
-  "Notification Settings JSON serialization GET requests" must "capture full objects" in {
+  "Notification ClientSettings JSON serialization GET requests" must "capture full objects" in {
     val expected = s"""{
       $emailAddresses,
       $emailNotifications,

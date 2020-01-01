@@ -1,8 +1,8 @@
 package com.kelvaya.ecobee.client.tokens
 
 import com.kelvaya.ecobee.client.tokens.H2DbTokenStorage.DbError
-import com.kelvaya.ecobee.config.Settings
-import com.kelvaya.ecobee.test._
+import com.kelvaya.ecobee.client.ClientSettings
+import com.kelvaya.ecobee.test.client._
 
 import better.files.File
 
@@ -152,7 +152,7 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
 
   private def cleanup(f : File) = UIO(f.delete())
 
-  private def createTempDb(fn : Settings => Task[Assertion]) : Task[Assertion] = {
+  private def createTempDb(fn : ClientSettings => Task[Assertion]) : Task[Assertion] = {
     Task(File.newTemporaryDirectory(prefix=s"h2dts")).bracket(cleanup)  { dir => 
       val settings = new H2DbTokenStorageTestSettings(s"jdbc:h2:${dir.toString}/test.db")
       fn(settings)
@@ -160,7 +160,7 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
   }
 
 
-  private def withTestStore[S](fn : TokenStorage.Service[Any] => Task[S])(implicit s : Settings) = {
+  private def withTestStore[S](fn : TokenStorage.Service[Any] => Task[S])(implicit s : ClientSettings) = {
     val conn = H2DbTokenStorage.initDb
     conn.map(_.use { store =>
       val sql = 

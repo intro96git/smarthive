@@ -1,9 +1,9 @@
-package com.kelvaya.ecobee.test
+package com.kelvaya.ecobee.test.client
 
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.TestClient
-import com.kelvaya.ecobee.config.DI
-import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.DI
+import com.kelvaya.ecobee.client.ClientSettings
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -52,7 +52,7 @@ object BaseTestSpec {
     DI(newDeps)
   }
 
-  def createRequestMap(mapping : Map[HttpRequest, String])(implicit settings : Settings) : Map[HttpRequest, JsObject] = {
+  def createRequestMap(mapping : Map[HttpRequest, String])(implicit settings : ClientSettings) : Map[HttpRequest, JsObject] = {
     mapping.map {
       case (k,v) =>  (k.withUri(settings.EcobeeServerRoot),v.parseJson.asJsObject)
     }

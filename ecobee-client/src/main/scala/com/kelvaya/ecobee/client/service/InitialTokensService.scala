@@ -3,7 +3,7 @@ package com.kelvaya.ecobee.client.service
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Querystrings.GrantType
-import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.ClientSettings
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 
 
@@ -19,9 +19,9 @@ import com.kelvaya.ecobee.client.tokens.TokenStorage
   * @param account The ID of the account for which the token request will be made
   * @param s (implicit) The application global settings (from dependency injection, `DI`)
   *
-  * @see [[com.kelvaya.ecobee.config.DI]]
+  * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class InitialTokensRequest(override protected val account: AccountID)(implicit s : Settings) extends TokensRequest(account) {
+class InitialTokensRequest(override protected val account: AccountID)(implicit s : ClientSettings) extends TokensRequest(account) {
   final def authTokenQS : TokenStorage.IO[Option[Querystrings.Entry]] = this.getAuthCodeQS
   final def grantTypeQS : Querystrings.Entry = GrantType.Pin
 }
@@ -49,6 +49,6 @@ object InitialTokensService {
     * an `InitialTokensRequest` and pass it explicitly to a new `InitialTokensServiceImpl`.
     */
   implicit class InitialTokensServiceImpl(o : InitialTokensService.type) extends TokensService[InitialTokensRequest] {
-    def newTokenRequest(account: AccountID)(implicit s : Settings) = new InitialTokensRequest(account)
+    def newTokenRequest(account: AccountID)(implicit s : ClientSettings) = new InitialTokensRequest(account)
   }
 }

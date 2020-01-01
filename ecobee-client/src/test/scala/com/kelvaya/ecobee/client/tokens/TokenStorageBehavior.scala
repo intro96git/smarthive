@@ -1,8 +1,8 @@
 package com.kelvaya.ecobee.client.tokens
 
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 import zio.Task
-import com.kelvaya.ecobee.test.ZioTest
+import com.kelvaya.ecobee.test.client.ZioTest
 import org.scalatest.compatible.Assertion
 import com.kelvaya.ecobee.client.AccountID
 

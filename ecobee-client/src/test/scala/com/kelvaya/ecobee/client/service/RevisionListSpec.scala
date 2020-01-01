@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client.service;
 
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 
 import RevisionListItem._
 import spray.json._

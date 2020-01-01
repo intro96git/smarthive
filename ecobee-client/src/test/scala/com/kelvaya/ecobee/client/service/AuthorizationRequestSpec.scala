@@ -3,7 +3,7 @@ package com.kelvaya.ecobee.client.service
 import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.client.tokens.TokenStorage
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpMethods

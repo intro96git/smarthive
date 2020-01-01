@@ -1,4 +1,4 @@
-package com.kelvaya.ecobee.test
+package com.kelvaya.ecobee.test.client
 
 import com.kelvaya.ecobee.client.AccountID
 
@@ -7,12 +7,16 @@ import zio.UIO
 
 
 object TestStorage extends TestConstants {
-  def apply(account: AccountID) = new TestStorage(Map(account -> Tokens(Some(AuthCode), Some(AccessToken), Some(RefreshToken))))
+  def apply(account: AccountID) = new TestStorage {
+    lazy val testStorageParams : Map[AccountID, Tokens] = Map(account -> Tokens(Some(AuthCode), Some(AccessToken), Some(RefreshToken)))
+  }  
 }
 
-class TestStorage private (store : Map[AccountID,Tokens]) extends TokenStorage {
+trait TestStorage extends TokenStorage {
+  val testStorageParams : Map[AccountID, Tokens]
+
   val tokenStorage = new TokenStorage.Service[Any] {
-    private var _tokens = store
+    private var _tokens = testStorageParams
 
     // May throw exception...fix it!!
     def getTokens(account : AccountID): UIO[Tokens] = UIO(_tokens(account))

@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers

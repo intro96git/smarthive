@@ -1,7 +1,5 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.ecobee.config.Settings
-
 object Querystrings {
   type Entry = Tuple2[String, String]
 
@@ -22,7 +20,7 @@ object Querystrings {
   }
 
   private var _clientId: Option[Entry] = None
-  def ClientId(implicit settings: Settings) = _clientId.getOrElse {
+  def ClientId(implicit settings: ClientSettings) = _clientId.getOrElse {
     _clientId = Some(("client_id", settings.EcobeeAppKey))
     _clientId.get
   }

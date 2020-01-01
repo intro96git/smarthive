@@ -10,7 +10,7 @@ import akka.stream.ActorMaterializer
 import com.kelvaya.ecobee.client.Electricity
 import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.ThermostatModification
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 
 import spray.json._
 

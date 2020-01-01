@@ -54,30 +54,30 @@ case class Thermostat(
     lastModified :         FullDate,
     thermostatTime :       FullDate,
     utcTime :              FullDate,
-    audio :                Audio,
-    alerts :               Array[Alert],
-//    reminders :            Option[Array[ThermostatReminder2], -- NB: Specs missing from Ecobee docs
-    settings :             ThermostatSettings,
-    runtime :              ThermostatRuntime,
-    extendedRuntime :      ExtendedRuntime,
-    electricity :          Electricity,
-    devices :              Array[Device],
-    location :             Location,
-//    energy :               Energy,  -- NB: Specs missing from Ecobee docs
-    technician :           Technician,
-    utility :              Utility,
-    management :           Management,
-    weather :              Weather,
-    events :               Array[Event],
-    houseDetails :         HouseDetails,
-    program :              Program,
-    equipmentStatus :      EquipmentStatusListItem,
-    notificationSettings : NotificationSettings,
-    version :              Version,
-    securitySettings :     SecuritySettings,
-//    oemCfg :               ThermostatOemCfg, -- NB: Specs missing from Ecobee docs
-//    privacy :              ThermostatPrivacy, -- NB: Specs missing from Ecobee docs
-    remoteSensors :        Array[RemoteSensor]
+    audio :                Option[Audio] = None,
+    alerts :               Option[Array[Alert]] = None,
+//    reminders :          Option[  Option][Array[ThermostatReminder2], -- NB: Specs missing from Ecobee docs
+    settings :             Option[ThermostatSettings] = None,
+    runtime :              Option[ThermostatRuntime] = None,
+    extendedRuntime :      Option[ExtendedRuntime] = None,
+    electricity :          Option[Electricity] = None,
+    devices :              Option[Array[Device]] = None,
+    location :             Option[Location] = None,
+//    energy :             Option[  Energy],  -- NB: Specs missing from Ecobee docs
+    technician :           Option[Technician] = None,
+    utility :              Option[Utility] = None,
+    management :           Option[Management] = None,
+    weather :              Option[Weather] = None,
+    events :               Option[Array[Event]] = None,
+    houseDetails :         Option[HouseDetails] = None,
+    program :              Option[Program] = None,
+    equipmentStatus :      Option[EquipmentStatusListItem] = None,
+    notificationSettings : Option[NotificationSettings] = None,
+    version :              Option[Version] = None,
+    securitySettings :     Option[SecuritySettings] = None,
+//    oemCfg :             Option[  ThermostatOemCfg], -- NB: Specs missing from Ecobee docs
+//    privacy :            Option[  ThermostatPrivacy], -- NB: Specs missing from Ecobee docs
+    remoteSensors :        Option[Array[RemoteSensor]] = None
 ) extends ReadonlyApiObject
 
 
@@ -128,26 +128,26 @@ object Thermostat extends SprayImplicits {
         lastModified = find[FullDate](o, "lastModified"),
         thermostatTime = find[FullDate](o, "thermostatTime"),
         utcTime = find[FullDate](o, "utcTime"),
-        audio = find[Audio](o, "audio"),
-        alerts = find[Array[Alert]](o, "alerts"),
-        settings = find[ThermostatSettings](o, "settings"),
-        runtime = find[ThermostatRuntime](o, "runtime"),
-        extendedRuntime = find[ExtendedRuntime](o, "extendedRuntime"),
-        electricity = find[Electricity](o, "electricity"),
-        devices = find[Array[Device]](o, "devices"),
-        location = find[Location](o, "location"),
-        technician = find[Technician](o, "technician"),
-        utility = find[Utility](o, "utility"),
-        management = find[Management](o, "management"),
-        weather = find[Weather](o, "weather"),
-        events = find[Array[Event]](o, "events"),
-        houseDetails = find[HouseDetails](o, "houseDetails"),
-        program = find[Program](o, "program"),
-        equipmentStatus = find[EquipmentStatusListItem](o, "equipmentStatus"),
-        notificationSettings = find[NotificationSettings](o, "notificationSettings"),
-        version = find[Version](o, "version"),
-        securitySettings = find[SecuritySettings](o, "securitySettings"),
-        remoteSensors = find[Array[RemoteSensor]](o, "remoteSensors")
+        audio = findOptional[Audio](o, "audio"),
+        alerts = findOptional[Array[Alert]](o, "alerts"),
+        settings = findOptional[ThermostatSettings](o, "settings"),
+        runtime = findOptional[ThermostatRuntime](o, "runtime"),
+        extendedRuntime = findOptional[ExtendedRuntime](o, "extendedRuntime"),
+        electricity = findOptional[Electricity](o, "electricity"),
+        devices = findOptional[Array[Device]](o, "devices"),
+        location = findOptional[Location](o, "location"),
+        technician = findOptional[Technician](o, "technician"),
+        utility = findOptional[Utility](o, "utility"),
+        management = findOptional[Management](o, "management"),
+        weather = findOptional[Weather](o, "weather"),
+        events = findOptional[Array[Event]](o, "events"),
+        houseDetails = findOptional[HouseDetails](o, "houseDetails"),
+        program = findOptional[Program](o, "program"),
+        equipmentStatus = findOptional[EquipmentStatusListItem](o, "equipmentStatus"),
+        notificationSettings = findOptional[NotificationSettings](o, "notificationSettings"),
+        version = findOptional[Version](o, "version"),
+        securitySettings = findOptional[SecuritySettings](o, "securitySettings"),
+        remoteSensors = findOptional[Array[RemoteSensor]](o, "remoteSensors")
       )
       case _ => deserializationError(s"$json is not a valid Thermostat payload")
     }

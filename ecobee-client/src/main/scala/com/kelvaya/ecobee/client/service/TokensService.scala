@@ -9,7 +9,7 @@ import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.tokens.TokenStorageError
-import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.ClientSettings
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
@@ -23,7 +23,7 @@ import zio.ZIO
   * 
   * @param account The ID of the account for which the token request will be made
   */ 
-abstract class TokensRequest(override protected val account: AccountID)(implicit s : Settings) 
+abstract class TokensRequest(override protected val account: AccountID)(implicit s : ClientSettings) 
 extends Request[ParameterlessApi](account) with PostRequest[ParameterlessApi] {
   import com.kelvaya.ecobee.client.Querystrings._
 
@@ -72,7 +72,7 @@ abstract class TokensService[T <: TokensRequest] extends EcobeeJsonAuthService[T
     * @param account The ID of the account for which the token request will be made
     * @param s (implicit) Global application settings
     */
-  def execute(account: AccountID)(implicit s : Settings) : ZIO[ClientEnv,ServiceError,TokensResponse] =
+  def execute(account: AccountID)(implicit s : ClientSettings) : ZIO[ClientEnv,ServiceError,TokensResponse] =
     this.execute(this.newTokenRequest(account))
 
   /** Create the tokens request for this service
@@ -80,5 +80,5 @@ abstract class TokensService[T <: TokensRequest] extends EcobeeJsonAuthService[T
     * @param account The ID of the account for which the token request will be made
     * @param s (implicit) Global application settings
     */
-  protected def newTokenRequest(account: AccountID)(implicit s : Settings) : T
+  protected def newTokenRequest(account: AccountID)(implicit s : ClientSettings) : T
 }

@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 import com.kelvaya.util.Time.DateOnly
 import com.kelvaya.util.Time.TimeOnly
 import org.joda.time.DateTime

@@ -3,7 +3,7 @@ package com.kelvaya.ecobee.client.service
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Querystrings.GrantType
-import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.ClientSettings
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 
 
@@ -19,9 +19,9 @@ import com.kelvaya.ecobee.client.tokens.TokenStorage
   * @param account The ID of the account for which the token request will be made
   * @param s (implicit) The application global settings (from dependency injection, `DI`)
   *
-  * @see [[com.kelvaya.ecobee.config.DI]]
+  * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class RefreshTokensRequest(override val account: AccountID)(implicit s : Settings) extends TokensRequest(account) {
+class RefreshTokensRequest(override val account: AccountID)(implicit s : ClientSettings) extends TokensRequest(account) {
   final def authTokenQS : TokenStorage.IO[Option[Querystrings.Entry]] = this.getRefreshTokenQS.map(Some(_))
   final def grantTypeQS : Querystrings.Entry = GrantType.RefreshToken
 }
@@ -42,6 +42,6 @@ class RefreshTokensRequest(override val account: AccountID)(implicit s : Setting
   */
 object RefreshTokensService {
   implicit class RefreshTokensServiceImpl(o : RefreshTokensService.type) extends TokensService[RefreshTokensRequest] {
-    def newTokenRequest(account: AccountID)(implicit s : Settings) = new RefreshTokensRequest(account)
+    def newTokenRequest(account: AccountID)(implicit s : ClientSettings) = new RefreshTokensRequest(account)
   }
 }

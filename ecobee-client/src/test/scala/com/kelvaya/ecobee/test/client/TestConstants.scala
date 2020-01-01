@@ -1,4 +1,4 @@
-package com.kelvaya.ecobee.test
+package com.kelvaya.ecobee.test.client
 
 
 object TestConstants extends TestConstants

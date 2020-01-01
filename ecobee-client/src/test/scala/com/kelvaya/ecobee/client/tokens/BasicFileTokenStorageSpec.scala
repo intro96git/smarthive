@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client.tokens
 
-import com.kelvaya.ecobee.test._
+import com.kelvaya.ecobee.test.client._
 
 import better.files.File
 

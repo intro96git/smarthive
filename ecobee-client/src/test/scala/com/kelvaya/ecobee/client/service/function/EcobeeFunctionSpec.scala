@@ -3,7 +3,7 @@ package com.kelvaya.ecobee.client.service.function
 import com.kelvaya.ecobee.client.service.Select
 import com.kelvaya.ecobee.client.service.SelectType
 import com.kelvaya.ecobee.client.service.ThermostatPostRequest
-import com.kelvaya.ecobee.test.BaseTestSpec
+import com.kelvaya.ecobee.test.client.BaseTestSpec
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration

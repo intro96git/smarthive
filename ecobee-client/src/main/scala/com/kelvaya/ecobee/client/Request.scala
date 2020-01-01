@@ -3,7 +3,6 @@ package com.kelvaya.ecobee.client
 import com.kelvaya.ecobee.client.tokens.Tokens
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.tokens.TokenStorageError
-import com.kelvaya.ecobee.config.Settings
 
 import scala.concurrent.Future
 
@@ -52,7 +51,7 @@ object Request {
       reqUri: Uri.Path,
       querystring: List[Querystrings.Entry],
       reqEntity: T
-  )(implicit settings: Settings): Request[T] =
+  )(implicit settings: ClientSettings): Request[T] =
     apply(account, reqUri, querystring, Some(reqEntity))
 
   /** Create a new [[AuthorizedRequest]] at the given URI with an empty request body.
@@ -66,7 +65,7 @@ object Request {
       account: AccountID,
       reqUri: Uri.Path,
       querystring: List[Querystrings.Entry] = List.empty
-  )(implicit settings: Settings): Request[ParameterlessApi] =
+  )(implicit settings: ClientSettings): Request[ParameterlessApi] =
     apply(account, reqUri, querystring, None)
 
   private def apply[T <: ApiObject: ToEntityMarshaller](
@@ -74,7 +73,7 @@ object Request {
       reqUri: Uri.Path,
       querystring: List[Querystrings.Entry],
       reqEntity: Option[T]
-  )(implicit s: Settings) =
+  )(implicit s: ClientSettings) =
     new Request[T](account) with AuthorizedRequest[T] {
       val uri = reqUri
       val query = UIO(querystring)
@@ -96,7 +95,7 @@ object Request {
   *
   * @tparam T Request entity type, which must be an `ApiObject`
   */
-abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account: AccountID)(implicit settings: Settings) {
+abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account: AccountID)(implicit settings: ClientSettings) {
   import Request._
 
   private lazy val _serverRoot = settings.EcobeeServerRoot
@@ -194,7 +193,7 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
 // ---------------------
 
 /** [[Request]] with no entity */
-abstract class RequestNoEntity(account: AccountID)(implicit s: Settings)
+abstract class RequestNoEntity(account: AccountID)(implicit s: ClientSettings)
     extends Request[ParameterlessApi](account) {
   val entity: Option[ParameterlessApi] = None
 }

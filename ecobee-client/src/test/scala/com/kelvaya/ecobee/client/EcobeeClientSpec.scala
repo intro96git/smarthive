@@ -1,10 +1,9 @@
 package com.kelvaya.ecobee.client
 
 import com.kelvaya.ecobee.client.tokens.{Tokens,TokenStorage,TokenStorageError}
-import com.kelvaya.ecobee.config.Settings
-import com.kelvaya.ecobee.test.BaseTestSpec
-import com.kelvaya.ecobee.test.TestConstants
-import com.kelvaya.ecobee.test.ZioTest
+import com.kelvaya.ecobee.test.client.BaseTestSpec
+import com.kelvaya.ecobee.test.client.TestConstants
+import com.kelvaya.ecobee.test.client.ZioTest
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpEntity
@@ -26,7 +25,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import spray.json._
-import com.kelvaya.ecobee.test.TestSettings
+import com.kelvaya.ecobee.test.client.TestSettings
 import com.kelvaya.ecobee.client.service.PinResponse
 import org.scalatest.exceptions.TestFailedException
 
@@ -71,7 +70,7 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
   implicit val ResponseFormat = DefaultJsonProtocol.jsonFormat1(Response)
 
 
-  // Settings pointing to the test REST web service
+  // ClientSettings pointing to the test REST web service
   implicit object LocalServerSettings extends TestSettings {
     override val EcobeeServerRoot: Uri = Uri("http://localhost:6789")
   }
@@ -200,12 +199,12 @@ object EcobeeClientSpec extends TestConstants {
     Http().bindAndHandle(route, "localhost", 6789)
   }
 
-  private class TestApiRequest(account : AccountID, path : String)(implicit s : Settings) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
+  private class TestApiRequest(account : AccountID, path : String)(implicit s : ClientSettings) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
     val query: TokenStorage.IO[List[Querystrings.Entry]] = UIO(List.empty)
     val uri: Uri.Path = Uri.Path(path)
   }
   
-  private class TestAuthRequest(account : AccountID, path : String)(implicit s : Settings) extends RequestNoEntity(account) {
+  private class TestAuthRequest(account : AccountID, path : String)(implicit s : ClientSettings) extends RequestNoEntity(account) {
     val query: TokenStorage.IO[List[Querystrings.Entry]] = UIO(List.empty)
     val uri: Uri.Path = Uri.Path(path)
   }

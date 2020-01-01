@@ -2,7 +2,7 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.Querystrings._
-import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.ClientSettings
 
 import spray.json.DefaultJsonProtocol
 import spray.json.DefaultJsonProtocol._
@@ -28,9 +28,9 @@ object PinRequest {
   * @param account The ID of the account for which the token request will be made
   * @param settings (implicit) The application global settings (from dependency injection, `DI`)
   *
-  * @see [[com.kelvaya.ecobee.config.DI]]
+  * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class PinRequest(override val account: AccountID)(implicit settings: Settings) extends RequestNoEntity(account) {
+class PinRequest(override val account: AccountID)(implicit settings: ClientSettings) extends RequestNoEntity(account) {
   val uri = PinRequest.Endpoint
   val query = UIO(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil)
 }
@@ -70,7 +70,7 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
   */
 object PinService {
   implicit class PinServiceImpl(o : PinService.type) extends EcobeeJsonAuthService[PinRequest,PinResponse] {
-    def execute(account: AccountID)(implicit s : Settings): ZIO[ClientEnv,ServiceError,PinResponse] = 
+    def execute(account: AccountID)(implicit s : ClientSettings): ZIO[ClientEnv,ServiceError,PinResponse] = 
       this.execute(new PinRequest(account))
   }
 }

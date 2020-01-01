@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.client.tokens
 
 import com.kelvaya.ecobee.client.AccountID
-import com.kelvaya.ecobee.config.Settings
+import com.kelvaya.ecobee.client.ClientSettings
 
 import akka.event.Logging
 import akka.event.LoggingBus
@@ -83,7 +83,7 @@ object H2DbTokenStorage {
     * @param settings (implicit) The application global settings
     * @param lb (implicit) Used for logging
     */
-  def connect(implicit settings : Settings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
+  def connect(implicit settings : ClientSettings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
     createConn(false).map(_.map(new H2DbTokenStorage(_)))
 
   /** Returns a handle to a configured [[H2DbTokenStorage]]
@@ -91,7 +91,7 @@ object H2DbTokenStorage {
     * @param settings (implicit) The application global settings
     * @param lb (implicit) Used for logging
     */
-  def initDb(implicit settings : Settings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
+  def initDb(implicit settings : ClientSettings, lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
     val create = sql"""
     create table token (
       id IDENTITY, 
@@ -110,7 +110,7 @@ object H2DbTokenStorage {
   }
 
 
-  private[tokens] def createConn(createIfMissing : Boolean)(implicit settings : Settings) : Either[DbError,Resource[Task,H2Transactor[Task]]] = {
+  private[tokens] def createConn(createIfMissing : Boolean)(implicit settings : ClientSettings) : Either[DbError,Resource[Task,H2Transactor[Task]]] = {
     parseConnectionString(settings.JdbcConnection, createIfMissing) map { connString => 
       for {
         connWaitPool <- doobie.util.ExecutionContexts.fixedThreadPool[Task](settings.H2DbThreadPoolSize)
