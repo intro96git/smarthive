@@ -10,24 +10,22 @@ object Status {
   implicit val StatusFormat = DefaultJsonProtocol.jsonFormat2(Status.apply)
 }
 
-/** Status returned by the Ecobee API for a request */
-case class Status(code : Int, message : String) extends ReadonlyApiObject
+/** Status returned by the Ecobee API for a request 
+  *
+  * @see [[ApiError]]
+  * @see [[Statuses$]] 
+  */
+final case class Status(code : Int, message : String) extends ReadonlyApiObject
 
 
 // ###########################################################################################
 
 
 /** Enumeration of [[Status]] messages that may be returned by the Ecobee API  */
-sealed trait StatusCode {
-  val code : Int
-  val message : String
-}
-
-/** Enumerated [[Status]] values */
-object StatusCode {
-  private val _codeList = mutable.ListBuffer.empty[StatusCode]
-  private def create(c : Int, m : String) : StatusCode = {
-    val code = new StatusCode { val (code,message) = (c, m) }
+object Statuses {
+  private val _codeList = mutable.ListBuffer.empty[Status]
+  private def create(c : Int, m : String) : Status = {
+    val code = Status(c, m)
     _codeList += code
     code
   }

@@ -36,7 +36,7 @@ object ThermostatRuntime extends SprayImplicits {
   * @param desiredCoolRange The possible valid range for which a desiredCool setpoint can be set to
   */
 case class ThermostatRuntime(
-    runtimeRev : String, connected : Boolean, firstConnected : String, connectDateTime : Time.FullDate, disconnectDateTime : Time.FullDate,
+    runtimeRev : String, connected : Boolean, firstConnected : Time.FullDate, connectDateTime : Time.FullDate, disconnectDateTime : Time.FullDate,
     lastModified : Time.FullDate, lastStatusModified : Time.FullDate, runtimeDate : Time.DateOnly, runtimeInterval : Int,
     actualTemperature : Int, actualHumidity : Int, rawTemperature : Int, showIconMode : WeatherForecast.WeatherIcon, desiredHeat : Int,
     desiredCool : Int, desiredHumidity : Int, desiredDehumidity : Int, desiredFanMode : FanMode.Entry,

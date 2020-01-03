@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.server
 
-import com.kelvaya.ecobee.test._
+import com.kelvaya.ecobee.test.server._
 
 class PipeSaverSpec extends ZioServerTestSpec {
 

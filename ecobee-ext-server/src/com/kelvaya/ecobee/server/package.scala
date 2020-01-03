@@ -1,5 +1,3 @@
 package com.kelvaya.ecobee
 
-package object server {
-  type ServerEnv = zio.ZEnv with Settings  
-}
+package object server extends ServerEnvDefinition

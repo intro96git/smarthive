@@ -41,7 +41,7 @@ object RequestError {
   * 
   * @param status Description of the error
   */
-case class ApiError(status : Status) extends ServiceError
+final case class ApiError(status : Status) extends ServiceError
 
 /** Implicit conversions for JSON serialization of [[ServiceError]] types */
 object ApiError {

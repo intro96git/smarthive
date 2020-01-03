@@ -43,7 +43,7 @@ import com.kelvaya.util.Time.FullDate
   * @param securitySettings The security settings for the Thermostat.
   * @param remoteSensors The list of `RemoteSensor` objects for the Thermostat.
   */
-case class Thermostat(
+final case class Thermostat(
     identifier :           String,
     name :                 String,
     thermostatRev :        String,

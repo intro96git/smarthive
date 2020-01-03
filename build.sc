@@ -50,8 +50,10 @@ object `ecobee-ext-server` extends u.CommonModule {
   val FinagleVersion = "0.31.0"
 
   object test extends Tests {
-    def ivyDeps = Agg(ScalaTest)
+    def ivyDeps = Agg(ScalaTest, ScalaMock)
     def testFrameworks = Seq("org.scalatest.tools.Framework")
+    def moduleDeps = Seq(`ecobee-ext-server`,`ecobee-client`.test)
+
     
     // from https://github.com/lihaoyi/mill/issues/344#issuecomment-445741323
     def testOne(args: String*) = T.command {
@@ -86,7 +88,9 @@ object CommonDeps {
   
   val ZIO = ivy"dev.zio::zio:1.0.0-RC17"
   val ZIOCats = ivy"dev.zio::zio-interop-cats:2.0.0.0-RC10"
-  
+
+  val ScalaMock = ivy"org.scalamock::scalamock:4.4.0"
+
   val AkkaHttpVersion = "10.1.11"
   val AkkaHttpTest = ivy"com.typesafe.akka::akka-http-testkit:$AkkaHttpVersion"
   val AkkaTestKit = ivy"com.typesafe.akka::akka-testkit:$AkkaVersion"

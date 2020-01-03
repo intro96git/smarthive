@@ -98,7 +98,7 @@ object Request {
 abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account: AccountID)(implicit s: ClientSettings.Service[Any]) {
   import Request._
 
-  private lazy val _serverRoot = s.EcobeeServerRoot
+  private val _serverRoot = s.EcobeeServerRoot
 
   /** The service endpoint */
   val uri: Uri.Path
@@ -132,10 +132,10 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
         }
       }
       .catchAll {
-        case e: RequestError      => ZIO.fail(e)
-        case e: TokenStorageError => ZIO.fail(RequestError.TokenAccessError(e))
-        case e: SerializationException =>
-          ZIO.fail(RequestError.SerializationError(e))
+        case e: RequestError           => ZIO.fail(e)
+        case e: TokenStorageError      => ZIO.fail(RequestError.TokenAccessError(e))
+        case e: SerializationException => ZIO.fail(RequestError.SerializationError(e))
+        case e                         => ZIO.die(e)
       }
   }
 

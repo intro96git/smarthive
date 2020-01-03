@@ -26,16 +26,16 @@ object ThermostatRequest {
 
   /** Returns new [[ThermostatRequest]] to initially request information.
     *
-    * @param account The ID of the account for which the token request will be made
-    * @param selection The selection criteria for update
+    * @param account The ID of the account for which the thermostat request will be made
+    * @param selection The selection criteria for the thermostat query
     * @param s (implicit) The application global settings
     */
  def apply(account: AccountID, selection : Select)(implicit s : ClientSettings.Service[Any]) : ThermostatRequest = ThermostatRequest(account, selection, None)
   
   /** Returns new [[ThermostatRequest]] to request information from a starting page.
     *
-    * @param account The ID of the account for which the token request will be made
-    * @param selection The selection criteria for update
+    * @param account The ID of the account for which the thermostat request will be made
+    * @param selection The selection criteria for the thermostat query
     * @param page The page of information to return
     * @param s (implicit) The application global settings
     */
@@ -45,8 +45,8 @@ object ThermostatRequest {
 
 /** Request for [[Thermostat]] information
   * 
-  * @param account The ID of the account for which the token request will be made
-  * @param selection The selection criteria for update
+  * @param account The ID of the account for which the thermostat request will be made
+  * @param selection The selection criteria for the thermostat query
   * @param page The page of information to return
   * @param s (implicit) The application global settings
   */
@@ -98,10 +98,14 @@ case class ThermostatResponse(
   * @param tokenStore The store of all API tokens
   * @param selection The selection criteria for update
   * @param page The page of information to return
+  * @param ev (implicit) The global akka Logging Bus
   * @param s (implicit) The application global settings
   *
   * @example
 {{{
+  implicit val log : akka.event.LoggingBus = ...
+  implicit val settings : ClientSettings.Service[Any] = ...
+
   val thermResponse = ThermostatService.execute(account, selection)
 }}}
   * @see [[ThermostatRequest]]
@@ -113,6 +117,9 @@ object ThermostatService {
     *
     * This allows the syntax, `ThermostatService.execute`, to work instead of having to create both
     * an `ThermostatRequest` and pass it explicitly to a new `ThermostatServiceImpl`.
+    * 
+    * @param ev (implicit) The global akka Logging Bus
+    * @param s (implicit) The application global settings
     */
   implicit class ThermostatServiceImpl(o : ThermostatService.type)(implicit ev : LoggingBus, s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
 
