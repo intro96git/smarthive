@@ -1,6 +1,7 @@
 package com.kelvaya.ecobee.test.client
 
 import com.kelvaya.ecobee.client.ClientSettings
+import com.typesafe.config.ConfigFactory
 
 
 trait TestClientSettings extends ClientSettings {
@@ -8,7 +9,9 @@ trait TestClientSettings extends ClientSettings {
 }
 
 object TestClientSettings {
-  class TestClientService extends ClientSettings.LiveService {
+  class TestClientService extends ClientSettings.Service[Any] {
+    val config = ConfigFactory.load("test.conf")
+    
     override lazy val EcobeeAppKey = TestConstants.ClientId
   }
 
