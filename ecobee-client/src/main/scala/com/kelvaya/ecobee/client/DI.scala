@@ -57,7 +57,7 @@ final class MyOverrideApp extends Application {
 }}}
   *
   * @note To setup Dependency Injection, call an `apply` method of [[DI$]] and then import the implicit values from the created instance.
-  * If no dependencies are explicitly requested, it will use the following defaults: [[com.kelvaya.ecobee.client.ClientSettings$LiveService]],
+  * If no dependencies are explicitly requested, it will use the following defaults: [[com.kelvaya.ecobee.client.ClientSettings$.LiveService ClientSettings.LiveService]],
   * the `LoggingBus` directly off of the given `ActorSystem`, and [[com.kelvaya.ecobee.client.RequestExecutorImpl RequestExecutorImpl]]
   *
   */

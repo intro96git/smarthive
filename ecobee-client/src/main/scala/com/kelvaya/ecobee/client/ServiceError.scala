@@ -88,8 +88,6 @@ object AuthError {
   *
   *  All error messages returned from the Ecobee API are of this format.  Expected errors are enumerated
   *  in the companion class.
-  *
-  *  @see [[ServiceError$]]
   */
 final case class AuthError(error : String, error_description : String, error_uri : String) extends ServiceError {
   import AuthError._

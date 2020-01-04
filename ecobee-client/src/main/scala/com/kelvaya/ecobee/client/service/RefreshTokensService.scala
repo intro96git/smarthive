@@ -4,7 +4,9 @@ import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Querystrings.GrantType
 import com.kelvaya.ecobee.client.ClientSettings
+import com.kelvaya.ecobee.client.tokens.Tokens
 import com.kelvaya.ecobee.client.tokens.TokenStorage
+import com.kelvaya.ecobee.client.tokens.TokenStorageError
 
 
 
@@ -24,6 +26,19 @@ import com.kelvaya.ecobee.client.tokens.TokenStorage
 class RefreshTokensRequest(override val account: AccountID)(implicit s : ClientSettings.Service[Any]) extends TokensRequest(account) {
   final def authTokenQS : TokenStorage.IO[Option[Querystrings.Entry]] = this.getRefreshTokenQS.map(Some(_))
   final def grantTypeQS : Querystrings.Entry = GrantType.RefreshToken
+
+  /** Returns the refresh token querystring parameter used during token refreshes */
+  private def getRefreshTokenQS: TokenStorage.IO[Querystrings.Entry] = {
+    for {
+      ts  <-  zio.ZIO.environment[TokenStorage]
+      tok <-  ts.tokenStorage.getTokens(account)
+      qs  <-  zio.IO.fromEither { tok match {
+                case Tokens(_, _, Some(token)) => Right((("refresh_token", token)))
+                case _                         => Left(TokenStorageError.MissingTokenError)
+              }}
+    } yield qs
+  }
+
 }
 
 // ---------------------

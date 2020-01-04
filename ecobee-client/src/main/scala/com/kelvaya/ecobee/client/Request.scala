@@ -156,38 +156,6 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
       case _                        => None
     }
   }
-
-  /** Returns the refresh token querystring parameter used during token refreshes */
-  def getRefreshTokenQS: TokenStorage.IO[Querystrings.Entry] = {
-    for {
-      ts  <-  ZIO.environment[TokenStorage]
-      tok <-  ts.tokenStorage.getTokens(account)
-      qs  <-  IO.fromEither { tok match {
-                case Tokens(_, _, Some(token)) => Right((("refresh_token", token)))
-                case _                         => Left(TokenStorageError.MissingTokenError)
-              }}
-    } yield qs
-  }
-
-  /** Return a new Akka `AuthorizationTokensRequest` OAuth Bearer Token HTTP header */
-  protected def generateAuthorizationTokensRequestHeader(): ZIO[TokenStorage, RequestError, Authorization] = {
-
-    def getAccessToken(tokens: Tokens) = tokens.accessToken match {
-      case None    => ZIO.fail(TokenStorageError.MissingTokenError)
-      case Some(t) => ZIO.succeed(Authorization(OAuth2BearerToken(t)))
-    }
-
-    val accessToken =
-      for {
-        ts  <- ZIO.environment[TokenStorage]
-        tok <- ts.tokenStorage.getTokens(account)
-        at  <- getAccessToken(tok)
-      } yield at
-
-    accessToken.catchAll {
-      case e: TokenStorageError => IO.fail(RequestError.TokenAccessError(e))
-    }
-  }
 }
 
 // ---------------------
@@ -207,7 +175,26 @@ trait AuthorizedRequest[T <: ApiObject] extends Request[T] {
     } 
     yield req.addHeader(hdr)
   }
-}
+  
+  /** Return a new Akka `AuthorizationTokensRequest` OAuth Bearer Token HTTP header */
+  private def generateAuthorizationTokensRequestHeader(): ZIO[TokenStorage, RequestError, Authorization] = {
+
+    def getAccessToken(tokens: Tokens) = tokens.accessToken match {
+      case None    => ZIO.fail(TokenStorageError.MissingTokenError)
+      case Some(t) => ZIO.succeed(Authorization(OAuth2BearerToken(t)))
+    }
+
+    val accessToken =
+      for {
+        ts  <- ZIO.environment[TokenStorage]
+        tok <- ts.tokenStorage.getTokens(account)
+        at  <- getAccessToken(tok)
+      } yield at
+
+    accessToken.catchAll {
+      case e: TokenStorageError => IO.fail(RequestError.TokenAccessError(e))
+    }
+  }}
 
 // ---------------------
 

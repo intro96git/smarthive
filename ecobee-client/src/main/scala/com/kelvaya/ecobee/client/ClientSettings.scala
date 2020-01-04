@@ -9,9 +9,9 @@ import akka.http.scaladsl.model.Uri
 
 /** Ecobee client library settings module
   *
-  * @note The default implementation can be foundat [[ClientSettings$Live$]]  
+  * @note The default implementation can be found at [[ClientSettings$.Live]]  
   *
-  * @see [[ClientSettings$Service]] 
+  * @see [[ClientSettings$.Service]] 
   */
 trait ClientSettings extends ConfigSettings {
   val settings : ClientSettings.Service[Any]

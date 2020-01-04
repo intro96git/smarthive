@@ -14,7 +14,7 @@ trait ClientEnvDefinition {
   
   /** `ZIO` effectful type environment for the Ecobee API client.
     * 
-    * Includes [[RequestExecutor]], [[ClientSettings]], and [[TokenStorage]]
+    * Includes [[RequestExecutor]], [[ClientSettings]], and [[com.kelvaya.ecobee.client.tokens.TokenStorage TokenStorage]]
     */
   type ClientEnv = ClientRuntimeEnv with ClientSettings
 }

@@ -4,7 +4,7 @@ import com.kelvaya.ecobee.client.AccountID
 
 import zio.ZIO
 
-/** Implementations of `TokenStorage` store and retrieve Ecobee API tokens to be used in requests by the [[Client]]
+/** Implementations of `TokenStorage` store and retrieve Ecobee API tokens to be used in requests by the [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]]
   *
   * @note Uses the "module" pattern of ZIO environments.  The tokenStorage member contains the actual service that will
   * provide access to the underlying token storage medium.
