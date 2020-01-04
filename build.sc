@@ -45,14 +45,14 @@ object `ecobee-client` extends u.CommonSbtModule {
   )
 }
 
-object `ecobee-ext-server` extends u.CommonModule {
+object `ecobee-ext` extends u.CommonModule {
 
   val FinagleVersion = "0.31.0"
 
   object test extends Tests {
     def ivyDeps = Agg(ScalaTest, ScalaMock)
     def testFrameworks = Seq("org.scalatest.tools.Framework")
-    def moduleDeps = Seq(`ecobee-ext-server`,`ecobee-client`.test)
+    def moduleDeps = Seq(`ecobee-ext`,`ecobee-client`.test)
 
     
     // from https://github.com/lihaoyi/mill/issues/344#issuecomment-445741323
