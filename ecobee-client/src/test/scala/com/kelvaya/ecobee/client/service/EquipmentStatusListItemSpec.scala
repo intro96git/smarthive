@@ -3,10 +3,11 @@ package com.kelvaya.ecobee.client.service
 import com.kelvaya.ecobee.test.client.BaseTestSpec
 import EquipmentStatusListItem._
 import spray.json._
+import com.typesafe.scalalogging.Logger
 
 class EquipmentStatusListItemSpec extends BaseTestSpec {
 
-  import deps.Implicits._
+  implicit val log = Logger[EquipmentStatusListItemSpec]
 
   "Equipment Status lists" must "require 2 attributes, but allow a equipment list" in {
     val serialized1 = "abc"

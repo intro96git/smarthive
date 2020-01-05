@@ -32,7 +32,6 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     val testToRun = { 
       val client = new ApiClientImpl { 
         val account = Account
-        val loggingBus: akka.event.LoggingBus = spec.actorSys.eventStream
         val env: ClientEnv = new RequestExecutor with TokenStorage with ClientSettings {
           val settings: ClientSettings.Service[Any] = spec.runtime.environment.settings  
           val requestExecutor: RequestExecutor.Service[Any] = re

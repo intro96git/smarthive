@@ -11,8 +11,9 @@ import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.Thermostat
 import com.kelvaya.ecobee.client.ClientSettings
 
-import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
+
+import com.typesafe.scalalogging.Logger
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -70,7 +71,7 @@ case class ThermostatRequest(override val account: AccountID, selection : Select
 
 /** Implicits for JSON serialization of [[ThermostatResponse]] */
 object ThermostatResponse {
-  implicit def responseFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
+  implicit def responseFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
 }
 
 
@@ -98,12 +99,12 @@ case class ThermostatResponse(
   * @param tokenStore The store of all API tokens
   * @param selection The selection criteria for update
   * @param page The page of information to return
-  * @param ev (implicit) The global akka Logging Bus
+  * @param ev (implicit) The logger of the caller
   * @param s (implicit) The application global settings
   *
   * @example
 {{{
-  implicit val log : akka.event.LoggingBus = ...
+  implicit val log : akka.event.Logger = ...
   implicit val settings : ClientSettings.Service[Any] = ...
 
   val thermResponse = ThermostatService.execute(account, selection)
@@ -118,10 +119,10 @@ object ThermostatService {
     * This allows the syntax, `ThermostatService.execute`, to work instead of having to create both
     * an `ThermostatRequest` and pass it explicitly to a new `ThermostatServiceImpl`.
     * 
-    * @param ev (implicit) The global akka Logging Bus
+    * @param ev (implicit) The logger of the caller
     * @param s (implicit) The application global settings
     */
-  implicit class ThermostatServiceImpl(o : ThermostatService.type)(implicit ev : LoggingBus, s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
+  implicit class ThermostatServiceImpl(o : ThermostatService.type)(implicit ev : Logger, s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
 
     def execute(account : AccountID, selection : Select): ZIO[ClientEnv, ServiceError, ThermostatResponse] =
       pexecute(account, selection, None)

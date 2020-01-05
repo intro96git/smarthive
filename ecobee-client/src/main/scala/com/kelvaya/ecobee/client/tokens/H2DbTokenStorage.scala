@@ -3,9 +3,6 @@ package com.kelvaya.ecobee.client.tokens
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.ClientSettings
 
-import akka.event.Logging
-import akka.event.LoggingBus
-
 import doobie._
 import doobie.h2.H2Transactor
 import doobie.implicits._
@@ -17,6 +14,7 @@ import zio.IO
 import zio.Task
 import zio.interop.catz._
 
+import com.typesafe.scalalogging.Logger
 
 
 /** [[TokenStorage]] backed by an H2 database.
@@ -24,9 +22,6 @@ import zio.interop.catz._
   * @note This storage is not suited for large sites that need high-availability or distributed storage.
   */
 trait H2DbTokenStorage extends TokenStorage {
-  
-  /** Used for logging */
-  implicit val loggingBus : LoggingBus
   
   /** The Doobie `Transactor` for executing queries against H2 */
   val transactor : Transactor[Task]
@@ -38,8 +33,7 @@ trait H2DbTokenStorage extends TokenStorage {
       
       sql
         .mapError { error =>
-            val log = Logging(loggingBus, classOf[H2DbTokenStorage])
-            log.warning(s"Error returned by DB: $error")
+            H2DbTokenStorage.log.warn(s"Error returned by DB: $error")
             TokenStorageError.ConnectionError
         }
         .flatMap { optTokens => 
@@ -55,8 +49,7 @@ trait H2DbTokenStorage extends TokenStorage {
     def storeTokens(account: AccountID, tokens: Tokens): IO[TokenStorageError,Unit] = {
       storeSql(account, tokens).update.run.transact(transactor)
         .mapError { e => 
-          val log = Logging(loggingBus, classOf[H2DbTokenStorage])
-          log.warning(s"Unexpected database error: $e")
+          H2DbTokenStorage.log.warn(s"Unexpected database error: $e")
           TokenStorageError.ConnectionError
         }
         .map(_ => ())
@@ -79,16 +72,15 @@ trait H2DbTokenStorage extends TokenStorage {
   */
 object H2DbTokenStorage {
 
+  private val log = Logger[H2DbTokenStorage]
 
   /** [[TokenStorage]] backed by an H2 database.
     *
     * @note This storage is not suited for large sites that need high-availability or distributed storage.
     *
     * @param xa The Doobie `Transactor` for executing queries against H2
-    * @param lb (implicit) Used for logging
     */
-  class Live (private[tokens] val xa : Transactor[Task])(implicit lb : LoggingBus) extends H2DbTokenStorage {
-    implicit val loggingBus: LoggingBus = lb
+  class Live (private[tokens] val xa : Transactor[Task]) extends H2DbTokenStorage {
     val transactor: Transactor[zio.Task] = xa
   }
 
@@ -96,17 +88,15 @@ object H2DbTokenStorage {
   /** Returns a handle to a configured [[H2DbTokenStorage]] 
     *
     * @param settings (implicit) The application global settings
-    * @param lb (implicit) Used for logging
     */
-  def connect(implicit settings : ClientSettings.Service[Any], lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
+  def connect(implicit settings : ClientSettings.Service[Any]) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
     createConn(false).map(_.map(new Live(_)))
 
   /** Returns a handle to a configured [[H2DbTokenStorage]]
     *
     * @param settings (implicit) The application global settings
-    * @param lb (implicit) Used for logging
     */
-  def initDb(implicit settings : ClientSettings.Service[Any], lb : LoggingBus) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
+  def initDb(implicit settings : ClientSettings.Service[Any]) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
     val create = sql"""
     create table token (
       id IDENTITY, 

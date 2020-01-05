@@ -18,8 +18,6 @@ class BasicFileTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior {
     }
   """
 
-  import deps.Implicits._
-
 
   "The json-based file token storage driver" must behave like storage(usingNewFile)
 

@@ -11,7 +11,8 @@ import com.kelvaya.ecobee.client.ThermostatModification
 import com.kelvaya.ecobee.client.WriteableApiObject
 import com.kelvaya.ecobee.client.ClientSettings
 
-import akka.event.LoggingBus
+import com.typesafe.scalalogging.Logger
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
 
@@ -30,7 +31,7 @@ object ThermostatPostRequest {
 
   /** The JSON body of a [[ThermostatPostRequest]] */
   case class RequestBody private (selection : Select, thermostat : Option[ThermostatModification], functions : Option[Seq[ThermostatFunction]]) extends WriteableApiObject
-  implicit def requestBodyFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat3(RequestBody)
+  implicit def requestBodyFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat3(RequestBody)
 }
 
 /** Request to modify an Ecobee [[Thermostat]]
@@ -48,7 +49,7 @@ case class ThermostatPostRequest(
   override val account: AccountID, 
   selection : Select, 
   thermostat : Option[ThermostatModification], 
-  functions : Option[Seq[ThermostatFunction]])(implicit s : ClientSettings.Service[Any], log : LoggingBus)
+  functions : Option[Seq[ThermostatFunction]])(implicit s : ClientSettings.Service[Any], log : Logger)
 extends Request[ThermostatPostRequest.RequestBody](account)
 with PostRequest[ThermostatPostRequest.RequestBody]
 with AuthorizedRequest[ThermostatPostRequest.RequestBody]
@@ -84,9 +85,9 @@ object ThermostatPostResponse {
   *
   * Requires a [[ThermostatPostRequest]] and the API responds with a [[ThermostatPostResponse]]
   *
-  * @param ev The AKKA `LoggingBus` that can record application log messages
+  * @param ev The AKKA `Logger` that can record application log messages
   */
-class ThermostatPostService(implicit ev : LoggingBus) extends EcobeeJsonService[ThermostatPostRequest,ThermostatPostResponse] {
+class ThermostatPostService(implicit ev : Logger) extends EcobeeJsonService[ThermostatPostRequest,ThermostatPostResponse] {
 
   /** Execute the request against the API, returning the [[ThermostatPostResponse]]
     *

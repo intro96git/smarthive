@@ -12,10 +12,12 @@ import akka.http.scaladsl.model.headers.Authorization
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 
 import spray.json._
+import com.typesafe.scalalogging.Logger
 
 class ThermostatSummarySpec extends BaseTestSpec {
 
   import deps.Implicits._
+  implicit val log = Logger[ThermostatSummarySpec]
 
   lazy val store = this.createStorage()
 

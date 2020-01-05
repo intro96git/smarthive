@@ -15,7 +15,7 @@ object util extends Module {
 
 object `ecobee-client` extends u.CommonSbtModule {
   object test extends Tests {
-    def ivyDeps = Agg(ScalaTest)
+    def ivyDeps = Agg(ScalaTest,Logback)
     def testFrameworks = Seq("org.scalatest.tools.Framework")
     
     // from https://github.com/lihaoyi/mill/issues/344#issuecomment-445741323
@@ -31,7 +31,8 @@ object `ecobee-client` extends u.CommonSbtModule {
     ivy"com.typesafe.akka::akka-http:$AkkaHttpVersion",
     ivy"com.typesafe.akka::akka-http-xml:$AkkaHttpVersion",
     ivy"com.typesafe.akka::akka-stream:$AkkaVersion",
-    AkkaSlf4j, Slf4j,
+    
+    Slf4j, ScalaLogging,
 
     TypesafeConfig,
 
@@ -47,7 +48,7 @@ object `ecobee-client` extends u.CommonSbtModule {
 
 object `ecobee-ext` extends u.CommonModule {
 
-  val FinagleVersion = "0.31.0"
+  
 
   object test extends Tests {
     def ivyDeps = Agg(ScalaTest, ScalaMock)
@@ -64,8 +65,8 @@ object `ecobee-ext` extends u.CommonModule {
   def moduleDeps = Seq(`ecobee-client`, util.util)
 
   def ivyDeps = Agg(
-    ivy"com.github.finagle::finchx-core:$FinagleVersion",
-    ivy"com.github.finagle::finchx-circe:$FinagleVersion",
+    Finch,
+    FinchCirce,
     ivy"com.twitter::twitter-server:19.12.0",
     TypesafeConfig,
     H2, DoobieCore, DoobieH2,
@@ -92,7 +93,9 @@ object CommonDeps {
   val ScalaMock = ivy"org.scalamock::scalamock:4.4.0"
 
   val AkkaHttpVersion = "10.1.11"
-  val AkkaHttpTest = ivy"com.typesafe.akka::akka-http-testkit:$AkkaHttpVersion"
-  val AkkaTestKit = ivy"com.typesafe.akka::akka-testkit:$AkkaVersion"
-  val AkkaStreamTest = ivy"com.typesafe.akka::akka-stream-testkit:$AkkaVersion"
+  
+  val FinagleVersion = "0.31.0"
+  val Finch = ivy"com.github.finagle::finchx-core:$FinagleVersion"
+  val FinchCirce = ivy"com.github.finagle::finchx-circe:$FinagleVersion"
+  val FinchSpray = ivy"com.github.finagle::finchx-sprayjson:$FinagleVersion"
 }

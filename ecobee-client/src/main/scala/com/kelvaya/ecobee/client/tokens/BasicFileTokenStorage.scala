@@ -2,14 +2,13 @@ package com.kelvaya.ecobee.client.tokens
 
 import com.kelvaya.ecobee.client.AccountID
 
-import akka.event.Logging
-import akka.event.LoggingBus
-
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
 import zio.IO
 import zio.Ref
+
+import com.typesafe.scalalogging.Logger
 
 
 /** [[TokenStorage]] backed by a simple JSON-based file.
@@ -20,7 +19,7 @@ import zio.Ref
   * @param tokensRef Tuple of list of tokens loaded from the file and closed status of storage handle
   * @param lb (implicit) Used for logging
   */
-class BasicFileTokenStorage private (file : better.files.File, tokensRef : Ref[Map[AccountID,Tokens]])(implicit lb : LoggingBus)
+class BasicFileTokenStorage private (file : better.files.File, tokensRef : Ref[Map[AccountID,Tokens]])
 extends TokenStorage {
   import BasicFileTokenStorage._
 
@@ -64,10 +63,10 @@ object BasicFileTokenStorage {
   private final val TokenFileMaxLength = 32
 
   /** Returns the [[BasicFileTokenStorage]] located at the given file */
-  def connect(file : java.io.File)(implicit lb : LoggingBus) : IO[TokenStorageError,BasicFileTokenStorage] = connect(file.toScala)
+  def connect(file : java.io.File) : IO[TokenStorageError,BasicFileTokenStorage] = connect(file.toScala)
 
   /** Returns the [[BasicFileTokenStorage]] located at the given file */
-  def connect(file : better.files.File)(implicit lb : LoggingBus) : IO[TokenStorageError,BasicFileTokenStorage] =
+  def connect(file : better.files.File) : IO[TokenStorageError,BasicFileTokenStorage] =
     connectToDirectory(file)
 
 
@@ -75,10 +74,10 @@ object BasicFileTokenStorage {
   // ###############################################################
   // ###############################################################
 
-  private def connectToDirectory(file : better.files.File)(implicit lb : LoggingBus) : IO[TokenStorageError,BasicFileTokenStorage] = {
+  private def connectToDirectory(file : better.files.File) : IO[TokenStorageError,BasicFileTokenStorage] = {
     
     IO.fromEither {
-      val log = Logging(lb, BasicFileTokenStorage.getClass)
+      val log = Logger[BasicFileTokenStorage]
       log.info(s"Opening $file for reading tokens")
       if (!file.exists || !file.isReadable) {
         log.error(s"Fatal Error: Token storage file invalid: $file.  Check permissions.")
@@ -95,7 +94,7 @@ object BasicFileTokenStorage {
           }
           fTokens.tokens.foreach { tl =>
             val found = map.put(new AccountID(tl.client),tl.tokens)
-            if (found.isDefined) log.warning(s"Client defined in tokens more than once. `$found` is being overwritten by `${tl.tokens}` from file `$file`")
+            if (found.isDefined) log.warn(s"Client defined in tokens more than once. `$found` is being overwritten by `${tl.tokens}` from file `$file`")
           }
           Right(map.toMap)
         }
@@ -112,12 +111,12 @@ object BasicFileTokenStorage {
   }
 
 
-  def storeToDirectory(file : better.files.File, tokens : Map[AccountID,Tokens])(implicit lb: LoggingBus) = {
+  def storeToDirectory(file : better.files.File, tokens : Map[AccountID,Tokens]) = {
     IO.fromEither {
-      val log = Logging(lb, BasicFileTokenStorage.getClass)
+      val log = Logger[BasicFileTokenStorage]
       log.info(s"Writing out all tokens to file $file")
       if (!file.exists || !file.isRegularFile) {
-        log.warning(s"DATA LOSS POSSIBLE! Cannot save tokens; token storage file invalid: $file")
+        log.warn(s"DATA LOSS POSSIBLE! Cannot save tokens; token storage file invalid: $file")
         Left(TokenStorageError.ConnectionError)
       }
       else {

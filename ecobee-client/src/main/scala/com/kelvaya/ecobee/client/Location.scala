@@ -2,9 +2,13 @@ package com.kelvaya.ecobee.client
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+
 import org.joda.time.DateTimeZone
+
 import com.kelvaya.util.SprayImplicits
-import akka.event.LoggingBus
+
+import com.typesafe.scalalogging.Logger
+
 
 /** Physical location of [[Thermostat]].
   *
@@ -37,7 +41,7 @@ case class Location(
 ) extends ReadonlyApiObject
 
 object Location extends SprayImplicits {
-  implicit def locationFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat10(Location.apply)
+  implicit def locationFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat10(Location.apply)
 }
 
 /** Physical location of [[Thermostat]] which can be used in POST modification requests.
@@ -68,5 +72,5 @@ case class LocationModification(
 
 
 object LocationModification extends SprayImplicits {
-  implicit def locationModificationFormat(implicit ev : LoggingBus) = DefaultJsonProtocol.jsonFormat9(LocationModification.apply)
+  implicit def locationModificationFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat9(LocationModification.apply)
 }

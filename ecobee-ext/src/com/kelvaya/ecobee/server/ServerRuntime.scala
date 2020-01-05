@@ -21,7 +21,6 @@ class ServerRuntime(xa : doobie.Transactor[Task])(implicit sys : ActorSystem) ex
   override val platform: Platform = _default.platform
   override val environment : ServerEnv = new RequestExecutorImpl with ServerSettings.Live with Clock.Live with Console.Live 
     with System.Live with Random.Live with Blocking.Live with H2DbTokenStorage {
-      implicit val loggingBus: akka.event.LoggingBus = sys.eventStream
       val transactor: doobie.Transactor[zio.Task] = xa
     }
 

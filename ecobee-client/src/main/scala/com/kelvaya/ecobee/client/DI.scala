@@ -29,7 +29,7 @@ object DI {
 /** Dependency Injection settings
   *
   * Sets the dependencies used by the application, including the [[com.kelvaya.ecobee.client.ClientSettings ClientSettings]], `ActorSystem`,
-  * `LoggingBus`, and [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]].
+  * and [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]].
   *
   * @param di [[DI$.Dependencies]] to use in the application
   *
@@ -49,7 +49,7 @@ final class MyOverrideApp extends Application {
   val deps = DI(overrides)
 
   // Import the created dependencies except for the executor, which we create on our own (useful for unit testing)
-  import deps.Implicits.{SettingsImplicit,ActorSystemImplicit,LoggingBusImplicit}
+  import deps.Implicits.{SettingsImplicit,ActorSystemImplicit}
 
   implicit val Executor = new MyOwnExecutor
 }
@@ -58,7 +58,7 @@ final class MyOverrideApp extends Application {
   *
   * @note To setup Dependency Injection, call an `apply` method of [[DI$]] and then import the implicit values from the created instance.
   * If no dependencies are explicitly requested, it will use the following defaults: [[com.kelvaya.ecobee.client.ClientSettings$.LiveService ClientSettings.LiveService]],
-  * the `LoggingBus` directly off of the given `ActorSystem`, and [[com.kelvaya.ecobee.client.RequestExecutorImpl RequestExecutorImpl]]
+  * and [[com.kelvaya.ecobee.client.RequestExecutorImpl RequestExecutorImpl]]
   *
   */
 class DI (di : DI.Dependencies) {
@@ -69,9 +69,6 @@ class DI (di : DI.Dependencies) {
   /** Akka Actor system */
   lazy val actorSys = di.actorSystem
 
-  /** Akka logging */
-  lazy val loggingBus = di.actorSystem.eventStream
-
   /** RequestExecutor used to execute all API requests */
   lazy val executor = di.executor.getOrElse(new RequestExecutorImpl()(actorSys))
 
@@ -81,7 +78,6 @@ class DI (di : DI.Dependencies) {
     */
   object Implicits {
     implicit lazy val SettingsImplicit = settings
-    implicit lazy val LoggingBusImplicit = loggingBus
     implicit lazy val ExecutorImplicit = executor
     implicit lazy val ActorSysImplicit = actorSys
   }

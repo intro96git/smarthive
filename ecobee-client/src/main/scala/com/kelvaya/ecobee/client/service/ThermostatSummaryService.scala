@@ -9,8 +9,9 @@ import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.ClientSettings
 
-import akka.event.LoggingBus
 import akka.http.scaladsl.model.Uri
+
+import com.typesafe.scalalogging.Logger
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -50,7 +51,7 @@ case class ThermostatSummaryRequest(override val account: AccountID, selectType 
 
 /** Implicits for JSON serialization of [[ThermostatSummaryResponse]] */
 object ThermostatSummaryResponse {
-  implicit def getResponseFormat(implicit lb : LoggingBus) = DefaultJsonProtocol.jsonFormat4(ThermostatSummaryResponse.apply)
+  implicit def getResponseFormat(implicit lb : Logger) = DefaultJsonProtocol.jsonFormat4(ThermostatSummaryResponse.apply)
 }
 
 /** Response from a [[ThermostatSummaryRequest]]
@@ -92,7 +93,7 @@ object ThermostatSummaryService {
     * This allows the syntax, `ThermostatSummaryService.execute`, to work instead of having to create both
     * an `ThermostatSummaryRequest` and pass it explicitly to a new `ThermostatSummaryServiceImpl`.
     */
-  implicit class ThermostatSummaryServiceImpl(o : ThermostatSummaryService.type)(implicit lb : LoggingBus, s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
+  implicit class ThermostatSummaryServiceImpl(o : ThermostatSummaryService.type)(implicit lb : Logger, s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatSummaryRequest,ThermostatSummaryResponse] {
     def execute(account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false): ZIO[ClientEnv,ServiceError,ThermostatSummaryResponse] =
       execute(ThermostatSummaryRequest(account, selectType, includeEquipStatus))
   }

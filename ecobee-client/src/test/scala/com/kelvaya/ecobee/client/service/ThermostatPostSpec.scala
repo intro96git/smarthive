@@ -18,12 +18,14 @@ import java.nio.charset.StandardCharsets
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
+import com.typesafe.scalalogging.Logger
 
 class ThermostatPostSpec extends BaseTestSpec {
 
 
   import deps.Implicits._
   implicit val materializer = ActorMaterializer()
+  implicit val log = Logger[ThermostatPostSpec]
 
   lazy val TestThermostat = ThermostatModification("identifier", name = Some("Hello World"))
   lazy val TestFunction = ThermostatFunction("test", Electricity(Seq.empty))

@@ -16,8 +16,6 @@ import org.scalatest.compatible.Assertion
 
 class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with ZioTest {
 
-  import deps.Implicits.{SettingsImplicit=>_,_}
-
   "Connection parsing" must "support enabling or disabling autocreation" in {
     val enabled = "jdbc:h2:/data/sample;IFEXISTS=TRUE"
     val missing = "jdbc:h2:/data/sample"

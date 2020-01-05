@@ -13,7 +13,8 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 
 import zio.{IO,Task,ZIO}
-import akka.event.Logging
+
+import com.typesafe.scalalogging.Logger
 
 /** Executor which calls the Ecobee REST endpoints
   *
@@ -26,7 +27,7 @@ class RequestExecutorImpl(implicit system : ActorSystem) extends RequestExecutor
 
   val requestExecutor = new RequestExecutor.Service[Any] {
     private implicit val _materializer = ActorMaterializer()
-    private lazy val _log = Logging(system, classOf[RequestExecutorImpl])
+    private lazy val _log = Logger[RequestExecutorImpl]
 
     def executeRequest[S:JsonFormat,E<:ServiceError](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
       val reqExec = Task.fromFuture { _ => 

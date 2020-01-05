@@ -17,11 +17,13 @@ import spray.json.DefaultJsonProtocol._
 import org.joda.time.DateTime
 import com.kelvaya.ecobee.client.Temperature
 import com.kelvaya.ecobee.client.Event.FanMode
+import com.typesafe.scalalogging.Logger
 
 class EcobeeFunctionSpec extends BaseTestSpec {
 
   import deps.Implicits._
   implicit val materializer = ActorMaterializer()
+  implicit val log = Logger[EcobeeFunctionSpec]
 
   val now = DateTime.parse("2014-03-22T10:23:44")
 

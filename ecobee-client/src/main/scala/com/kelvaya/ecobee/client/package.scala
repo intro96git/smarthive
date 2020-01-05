@@ -15,7 +15,6 @@ import spray.json._
   - The [[com.kelvaya.ecobee.client.ClientSettings ClientSettings]] instance that reads global application settings.
   - The [[RequestExecutor]] instance, which controls the actual execution of HTTP requests against the Ecobee API
   - The `ActorSystem` instance, used by Akka to coordinate all actor interactions
-  - The Akka `LoggingBus` instance, used for logging.
   *
   * This can be done through the [[com.kelvaya.ecobee.client.DI DI]] class for ease-of-use.  It has sane defaults,
   * and allows overriding of the [[com.kelvaya.ecobee.client.ClientSettings ClientSettings]] and [[RequestExecutor]] for individual situations through the

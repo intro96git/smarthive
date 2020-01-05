@@ -1,8 +1,9 @@
 package com.kelvaya.ecobee.client.service
 
-import akka.event.Logging
-import akka.event.LoggingBus
 import spray.json._
+
+import com.typesafe.scalalogging.Logger
+
 
 object EquipmentStatusListItem {
 
@@ -10,7 +11,7 @@ object EquipmentStatusListItem {
     *
     * @note The CSV must contain exactly 2 values to be accepted.
     */
-  def fromCSV(csv : CSV)(implicit logBus : LoggingBus) : EquipmentStatusListItem = {
+  def fromCSV(csv : CSV)(implicit logBus : Logger) : EquipmentStatusListItem = {
     val lov = csv.value.split(CSV.Delimiter, 2)
     if (lov.size != 2) throw new IllegalArgumentException(s"Equipment status lists expect 2 values.  ${csv} contains ${lov.size}.")
     EquipmentStatusListItem(
@@ -20,13 +21,12 @@ object EquipmentStatusListItem {
   }
 
 
-  private def parseEquipment(equip : String)(implicit logBus : LoggingBus) = {
+  private def parseEquipment(equip : String)(implicit log : Logger) = {
     val (good,bad) = equip.split(",").partition(s => Equipment.values.exists(_.toString == s))
 
     if (bad.size > 0) {
-      val log = Logging(logBus, this.getClass)
       val errorMsg = "Unrecognized equipment returned by the Ecobee API: %s".format(bad.mkString(","))
-      log.warning(errorMsg)
+      log.warn(errorMsg)
     }
 
     (good map Equipment.withName).toIterable
@@ -34,7 +34,7 @@ object EquipmentStatusListItem {
 
 
   /** JSON serialization for [[EquipmentStatusListItem]] */
-  implicit def equipStatusListItemFormatter(implicit lb : LoggingBus) : RootJsonFormat[EquipmentStatusListItem] = new RootJsonFormat[EquipmentStatusListItem] {
+  implicit def equipStatusListItemFormatter(implicit lb : Logger) : RootJsonFormat[EquipmentStatusListItem] = new RootJsonFormat[EquipmentStatusListItem] {
     def read(json: JsValue): EquipmentStatusListItem = {
       json match {
         case j : JsString => {
