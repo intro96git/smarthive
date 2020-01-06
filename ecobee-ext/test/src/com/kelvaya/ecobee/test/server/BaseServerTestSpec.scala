@@ -16,13 +16,12 @@ import com.kelvaya.util.Time.FullDate
 import zio.Task
 import zio.ZIO
 
-import akka.actor.ActorSystem
+
 import com.kelvaya.util.Time.DateOnly
 import com.kelvaya.ecobee.client.service.ThermostatResponse
 
 
 trait BaseServerTestSpec extends FlatSpec with Matchers with OptionValues with ServerTestConstants {
-  implicit val actorSys = ActorSystem("ecobee-ext-test")
 }
 
 

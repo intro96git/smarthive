@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.server
 
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
+import com.twitter.finagle.http.{Request => HttpRequest}
+import com.twitter.finagle.http.{Response => HttpResponse}
 
 import org.scalatest.compatible.Assertion
 import org.scalamock.scalatest.MockFactory
@@ -45,8 +45,8 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
 
   val mockRequestExec = mock[RequestExecutor.Service[Any]]
   
-  def setupMockRequestExecExpectations[S,E<:ServiceError] = 
-    toMockFunction4(mockRequestExec.executeRequest[S,E](_ : HttpRequest,_ : JsObject=>E,_ : (Throwable, Option[HttpResponse]) => E)(_ : JsonFormat[S]))
+  def setupMockRequestExecExpectations[E<:ServiceError,S] = 
+    toMockFunction4(mockRequestExec.executeRequest[E,S](_ : HttpRequest,_ : JsObject=>E,_ : (Throwable, Option[HttpResponse]) => E)(_ : JsonFormat[S]))
 
 
   // #########################################################
@@ -54,7 +54,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
 
 
   "The Extension server" must "support reading a thermostat's temperature" in {
-    val expectedReq = ThermostatRequest(Account, Select(SelectType.Registered("testtherm"),includeRuntime = true))
+    val expectedReq = ThermostatRequest(Account, Select(SelectType.Thermostats("testtherm"),includeRuntime = true))
     val temp = Random.nextInt()
     val rt = thermRuntime(rawTemperature = temp)
     val mockResult = thermResponse(therm("testtherm", name="testtherm", runtime = Some(rt)))
@@ -63,9 +63,9 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     runWithMock(mockRequestExec) { client =>
       for {
         expectedHttp <- expectedReq.createRequest
-        _            =  setupMockRequestExecExpectations[ThermostatResponse,ApiError].expects(expectedHttp,*,*,*).returning(zio.UIO(mockResult))
-        _            =  setupMockRequestExecExpectations[ThermostatResponse,ApiError].expects(expectedHttp,*,*,*).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
-        _            =  setupMockRequestExecExpectations[ThermostatResponse,ApiError].expects(expectedHttp,*,*,*).returning(zio.UIO(emptyMockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(mockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(emptyMockResult))
 
         d            <- client.readThermostat(new ThermostatID("testtherm"))
         _            <- d shouldBe ThermostatStats("testtherm", Temperature(temp))
@@ -81,7 +81,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
 
   
   it must "support reading all of an account's thermostats simultaneously" in {
-    val expectedReq = ThermostatRequest(Account, Select(SelectType.Thermostats, includeRuntime = true))
+    val expectedReq = ThermostatRequest(Account, Select(SelectType.Registered, includeRuntime = true))
     val (temp1,temp2) = (Random.nextInt(),Random.nextInt())
     val (rt1,rt2) = (thermRuntime(rawTemperature = temp1),thermRuntime(rawTemperature = temp2))
     val mockResult = thermResponse(therm("testtherm", name="testtherm", runtime = Some(rt1)), therm("testtherm2", name="testtherm2", runtime = Some(rt2)))
@@ -90,9 +90,9 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     runWithMock(mockRequestExec) { client =>
       for {
         expectedHttp <- expectedReq.createRequest
-        _            =  setupMockRequestExecExpectations[ThermostatResponse,ApiError].expects(expectedHttp,*,*,*).returning(zio.UIO(mockResult))
-        _            =  setupMockRequestExecExpectations[ThermostatResponse,ApiError].expects(expectedHttp,*,*,*).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
-        _            =  setupMockRequestExecExpectations[ThermostatResponse,ApiError].expects(expectedHttp,*,*,*).returning(zio.UIO(emptyMockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(mockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(emptyMockResult))
 
         d1           <- client.readThermostats
         _            <- d1 should contain theSameElementsAs Seq(ThermostatStats("testtherm2", Temperature(temp2)),ThermostatStats("testtherm", Temperature(temp1)))

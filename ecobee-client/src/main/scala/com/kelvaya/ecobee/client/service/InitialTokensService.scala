@@ -4,6 +4,7 @@ import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.Querystrings.GrantType
 import com.kelvaya.ecobee.client.ClientSettings
+import com.kelvaya.ecobee.client.tokens.Tokens
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 
 
@@ -21,9 +22,21 @@ import com.kelvaya.ecobee.client.tokens.TokenStorage
   *
   * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class InitialTokensRequest(override protected val account: AccountID)(implicit s : ClientSettings.Service[Any]) extends TokensRequest(account) {
+class InitialTokensRequest(override val account: AccountID)(implicit s : ClientSettings.Service[Any]) extends TokensRequest(account) {
   final def authTokenQS : TokenStorage.IO[Option[Querystrings.Entry]] = this.getAuthCodeQS
   final def grantTypeQS : Querystrings.Entry = GrantType.Pin
+
+  /** Returns the authorization code querystring parameter used during initial authorization */
+  private def getAuthCodeQS: TokenStorage.IO[Option[Querystrings.Entry]] = {
+    for {
+      ts  <- zio.ZIO.environment[TokenStorage]
+      tok <- ts.tokenStorage.getTokens(account)
+    } yield tok match {
+      case Tokens(Some(code), _, _) => Some(("code", code))
+      case _                        => None
+    }
+  }
+
 }
 
 

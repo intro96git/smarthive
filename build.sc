@@ -15,7 +15,14 @@ object util extends Module {
 
 object `ecobee-client` extends u.CommonSbtModule {
   object test extends Tests {
-    def ivyDeps = Agg(ScalaTest,Logback)
+    def ivyDeps = Agg(
+      ScalaTest,
+      Logback,
+      ivy"com.typesafe.akka::akka-http-spray-json:$AkkaHttpVersion",
+      ivy"com.typesafe.akka::akka-http:$AkkaHttpVersion",
+      ivy"com.typesafe.akka::akka-http-xml:$AkkaHttpVersion",
+      ivy"com.typesafe.akka::akka-stream:$AkkaVersion"
+    )
     def testFrameworks = Seq("org.scalatest.tools.Framework")
     
     // from https://github.com/lihaoyi/mill/issues/344#issuecomment-445741323
@@ -27,11 +34,8 @@ object `ecobee-client` extends u.CommonSbtModule {
   def moduleDeps = Seq(util.util)
 
   def ivyDeps = Agg(
-    ivy"com.typesafe.akka::akka-http-spray-json:$AkkaHttpVersion",
-    ivy"com.typesafe.akka::akka-http:$AkkaHttpVersion",
-    ivy"com.typesafe.akka::akka-http-xml:$AkkaHttpVersion",
-    ivy"com.typesafe.akka::akka-stream:$AkkaVersion",
-    
+    Finagle, 
+
     Slf4j, ScalaLogging,
 
     TypesafeConfig,
@@ -40,7 +44,7 @@ object `ecobee-client` extends u.CommonSbtModule {
 
     H2, DoobieCore, DoobieH2,
 
-    ZIO, ZIOCats,
+    ZIO, ZIOCats, ZIOTwitter,
 
     JodaTime, JodaConvert, ScalaTime
   )
@@ -89,13 +93,14 @@ object CommonDeps {
   
   val ZIO = ivy"dev.zio::zio:1.0.0-RC17"
   val ZIOCats = ivy"dev.zio::zio-interop-cats:2.0.0.0-RC10"
-
+  val ZIOTwitter = ivy"dev.zio::zio-interop-twitter:19.11.0.0-RC1"
+  
   val ScalaMock = ivy"org.scalamock::scalamock:4.4.0"
-
+  
   val AkkaHttpVersion = "10.1.11"
   
-  val FinagleVersion = "0.31.0"
-  val Finch = ivy"com.github.finagle::finchx-core:$FinagleVersion"
-  val FinchCirce = ivy"com.github.finagle::finchx-circe:$FinagleVersion"
-  val FinchSpray = ivy"com.github.finagle::finchx-sprayjson:$FinagleVersion"
+  val FinchVersion = "0.31.0"
+  val Finagle = ivy"com.twitter::finagle-http:19.12.0"
+  val Finch = ivy"com.github.finagle::finchx-core:$FinchVersion"
+  val FinchCirce = ivy"com.github.finagle::finchx-circe:$FinchVersion"
 }

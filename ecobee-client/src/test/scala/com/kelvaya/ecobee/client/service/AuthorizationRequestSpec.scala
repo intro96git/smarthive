@@ -5,13 +5,13 @@ import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.test.client.BaseTestSpec
 
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
+import com.twitter.finagle.http.{Request => HttpRequest}
+import com.twitter.finagle.http.{Uri => HttpUri}
+import com.twitter.finagle.http.{Status => HttpStatus}
 
 import spray.json._
+import com.twitter.finagle.http.Method
+import com.twitter.finagle.http.Message
 
 class AuthorizationRequestSpec extends BaseTestSpec {
 
@@ -22,16 +22,17 @@ class AuthorizationRequestSpec extends BaseTestSpec {
   val store : TokenStorage = this.createStorage()
 
   "Services" must "include support for registering a new application PIN" in {
-    val pinReq = new PinRequest(account)
+    val pinReq = new PinRequest
     "PinService.execute(pinReq)" should compile
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = this.runtime.unsafeRun(pinReq.createRequest.provide(store))
-    req.method shouldBe HttpMethods.GET
-    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
-    req.uri.path shouldBe Uri.Path("/authorize")
-    req.uri.query() should contain theSameElementsAs(Seq(("format","json"),("response_type","ecobeePin"),("client_id",this.ClientId),("scope","smartWrite")))
-
+    req.method shouldBe Method.Get
+    req.contentType shouldBe Some(Message.ContentTypeJson)
+    req.contentString shouldBe ""
+    req.uri should startWith("/authorize?")
+    HttpUri.fromRequest(req).params should contain theSameElementsAs(Seq(("format","json"),("response_type","ecobeePin"),("client_id",this.ClientId),("scope","smartWrite")))
+    
     // Confirm expected response is validly structured
     val TestResponse = PinResponse(Pin, PinExpiration, AuthCode, PinScope.SmartWrite, PinInterval)
     TestResponse.toJson shouldBe s"""{
@@ -51,10 +52,11 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = this.runtime.unsafeRun(initTokenReq.createRequest.provide(store))
-    req.method shouldBe HttpMethods.POST
-    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
-    req.uri.path shouldBe Uri.Path("/token")
-    req.uri.query() should contain theSameElementsAs(Seq(("format","json"),("grant_type","ecobeePin"),("code",this.AuthCode),("client_id",this.ClientId)))
+    req.method shouldBe Method.Post
+    req.contentType shouldBe Some(Message.ContentTypeJson)
+    req.contentString shouldBe ""
+    req.uri should startWith("/token?")
+    HttpUri.fromRequest(req).params should contain theSameElementsAs(Seq(("format","json"),("grant_type","ecobeePin"),("code",this.AuthCode),("client_id",this.ClientId)))
 
     // Confirm expected response is validly structured
     val TestResponse = TokensResponse(InitAccessToken, TokenType.Bearer, InitTokenExpiration, InitRefreshToken, PinScope.SmartWrite)
@@ -74,10 +76,11 @@ class AuthorizationRequestSpec extends BaseTestSpec {
 
     // Confirm generated HTTP request is validly structured
     val req: HttpRequest = this.runtime.unsafeRun(tokenReq.createRequest.provide(store))
-    req.method shouldBe HttpMethods.POST
-    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
-    req.uri.path shouldBe Uri.Path("/token")
-    req.uri.query() should contain theSameElementsAs(Seq(("format","json"),("grant_type","refresh_token"),("refresh_token",this.RefreshToken),("client_id",this.ClientId)))
+    req.method shouldBe Method.Post
+    req.contentType shouldBe Some(Message.ContentTypeJson)
+    req.contentString shouldBe ""
+    req.uri should startWith("/token?")
+    HttpUri.fromRequest(req).params should contain theSameElementsAs(Seq(("format","json"),("grant_type","refresh_token"),("refresh_token",this.RefreshToken),("client_id",this.ClientId)))
 
     // Confirm expected response is validly structured
     val TestResponse = TokensResponse(AccessToken, TokenType.Bearer, TokenExpiration, RefreshToken, PinScope.SmartWrite)
@@ -100,18 +103,18 @@ class AuthorizationRequestSpec extends BaseTestSpec {
       }""".parseJson
 
     Map(
-    "access_denied" -> StatusCodes.Found,
-    "invalid_request" -> StatusCodes.BadRequest,
-    "invalid_client"  -> StatusCodes.Unauthorized,
-    "invalid_grant" -> StatusCodes.BadRequest,
-    "unauthorized_client"-> StatusCodes.BadRequest,
-    "unsupported_grant_type" -> StatusCodes.BadRequest,
-    "invalid_scope" -> StatusCodes.BadRequest,
-    "not_supported" -> StatusCodes.BadRequest,
-    "account_locked" -> StatusCodes.Unauthorized,
-    "account_disabled"-> StatusCodes.Unauthorized,
-    "authorization_pending"-> StatusCodes.Unauthorized,
-    "slow_down"-> StatusCodes.Unauthorized
+    "access_denied" -> HttpStatus.Found,
+    "invalid_request" -> HttpStatus.BadRequest,
+    "invalid_client"  -> HttpStatus.Unauthorized,
+    "invalid_grant" -> HttpStatus.BadRequest,
+    "unauthorized_client"-> HttpStatus.BadRequest,
+    "unsupported_grant_type" -> HttpStatus.BadRequest,
+    "invalid_scope" -> HttpStatus.BadRequest,
+    "not_supported" -> HttpStatus.BadRequest,
+    "account_locked" -> HttpStatus.Unauthorized,
+    "account_disabled"-> HttpStatus.Unauthorized,
+    "authorization_pending"-> HttpStatus.Unauthorized,
+    "slow_down"-> HttpStatus.Unauthorized
     ).map {
       case (e,s) => AuthError(e, "", "").statusCode shouldBe s
     }

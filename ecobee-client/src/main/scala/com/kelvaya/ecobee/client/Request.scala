@@ -4,82 +4,73 @@ import com.kelvaya.ecobee.client.tokens.Tokens
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.tokens.TokenStorageError
 
-import scala.concurrent.Future
-
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.marshalling._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.HttpCharsets
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.Authorization
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-
-import scala.concurrent.ExecutionContext
+import com.twitter.finagle.http.Method
+import com.twitter.finagle.http.{Request => HttpRequest}
+import com.twitter.finagle.http.RequestBuilder
+import com.twitter.io.Buf
 
 import zio.IO
 import zio.Task
 import zio.UIO
 import zio.ZIO
 
+import spray.json.JsValue
+import spray.json.RootJsonFormat
 import spray.json.SerializationException
 
 /** Factory methods for [[Request]] */
 object Request {
-  private val JsonSubType = "json"
-
-  private[client] val ContentTypeJson = ContentType(
-    MediaType.applicationWithOpenCharset(JsonSubType),
-    HttpCharsets.`UTF-8`
-  )
 
   /** Create a new [[AuthorizedRequest]] at the given URI.
     *
     * @param account The ID of the account for which the token request will be made
     * @param reqUri The URI of the HTTP request
-    * @param querystring A list of querystrings to add to the request.  Defaults to an empty list.
+    * @param querystring A list of querystrings to add to the request.
+    * @param queryBodyParam The "body" parameter used on the request querystring.
     * @param reqEntity The body of the HTTP request.
     * @param settings (implicit) The application settings
     *
     * @tparam T Request entity type, which must be an `ApiObject`
     */
-  def apply[T <: ApiObject: ToEntityMarshaller](
+  def apply[T <: ApiObject: RootJsonFormat](
       account: AccountID,
-      reqUri: Uri.Path,
+      reqUri: Uri,
       querystring: List[Querystrings.Entry],
+      queryBodyParam : Option[String],
       reqEntity: T
   )(implicit settings: ClientSettings.Service[Any]): Request[T] =
-    apply(account, reqUri, querystring, Some(reqEntity))
+    apply(account, reqUri, querystring, queryBodyParam, Some(reqEntity))
 
   /** Create a new [[AuthorizedRequest]] at the given URI with an empty request body.
     *
     * @param account The ID of the account for which the token request will be made
     * @param reqUri The URI of the HTTP request
     * @param querystring A list of querystrings to add to the request.  Defaults to an empty list.
+    * @param queryBodyParam The "body" parameter used on the request querystring.  Defaults to None.
     * @param settings (implicit) The application settings
     */
   def apply(
       account: AccountID,
-      reqUri: Uri.Path,
-      querystring: List[Querystrings.Entry] = List.empty
+      reqUri: Uri,
+      querystring: List[Querystrings.Entry] = List.empty,
+      queryBodyParam : Option[String] = None
   )(implicit settings: ClientSettings.Service[Any]): Request[ParameterlessApi] =
-    apply(account, reqUri, querystring, None)
+    apply(account, reqUri, querystring, queryBodyParam, None)
 
-  private def apply[T <: ApiObject: ToEntityMarshaller](
-      account: AccountID,
-      reqUri: Uri.Path,
+  private def apply[T <: ApiObject: RootJsonFormat](
+      accountId: AccountID,
+      reqUri: Uri,
       querystring: List[Querystrings.Entry],
+      queryBodyParam : Option[String],
       reqEntity: Option[T]
   )(implicit s: ClientSettings.Service[Any]) =
-    new Request[T](account) with AuthorizedRequest[T] {
+    new Request[T] with AuthorizedRequest[T] {
+      val account = accountId
       val uri = reqUri
       val query = UIO(querystring)
+      val queryBody = UIO(queryBodyParam)
       val entity = reqEntity
     }
-
 }
 
 /** Ecobee API HTTP GET Request
@@ -95,16 +86,19 @@ object Request {
   *
   * @tparam T Request entity type, which must be an `ApiObject`
   */
-abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account: AccountID)(implicit s: ClientSettings.Service[Any]) {
-  import Request._
+abstract class Request[T <: ApiObject: RootJsonFormat](implicit protected val s: ClientSettings.Service[Any]) {
 
-  private val _serverRoot = s.EcobeeServerRoot
+  /** Server root URL */
+  val serverRoot = s.EcobeeServerRoot
 
   /** The service endpoint */
-  val uri: Uri.Path
+  val uri: Uri
 
   /** The querystring parameters to be included in the request */
   val query: TokenStorage.IO[List[Querystrings.Entry]]
+
+  /** The "body" parameter of the querystring */
+  val queryBody : TokenStorage.IO[Option[String]]
 
   /** The request body (if any) */
   val entity: Option[T]
@@ -114,24 +108,14 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
     * Will return a [[RequestError]] if the request is malformed or unrecognized.
     */
   def createRequest: ZIO[TokenStorage, RequestError, HttpRequest] = {
-    this.query
-      .flatMap { qry =>
-        Task.fromFuture { implicit s =>
-          val computedEntity = marshallAsJsonEntity(this.entity)
-
-          computedEntity.map { entity =>
-            val computedQuery =
-              Uri.Query((Querystrings.JsonFormat :: qry).toSeq: _*)
-
-            HttpRequest(
-              uri = _serverRoot
-                .withPath(_serverRoot.path ++ uri)
-                .withQuery(computedQuery)
-            ).withEntity(entity)
-          }
-        }
-      }
-      .catchAll {
+    val req = for {
+      qry     <- this.query
+      qryBody <- this.queryBody
+      ent     <- Task(this.entity.map(e => implicitly[RootJsonFormat[T]].write(e)))
+      r       <- buildRequest(qry, qryBody, ent)
+    } yield r
+    
+    req.catchAll {
         case e: RequestError           => ZIO.fail(e)
         case e: TokenStorageError      => ZIO.fail(RequestError.TokenAccessError(e))
         case e: SerializationException => ZIO.fail(RequestError.SerializationError(e))
@@ -139,49 +123,46 @@ abstract class Request[T <: ApiObject: ToEntityMarshaller](protected val account
       }
   }
 
-  private def marshallAsJsonEntity(
-      entity: Option[T]
-  )(implicit ec: ExecutionContext): Future[RequestEntity] =
-    entity
-      .map(Marshal(_).to[MessageEntity].map(_.withContentType(ContentTypeJson)))
-      .getOrElse(Future.successful(HttpEntity.empty(ContentTypeJson)))
-
-  /** Returns the authorization code querystring parameter used during initial authorization */
-  protected def getAuthCodeQS: TokenStorage.IO[Option[Querystrings.Entry]] = {
-    for {
-      ts <- ZIO.environment[TokenStorage]
-      tok <- ts.tokenStorage.getTokens(account)
-    } yield tok match {
-      case Tokens(Some(code), _, _) => Some(("code", code))
-      case _                        => None
-    }
+  private def buildRequest(qs : List[Querystrings.Entry], qsBody : Option[String], entity : Option[JsValue]) = Task {
+    val bodyReq = List(qsBody.map("body" -> _)).flatten
+    val baseReq = HttpRequest(serverRoot + this.uri.uri, (Querystrings.JsonFormat :: bodyReq ::: qs).toSeq: _*)
+    val url = new java.net.URL(baseReq.uri)
+    val content = entity.map(j => Buf.Utf8(j.compactPrint))
+    val req = RequestBuilder().url(url).build(Method.Get, content)
+    req.setContentTypeJson()
+    req
   }
 }
 
 // ---------------------
 
 /** [[Request]] with no entity */
-abstract class RequestNoEntity(account: AccountID)(implicit s: ClientSettings.Service[Any])
-    extends Request[ParameterlessApi](account) {
+abstract class RequestNoEntity(implicit s: ClientSettings.Service[Any]) extends Request[ParameterlessApi] {
   val entity: Option[ParameterlessApi] = None
 }
 
 /** A mix-in trait which includes the authorization header in a [[Request]] */
 trait AuthorizedRequest[T <: ApiObject] extends Request[T] {
+  val account : AccountID
+
+  override val serverRoot = new java.net.URL(s.EcobeeServerRoot.toString + "/" + s.EcobeeApiVersion)
+  
   abstract override def createRequest = {
     for {
       hdr <- this.generateAuthorizationTokensRequestHeader  
       req <- super.createRequest
-    } 
-    yield req.addHeader(hdr)
+    } yield {
+      req.authorization = hdr.auth
+      req
+    }
   }
   
   /** Return a new Akka `AuthorizationTokensRequest` OAuth Bearer Token HTTP header */
-  private def generateAuthorizationTokensRequestHeader(): ZIO[TokenStorage, RequestError, Authorization] = {
+  private def generateAuthorizationTokensRequestHeader(): ZIO[TokenStorage, RequestError, OAuthHeader] = {
 
     def getAccessToken(tokens: Tokens) = tokens.accessToken match {
       case None    => ZIO.fail(TokenStorageError.MissingTokenError)
-      case Some(t) => ZIO.succeed(Authorization(OAuth2BearerToken(t)))
+      case Some(t) => ZIO.succeed(OAuthHeader(t))
     }
 
     val accessToken =
@@ -203,5 +184,8 @@ trait AuthorizedRequest[T <: ApiObject] extends Request[T] {
   * @tparam T Request entity type, which must be an `WriteableApiObject`
   */
 trait PostRequest[T <: WriteableApiObject] extends Request[T] {
-  abstract override def createRequest = super.createRequest.map(_.withMethod(HttpMethods.POST))
+  abstract override def createRequest = super.createRequest.map { r =>
+    r.method = Method.Post
+    r
+  }
 }

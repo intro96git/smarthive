@@ -1,6 +1,7 @@
 package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.AccountID
+import com.kelvaya.ecobee.client.ClientSettings
 import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.PinScope
 import com.kelvaya.ecobee.client.PostRequest
@@ -9,10 +10,7 @@ import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.TokenType
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.client.tokens.TokenStorageError
-import com.kelvaya.ecobee.client.ClientSettings
-
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.Uri
+import com.kelvaya.ecobee.client.Uri
 
 import spray.json.DefaultJsonProtocol
 
@@ -23,12 +21,13 @@ import zio.ZIO
   * 
   * @param account The ID of the account for which the token request will be made
   */ 
-abstract class TokensRequest(override protected val account: AccountID)(implicit s : ClientSettings.Service[Any]) 
-extends Request[ParameterlessApi](account) with PostRequest[ParameterlessApi] {
+abstract class TokensRequest(val account: AccountID)(implicit s : ClientSettings.Service[Any]) 
+extends Request[ParameterlessApi] with PostRequest[ParameterlessApi] {
   import com.kelvaya.ecobee.client.Querystrings._
 
   val entity = None
-  val uri = Uri.Path("/token")
+  val uri = Uri("/token")
+  val queryBody = zio.UIO.succeed(None)
   val query: ZIO[TokenStorage,TokenStorageError, List[Entry]] = this.authTokenQS.map { qs =>
     val list = qs.map(_ :: Nil).getOrElse(List.empty[Entry])
     this.grantTypeQS :: ClientId :: list

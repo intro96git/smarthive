@@ -1,10 +1,10 @@
 package com.kelvaya.ecobee.client
 
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-
 import spray.json.JsonFormat
 import spray.json.JsObject
+
+import com.twitter.finagle.http.{Request => HttpRequest}
+import com.twitter.finagle.http.{Response => HttpResponse}
 
 import zio.IO
 
@@ -12,7 +12,7 @@ import zio.IO
 class TestClient extends RequestExecutor {
 
   val requestExecutor = new RequestExecutor.Service[Any] {
-    def executeRequest[S:JsonFormat,E<:ServiceError](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
+    def executeRequest[E<:ServiceError,S:JsonFormat](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
       ???
     }
   }

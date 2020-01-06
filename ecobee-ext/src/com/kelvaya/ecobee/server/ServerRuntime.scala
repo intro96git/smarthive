@@ -10,12 +10,12 @@ import zio.internal.Platform
 import zio.random.Random
 import zio.system.System
 
-import akka.actor.ActorSystem
+
 
 import com.kelvaya.ecobee.client.RequestExecutorImpl
 import com.kelvaya.ecobee.client.tokens.H2DbTokenStorage
 
-class ServerRuntime(xa : doobie.Transactor[Task])(implicit sys : ActorSystem) extends Runtime[ServerEnv] {
+class ServerRuntime(xa : doobie.Transactor[Task]) extends Runtime[ServerEnv] {
   private lazy val _default = new DefaultRuntime {}
 
   override val platform: Platform = _default.platform

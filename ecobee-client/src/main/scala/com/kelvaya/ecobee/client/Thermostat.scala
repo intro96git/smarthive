@@ -3,8 +3,6 @@ package com.kelvaya.ecobee.client
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
-import com.typesafe.scalalogging.Logger
-
 
 import com.kelvaya.ecobee.client.service.EquipmentStatusListItem
 import com.kelvaya.util.SprayImplicits
@@ -117,7 +115,7 @@ case class ThermostatModification(
 
 
 object Thermostat extends SprayImplicits {
-  implicit def thermostatFormat(implicit ev : Logger) = new RootJsonFormat[Thermostat] {
+  implicit val ThermostatFormat = new RootJsonFormat[Thermostat] {
     def read(json: JsValue): Thermostat = json match {
       case o : JsObject =>
       Thermostat(
@@ -162,5 +160,5 @@ object Thermostat extends SprayImplicits {
 
 
 object ThermostatModification {
-  implicit def thermostatModificationFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat9(ThermostatModification.apply)
+  implicit val ThermostatModificationFormat = DefaultJsonProtocol.jsonFormat9(ThermostatModification.apply)
 }

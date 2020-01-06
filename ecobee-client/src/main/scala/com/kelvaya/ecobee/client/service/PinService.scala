@@ -7,15 +7,13 @@ import com.kelvaya.ecobee.client.ClientSettings
 import spray.json.DefaultJsonProtocol
 import spray.json.DefaultJsonProtocol._
 
-import akka.http.scaladsl.model.Uri
-
 import zio.UIO
 import zio.ZIO
 
 
 /** Contains constants used by [[PinRequest]] */
 object PinRequest {
-  val Endpoint = Uri.Path("/authorize")
+  val Endpoint = Uri("/authorize")
 }
 
 /** Initial registration request against the Ecobee API.
@@ -30,9 +28,10 @@ object PinRequest {
   *
   * @see [[com.kelvaya.ecobee.client.DI]]
   */
-class PinRequest(override val account: AccountID)(implicit settings: ClientSettings.Service[Any]) extends RequestNoEntity(account) {
+class PinRequest(implicit settings: ClientSettings.Service[Any]) extends RequestNoEntity {
   val uri = PinRequest.Endpoint
   val query = UIO(ResponseType.EcobeePIN :: ClientId :: Scope.SmartWrite :: Nil)
+  val queryBody = zio.UIO.succeed(None)
 }
 
 
@@ -70,7 +69,7 @@ case class PinResponse(ecobeePin : String, expires_in : Int, code : String, scop
   */
 object PinService {
   implicit class PinServiceImpl(o : PinService.type) extends EcobeeJsonAuthService[PinRequest,PinResponse] {
-    def execute(account: AccountID)(implicit s : ClientSettings.Service[Any]): ZIO[ClientEnv,ServiceError,PinResponse] = 
-      this.execute(new PinRequest(account))
+    def execute(implicit s : ClientSettings.Service[Any]): ZIO[ClientEnv,ServiceError,PinResponse] = 
+      this.execute(new PinRequest)
   }
 }

@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.test.server
 
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
+import com.twitter.finagle.http.{Request => HttpRequest}
+import com.twitter.finagle.http.{Response => HttpResponse}
 
 import zio.DefaultRuntime
 import zio.Runtime
@@ -39,6 +39,6 @@ class TestRuntime extends Runtime[ServerEnv] with ServerTestConstants {
 
 trait NoExecutor extends RequestExecutor {
   val requestExecutor = new RequestExecutor.Service[Any] {
-    def executeRequest[S:JsonFormat,E<:ServiceError](req: HttpRequest, err: JsObject => E, fail: (Throwable, Option[HttpResponse]) => E) : zio.ZIO[Any,E,S] = ???
+    def executeRequest[E<:ServiceError,S:JsonFormat](req: HttpRequest, err: JsObject => E, fail: (Throwable, Option[HttpResponse]) => E) : zio.ZIO[Any,E,S] = ???
   }
 }

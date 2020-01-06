@@ -1,6 +1,6 @@
 package com.kelvaya.ecobee.client
 
-import akka.actor.ActorSystem
+
 
 
 /** Factory for creating new dependency injections for the application execution.
@@ -9,8 +9,6 @@ import akka.actor.ActorSystem
   */
 object DI {
 
-  /** Create default dependencies using the given Actor system */
-  def apply(actorSystem : ActorSystem) = new DI(Dependencies(actorSystem))
 
   /** Use the given dependencies for application execution */
   def apply(options : Dependencies) : DI = new DI(options)
@@ -18,17 +16,16 @@ object DI {
 
   /** Dependencies that can be chosen to be used during application execution.
     *
-    * @param actorSystem The `ActorSystem` to use
     * @param settings The [[com.kelvaya.ecobee.client.ClientSettings ClientSettings]] to use for global application settings
     * @param executor The [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]] used to execute API requests
     */
-  case class Dependencies(actorSystem : ActorSystem, settings : Option[ClientSettings] = None, executor : Option[RequestExecutor] = None)
+  case class Dependencies(settings : Option[ClientSettings] = None, executor : Option[RequestExecutor] = None)
 }
 
 
 /** Dependency Injection settings
   *
-  * Sets the dependencies used by the application, including the [[com.kelvaya.ecobee.client.ClientSettings ClientSettings]], `ActorSystem`,
+  * Sets the dependencies used by the application, including the [[com.kelvaya.ecobee.client.ClientSettings ClientSettings]],
   * and [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]].
   *
   * @param di [[DI$.Dependencies]] to use in the application
@@ -38,18 +35,18 @@ object DI {
 final class MyApp extends Application {
 
   // Initialize dependencies using all defaults
-  val deps = DI(ActorSystem("my-actor-sys"))
+  val deps = DI()
   import deps.Implicits._
 }
 
 final class MyOverrideApp extends Application {
-  val overrides = DI.Dependencies(ActorSystem("my-overrides"),settings=new MySettings)
+  val overrides = DI.Dependencies(settings=new MySettings)
 
   // Initialize dependencies using custom settings
   val deps = DI(overrides)
 
   // Import the created dependencies except for the executor, which we create on our own (useful for unit testing)
-  import deps.Implicits.{SettingsImplicit,ActorSystemImplicit}
+  import deps.Implicits.{SettingsImplicit}
 
   implicit val Executor = new MyOwnExecutor
 }
@@ -66,11 +63,8 @@ class DI (di : DI.Dependencies) {
   /** Application settings */
   lazy val settings = di.settings.getOrElse(ClientSettings.Live).settings
 
-  /** Akka Actor system */
-  lazy val actorSys = di.actorSystem
-
   /** RequestExecutor used to execute all API requests */
-  lazy val executor = di.executor.getOrElse(new RequestExecutorImpl()(actorSys))
+  lazy val executor = di.executor.map(zio.UIO(_)).getOrElse(RequestExecutorImpl.create)
 
   /** Exposes all dependencies implicitly
     *
@@ -79,7 +73,6 @@ class DI (di : DI.Dependencies) {
   object Implicits {
     implicit lazy val SettingsImplicit = settings
     implicit lazy val ExecutorImplicit = executor
-    implicit lazy val ActorSysImplicit = actorSys
   }
 }
 

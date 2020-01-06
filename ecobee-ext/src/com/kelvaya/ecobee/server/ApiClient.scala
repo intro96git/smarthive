@@ -46,20 +46,20 @@ object ApiClient {
 
 /** Default implementation of the Ecobee client API, using the Ecobee client library's [[RequestExecutor]] 
   *  to provide access to the thermostat data.
+  * 
+  * @note One can use [[AplClientImpl$#create]] to instantiate a new instance.
   */ 
 trait ApiClientImpl extends ApiClient {
-  val loggingBus : akka.event.LoggingBus
   val account : AccountID
   val env : ClientEnv
 
-  private implicit lazy val _logging = loggingBus
   private implicit lazy val _settings = env.settings
-  
+
   val apiClient = new ApiClient.Service[Any] {
 
     def readThermostat(id : ThermostatID) : ZIO[Any,ClientError,ThermostatStats] = {      
       ThermostatService
-        .execute(account, Select(SelectType.Registered(id.id), includeRuntime=true))
+        .execute(account, Select(SelectType.Thermostats(id.id), includeRuntime=true))
         .mapError(ClientError.ApiServiceError)
         .flatMap { res =>
           zio.IO.fromEither {
@@ -76,11 +76,36 @@ trait ApiClientImpl extends ApiClient {
 
     def readThermostats : ZIO[Any,ClientError,Iterable[ThermostatStats]] = {
       ThermostatService
-        .execute(account, Select(SelectType.Thermostats, includeRuntime=true))
+        .execute(account, Select(SelectType.Registered, includeRuntime=true))
         .mapError(ClientError.ApiServiceError)
         .map(_.thermostatList.flatMap(t => t.runtime.map(r => ThermostatStats(t.name, Temperature(r.rawTemperature))))) 
         .provide(env)
     }
   }
+}
 
+
+/** Factory for [[ApiClientImpl]]
+  * 
+  * Use [[#create]] to instantiate a new instance
+  */
+object ApiClientImpl {
+
+  /** Returns a new [[ApiClientImpl]]
+    * which requires a [[ClientEnv]] environment to use.
+    * 
+    * @param accountId The Account with which the API will connect to the Ecobee servers
+    * @param lb (implicit) Akka logging
+    */
+  def create(accountId : AccountID) : zio.URIO[ClientEnv,ApiClientImpl] = {
+    for {
+      cenv   <- zio.ZIO.environment[ClientEnv]
+      client <- zio.UIO {
+        new ApiClientImpl {
+          val account = accountId
+          val env = cenv
+        }
+      }
+    } yield client
+  }
 }

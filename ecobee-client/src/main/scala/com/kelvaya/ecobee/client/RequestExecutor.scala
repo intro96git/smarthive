@@ -1,12 +1,12 @@
 package com.kelvaya.ecobee.client
 
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-
 import spray.json.JsObject
 import spray.json.JsonFormat
 
 import zio.ZIO
+
+import com.twitter.finagle.http.{Request => HttpRequest}
+import com.twitter.finagle.http.{Response => HttpResponse}
 
 
 /** Module to send HTTP requests to the Ecobee API */
@@ -24,22 +24,22 @@ object RequestExecutor {
       * @define E ServiceError
       *
       * @param req The HTTP Request to execute
-      * @param err The function to run when the HttpResponse is an error response
+      * @param err The function to run when the Response is an error response
       * @param fail The function to run when an unhandled exception is thrown during request execution
       *
       * @tparam S The return payload type (must be in the typeclass of `JsonFormat` used to deserialize it)
       * @tparam E The return payload type for the error
       *
       */
-    def executeRequest[S:JsonFormat,E<:ServiceError](
-      req: HttpRequest, 
+    def executeRequest[E<:ServiceError,S:JsonFormat](
+      req: HttpRequest,
       err: JsObject => E, 
       fail: (Throwable,Option[HttpResponse]) => E) : ZIO[R,E,S]
   }
 
   object > extends Service[RequestExecutor] {
-    def executeRequest[S: JsonFormat, E <: ServiceError](req: HttpRequest, err: JsObject => E, fail: (Throwable, Option[HttpResponse]) => E): ZIO[RequestExecutor,E,S] = {
-      ZIO.accessM[RequestExecutor](_.requestExecutor.executeRequest[S,E](req,err,fail))
+    def executeRequest[E<:ServiceError,S:JsonFormat](req: HttpRequest, err: JsObject => E, fail: (Throwable, Option[HttpResponse]) => E): ZIO[RequestExecutor,E,S] = {
+      ZIO.accessM[RequestExecutor](_.requestExecutor.executeRequest[E,S](req,err,fail))
     }
   }
 }

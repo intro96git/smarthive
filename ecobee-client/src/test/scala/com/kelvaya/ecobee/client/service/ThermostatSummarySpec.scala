@@ -1,15 +1,11 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.test.client.BaseTestSpec
 
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.Authorization
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import com.twitter.finagle.http.Fields
+import com.twitter.finagle.http.Message
+import com.twitter.finagle.http.Method
 
 import spray.json._
 import com.typesafe.scalalogging.Logger
@@ -23,23 +19,25 @@ class ThermostatSummarySpec extends BaseTestSpec {
 
   "The thermostat summary service" must "serialize requests correctly" in {
 
-    "ThermostatSummaryService.execute(account, SelectType.Thermostats, true)" should compile
+    "ThermostatSummaryService.execute(account, SelectType.Registered, true)" should compile
 
-    val thermReq = new ThermostatSummaryRequest(account, SelectType.Thermostats, true)
+    val thermReq = new ThermostatSummaryRequest(account, SelectType.Registered, true)
     "ThermostatSummaryService.execute(thermReq)" should compile
 
-    val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeEquipmentStatus":true}""".parseJson
+    val expectedSelectionQs = """{ "selection" : {"selectionType":"registered","includeEquipmentStatus":true} }""".parseJson
 
-    val req: HttpRequest = this.runtime.unsafeRun(thermReq.createRequest.provide(store))
-    req.method shouldBe HttpMethods.GET
-    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
-    req.uri.path shouldBe Uri.Path("/thermostatSummary")
-    val qsSelection = req.uri.query().get("selection")
+    val req = this.runtime.unsafeRun(thermReq.createRequest.provide(store))
+    req.method shouldBe Method.Get
+    req.contentString shouldBe ""
+    req.uri should startWith("/1/thermostatSummary?")
+    req.contentType shouldBe Some(Message.ContentTypeJson)
+    req.headerMap.get(Fields.Authorization) shouldBe 'defined
+    req.headerMap(Fields.Authorization) shouldBe "Bearer " + AccessToken
+
+    val qsSelection = req.params.get("body")
     qsSelection.value.parseJson shouldBe expectedSelectionQs
 
-    req.uri.query().size shouldBe 2
-    req.header[Authorization] shouldBe 'defined
-    req.header[Authorization].get shouldBe Authorization(OAuth2BearerToken(this.AccessToken))
+    req.params.size shouldBe 2
   }
 
 

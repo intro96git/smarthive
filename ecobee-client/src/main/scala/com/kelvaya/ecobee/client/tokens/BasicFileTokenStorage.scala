@@ -13,15 +13,18 @@ import com.typesafe.scalalogging.Logger
 
 /** [[TokenStorage]] backed by a simple JSON-based file.
   *
-  * @note This storage is not suited for production-level code.
-  *
-  * @param file The file containing all of the tokens
-  * @param tokensRef Tuple of list of tokens loaded from the file and closed status of storage handle
-  * @param lb (implicit) Used for logging
+  * This storage is not suited for production-level code.
+  * 
+  * @note Use [[BasicFileTokenStorage$#connect]] to create a new instance
   */
-class BasicFileTokenStorage private (file : better.files.File, tokensRef : Ref[Map[AccountID,Tokens]])
-extends TokenStorage {
+trait BasicFileTokenStorage extends TokenStorage {
   import BasicFileTokenStorage._
+
+    /** The file containing all of the tokens */
+  val file : better.files.File
+
+  /** Tuple of list of tokens loaded from the file */
+  val tokensRef : Ref[Map[AccountID,Tokens]]
 
   val tokenStorage = new TokenStorage.Service[Any] {
 
@@ -67,14 +70,24 @@ object BasicFileTokenStorage {
 
   /** Returns the [[BasicFileTokenStorage]] located at the given file */
   def connect(file : better.files.File) : IO[TokenStorageError,BasicFileTokenStorage] =
-    connectToDirectory(file)
-
+    connectToDirectory(file).map(new Live(file, _))
 
 
   // ###############################################################
   // ###############################################################
 
-  private def connectToDirectory(file : better.files.File) : IO[TokenStorageError,BasicFileTokenStorage] = {
+
+  /** [[TokenStorage]] backed by a simple JSON-based file.
+    *
+    * @note This storage is not suited for production-level code.
+    *
+    * @param file The file containing all of the tokens
+    * @param tokensRef Tuple of list of tokens loaded from the file
+    * @param loggingBus (implicit) Used for logging
+    */
+  final class Live(val file : better.files.File, val tokensRef : Ref[Map[AccountID,Tokens]]) extends BasicFileTokenStorage
+
+  private[client] def connectToDirectory(file : better.files.File) : IO[TokenStorageError,Ref[Map[AccountID,Tokens]]] = {
     
     IO.fromEither {
       val log = Logger[BasicFileTokenStorage]
@@ -107,7 +120,6 @@ object BasicFileTokenStorage {
       }
     }
     .flatMap(t => Ref.make(t))
-    .map(new BasicFileTokenStorage(file, _))
   }
 
 

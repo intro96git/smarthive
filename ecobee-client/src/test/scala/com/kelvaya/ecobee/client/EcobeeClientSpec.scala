@@ -1,8 +1,10 @@
 package com.kelvaya.ecobee.client
 
+import com.kelvaya.ecobee.client.service.PinResponse
 import com.kelvaya.ecobee.client.tokens.{Tokens,TokenStorage,TokenStorageError}
 import com.kelvaya.ecobee.test.client.BaseTestSpec
 import com.kelvaya.ecobee.test.client.TestConstants
+import com.kelvaya.ecobee.test.client.TestClientSettings
 import com.kelvaya.ecobee.test.client.ZioTest
 
 import akka.actor.ActorSystem
@@ -11,8 +13,10 @@ import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model._
+
 import akka.stream.ActorMaterializer
+
+import com.twitter.finagle.http.{Response => HttpResponse}
 
 import zio.IO
 import zio.UIO
@@ -25,20 +29,19 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import spray.json._
-import com.kelvaya.ecobee.test.client.TestClientSettings
-import com.kelvaya.ecobee.client.service.PinResponse
 import org.scalatest.exceptions.TestFailedException
+
 
 
 case class Response(status : Status)
 
 class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll {
-  import deps.Implicits.{SettingsImplicit => _,_}
   import EcobeeClientSpec._
 
   // ###################
   // Start and stop a test REST web service (see startTestServer at the botttom of the file)
   // ###################
+  private implicit val _sys = ActorSystem("ecobee-client-test")
   private val _server: Future[Http.ServerBinding] = startTestServer
 
   override def beforeAll(): Unit = {
@@ -46,11 +49,11 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
   }
 
   override def afterAll(): Unit = {
-    implicit val ec = ActorSysImplicit.dispatcher
+    implicit val ec = _sys.dispatcher
     val fut = for {
       sc <- _server
       _  <- sc.terminate(5.seconds)
-      t  <- ActorSysImplicit.terminate()
+      t  <- _sys.terminate()
     } yield t
     
     val _ = Await.ready(fut, 5.seconds)
@@ -72,7 +75,11 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
 
   // ClientSettings pointing to the test REST web service
   implicit object LocalServerSettings extends TestClientSettings.TestClientService {
-    override lazy val EcobeeServerRoot: Uri = Uri("http://localhost:6789")
+    override lazy val EcobeeServerRoot = new java.net.URL("http://localhost:6789")
+  }
+
+  val Settings = new TestClientSettings {
+    override val settings: TestClientSettings.TestClientService = LocalServerSettings
   }
   
   // ##################################################################################################################
@@ -83,16 +90,19 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
     val request1 = new TestApiRequest(this.account, "/test1")
     val request2 = new TestAuthRequest(this.account, "/auth1")
 
-    val exec = (new RequestExecutorImpl).requestExecutor
+    val requestExecutor = RequestExecutorImpl.create.map(_.requestExecutor).provide(Settings)
+      
     val test1 = for {
-      req <- request1.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
-      rsp <- exec.executeRequest[Response,ApiError](req, _.convertTo[ApiError], apiFn(_,_))
-      a   <- rsp shouldBe Response(Status(0, "Your request was successfully received and processed."))
+      exec <- requestExecutor
+      req  <- request1.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
+      rsp  <- exec.executeRequest[ApiError,Response](req, _.convertTo[ApiError], apiFn(_,_))
+      a    <- rsp shouldBe Response(Status(0, "Your request was successfully received and processed."))
     } yield a
     
     val test2 = for {
+      exec <- requestExecutor
       req <- request2.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
-      rsp <- exec.executeRequest[PinResponse,AuthError](req, _.convertTo[AuthError], authFn(_,_))
+      rsp <- exec.executeRequest[AuthError,PinResponse](req, _.convertTo[AuthError], authFn(_,_))
       a   <- rsp shouldBe PinResponse("bv29", 9, "uiNQok9Uhy5iScG4gncCAilcFUMK0zWT", PinScope.SmartWrite, 30)
     } yield a
 
@@ -104,26 +114,29 @@ class EcobeeClientSpec extends BaseTestSpec with ZioTest with BeforeAndAfterAll 
   it must "be able to handle failed web service calls" in {
     val request1 = new TestApiRequest(this.account, "/test2")
     val request2 = new TestAuthRequest(this.account, "/auth2")
-    val exec = (new RequestExecutorImpl).requestExecutor
+    
+    val requestExecutor = RequestExecutorImpl.create.map(_.requestExecutor).provide(Settings)
     
     val test1 = for {
-      req <- request1.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
-      rsp <- 
+      exec <- requestExecutor
+      req  <- request1.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
+      rsp  <- 
         exec
-          .executeRequest[Response,ApiError](req, _.convertTo[ApiError], apiFn(_,_))
+          .executeRequest[ApiError,Response](req, _.convertTo[ApiError], apiFn(_,_))
           .map(r => new TestFailedException(s"Request did not fail.  Response: $r", new RuntimeException, 1))
           .flip
-      a <- rsp shouldBe ApiError(Status(1, "Invalid credentials supplied to the registration request, or invalid token. Request registration again."))
+      a    <- rsp shouldBe ApiError(Status(1, "Invalid credentials supplied to the registration request, or invalid token. Request registration again."))
     } yield a
     
     val test2 = for {
-      req <- request2.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
-      rsp <- 
+      exec <- requestExecutor
+      req  <- request2.createRequest.provide(new EcobeeClientSpec.MemoryTokenStorage)
+      rsp  <- 
         exec
-          .executeRequest[Response,AuthError](req, _.convertTo[AuthError], authFn(_,_))
+          .executeRequest[AuthError,Response](req, _.convertTo[AuthError], authFn(_,_))
           .map(r => new TestFailedException(s"Request did not fail.  Response: $r", new RuntimeException, 1))
           .flip
-      a   <- rsp shouldBe AuthError("access_denied", "Authorization has been denied by the user. This is only used in the Authorization Code authorization browser redirect.", "https://example.org")
+      a    <- rsp shouldBe AuthError("access_denied", "Authorization has been denied by the user. This is only used in the Authorization Code authorization browser redirect.", "https://example.org")
     } yield a
 
     
@@ -159,12 +172,12 @@ object EcobeeClientSpec extends TestConstants {
     implicit val ec = as.dispatcher
 
     val route = concat(
-      path("test1") {
+      path("1" / "test1") {
         get {
           complete(HttpEntity(ContentTypes.`application/json`,"""{ "status" : { "code":0, "message":"Your request was successfully received and processed." } }"""))
         }
       },
-      path("test2") {
+      path("1" / "test2") {
         get {
           complete(StatusCodes.InternalServerError -> HttpEntity(ContentTypes.`application/json`,"""{ 
             "status" : { 
@@ -199,13 +212,15 @@ object EcobeeClientSpec extends TestConstants {
     Http().bindAndHandle(route, "localhost", 6789)
   }
 
-  private class TestApiRequest(account : AccountID, path : String)(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
+  private class TestApiRequest(val account : AccountID, path : String)(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity with AuthorizedRequest[ParameterlessApi] {
     val query: TokenStorage.IO[List[Querystrings.Entry]] = UIO(List.empty)
-    val uri: Uri.Path = Uri.Path(path)
+    val queryBody = UIO(None)
+    val uri: Uri = Uri(path)
   }
   
-  private class TestAuthRequest(account : AccountID, path : String)(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity(account) {
+  private class TestAuthRequest(val account : AccountID, path : String)(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity {
     val query: TokenStorage.IO[List[Querystrings.Entry]] = UIO(List.empty)
-    val uri: Uri.Path = Uri.Path(path)
+    val queryBody = UIO(None)
+    val uri: Uri = Uri(path)
   }
 }

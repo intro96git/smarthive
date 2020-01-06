@@ -7,11 +7,14 @@ import com.typesafe.scalalogging.Logger
 
 object EquipmentStatusListItem {
 
+  private lazy val _log = Logger[EquipmentStatusListItem]
+
+
   /** Return new [[EquipmentStatusListItem]] from the given [[CSV]].
     *
     * @note The CSV must contain exactly 2 values to be accepted.
     */
-  def fromCSV(csv : CSV)(implicit logBus : Logger) : EquipmentStatusListItem = {
+  def fromCSV(csv : CSV) : EquipmentStatusListItem = {
     val lov = csv.value.split(CSV.Delimiter, 2)
     if (lov.size != 2) throw new IllegalArgumentException(s"Equipment status lists expect 2 values.  ${csv} contains ${lov.size}.")
     EquipmentStatusListItem(
@@ -21,12 +24,12 @@ object EquipmentStatusListItem {
   }
 
 
-  private def parseEquipment(equip : String)(implicit log : Logger) = {
+  private def parseEquipment(equip : String) = {
     val (good,bad) = equip.split(",").partition(s => Equipment.values.exists(_.toString == s))
 
     if (bad.size > 0) {
       val errorMsg = "Unrecognized equipment returned by the Ecobee API: %s".format(bad.mkString(","))
-      log.warn(errorMsg)
+      _log.warn(errorMsg)
     }
 
     (good map Equipment.withName).toIterable
@@ -34,7 +37,7 @@ object EquipmentStatusListItem {
 
 
   /** JSON serialization for [[EquipmentStatusListItem]] */
-  implicit def equipStatusListItemFormatter(implicit lb : Logger) : RootJsonFormat[EquipmentStatusListItem] = new RootJsonFormat[EquipmentStatusListItem] {
+  implicit val EquipStatusListItemFormatter = new RootJsonFormat[EquipmentStatusListItem] {
     def read(json: JsValue): EquipmentStatusListItem = {
       json match {
         case j : JsString => {

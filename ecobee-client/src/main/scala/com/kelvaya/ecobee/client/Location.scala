@@ -7,8 +7,6 @@ import org.joda.time.DateTimeZone
 
 import com.kelvaya.util.SprayImplicits
 
-import com.typesafe.scalalogging.Logger
-
 
 /** Physical location of [[Thermostat]].
   *
@@ -41,7 +39,7 @@ case class Location(
 ) extends ReadonlyApiObject
 
 object Location extends SprayImplicits {
-  implicit def locationFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat10(Location.apply)
+  implicit val LocationFormat = DefaultJsonProtocol.jsonFormat10(Location.apply)
 }
 
 /** Physical location of [[Thermostat]] which can be used in POST modification requests.
@@ -72,5 +70,5 @@ case class LocationModification(
 
 
 object LocationModification extends SprayImplicits {
-  implicit def locationModificationFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat9(LocationModification.apply)
+  implicit val LocationModificationFormat = DefaultJsonProtocol.jsonFormat9(LocationModification.apply)
 }

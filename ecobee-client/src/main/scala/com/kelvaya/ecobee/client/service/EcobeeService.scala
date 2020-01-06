@@ -12,7 +12,8 @@ import spray.json._
 
 import zio.ZIO
 
-import akka.http.scaladsl.model.HttpResponse
+import com.twitter.finagle.http.{Response => HttpResponse}
+
 
 
 

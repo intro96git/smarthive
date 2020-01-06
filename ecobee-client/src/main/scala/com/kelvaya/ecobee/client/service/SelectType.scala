@@ -7,11 +7,12 @@ object SelectType {
     *
     * These two strings normally come from the JSON representation of a `SelectionType`.
     */
-  def create(selectionType : String, selectionMatch : String) : SelectType = {
-    selectionType match {
-      case "thermostats"   ⇒ Thermostats
-      case "registered"    ⇒ new Registered(selectionMatch.split(",") : _*)
-      case "managementSet" ⇒ new ManagementSet(selectionMatch)
+  def create(selectionType : String, selectionMatch : Option[String]) : SelectType = {
+    (selectionType,selectionMatch) match {
+      case ("registered", None)   ⇒ Registered
+      case ("thermostats",Some(m))    ⇒ new Thermostats(m.split(",") : _*)
+      case ("managementSet", Some(m)) ⇒ new ManagementSet(m)
+      case _ => throw new MatchError(s"Invalid SelectType: selection ${selectionType}, match ${selectionMatch}")
     }
   }
 
@@ -19,9 +20,9 @@ object SelectType {
     *
     * This is only usable with Smart thermostats registered to a user.
     */
-  case object Thermostats extends SelectType {
-    val id = "thermostats"
-    val selectionMatch = ""
+  case object Registered extends SelectType {
+    val id = "registered"
+    val selectionMatch = None
   }
 
 
@@ -29,9 +30,9 @@ object SelectType {
     *
     *  There is a limit of 25 identifiers per request.
     */
-  case class Registered(thermostats : String*) extends SelectType {
-    val id = "registered"
-    val selectionMatch = thermostats.mkString(",")
+  case class Thermostats(thermostats : String*) extends SelectType {
+    val id = "thermostats"
+    val selectionMatch = Some(thermostats.mkString(","))
   }
 
 
@@ -42,7 +43,7 @@ object SelectType {
     */
   case class ManagementSet(set : String) extends SelectType {
     val id = "managementSet"
-    val selectionMatch = set
+    val selectionMatch = Some(set)
   }
 }
 
@@ -64,5 +65,5 @@ sealed trait SelectType extends Enumeration {
     *
     * This will be used as the "selectionMatch" in the JSON payload.
     */
-  val selectionMatch : String
+  val selectionMatch : Option[String]
 }

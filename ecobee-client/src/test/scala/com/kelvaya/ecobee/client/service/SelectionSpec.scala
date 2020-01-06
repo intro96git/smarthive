@@ -6,15 +6,14 @@ import spray.json._
 class SelectionSpec extends BaseTestSpec {
 
   "A request select parameter" must "serialize to JSON properly" in {
-    val select = Select(SelectType.Thermostats, true, true, true, true, true, true, true,
+    val select = Select(SelectType.Registered, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true)
 
     val formatter = implicitly[RootJsonFormat[Select]]
     val json = formatter.write(select)
 
     json shouldBe """{
-        "selectionType" : "thermostats",
-        "selectionMatch" : "",
+        "selectionType" : "registered",
         "includeRuntime" : true,
         "includeExtendedRuntime" : true,
         "includeElectricity" : true,
@@ -42,10 +41,10 @@ class SelectionSpec extends BaseTestSpec {
       }""".parseJson
 
 
-    val select2 = Select(SelectType.Registered("test"), includeAlerts = true)
+    val select2 = Select(SelectType.Thermostats("test"), includeAlerts = true)
 
     val expected2 = """{
-      "selectionType" : "registered",
+      "selectionType" : "thermostats",
       "selectionMatch" : "test",
       "includeAlerts" : true
       }""".parseJson
@@ -66,8 +65,7 @@ class SelectionSpec extends BaseTestSpec {
 
   it must "be deserialzed from JSON" in {
     val json =  """{
-        "selectionType" : "thermostats",
-        "selectionMatch" : "",
+        "selectionType" : "registered",
         "includeRuntime" : true,
         "includeExtendedRuntime" : true,
         "includeElectricity" : true,
@@ -94,7 +92,7 @@ class SelectionSpec extends BaseTestSpec {
         "includeEnergy" : true
       }""".parseJson
 
-      val expected = Select(SelectType.Thermostats, true, true, true, true, true, true, true,
+      val expected = Select(SelectType.Registered, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true)
 
       val actual = json.convertTo[Select]
@@ -197,14 +195,13 @@ class SelectionSpec extends BaseTestSpec {
 
   it must "default all non-required boolean fields to 'false'" in {
     val json = """{
-        "selectionType" : "thermostats",
-        "selectionMatch" : ""
+        "selectionType" : "registered"
         }""".parseJson
 
-    val expected = Select(SelectType.Thermostats, false, false, false, false, false, false, false, false, false, false,
+    val expected = Select(SelectType.Registered, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false)
 
-    val alsoExpected = Select(SelectType.Thermostats)
+    val alsoExpected = Select(SelectType.Registered)
 
     val actual = json.convertTo[Select]
 
@@ -216,11 +213,10 @@ class SelectionSpec extends BaseTestSpec {
 
   it must "properly handle all values for SelectionType" in {
     val thermoJson = """{
-        "selectionType" : "thermostats",
-        "selectionMatch" : ""
+        "selectionType" : "registered"
         }""".parseJson
     val registeredJson = """{
-        "selectionType" : "registered",
+        "selectionType" : "thermostats",
         "selectionMatch" : "sm,sm2,sm3"
         }""".parseJson
     val manageJson = """{
@@ -232,8 +228,8 @@ class SelectionSpec extends BaseTestSpec {
         "selectionMatch" : "sm"
         }""".parseJson
 
-    thermoJson.convertTo[Select] shouldBe Select(SelectType.Thermostats)
-    registeredJson.convertTo[Select] shouldBe Select(SelectType.Registered("sm","sm2","sm3"))
+    thermoJson.convertTo[Select] shouldBe Select(SelectType.Registered)
+    registeredJson.convertTo[Select] shouldBe Select(SelectType.Thermostats("sm","sm2","sm3"))
     manageJson.convertTo[Select] shouldBe Select(SelectType.ManagementSet("sm"))
     intercept[DeserializationException](badJson.convertTo[Select])
   }

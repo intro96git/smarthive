@@ -2,14 +2,15 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.AuthorizedRequest
+import com.kelvaya.ecobee.client.ClientSettings
 import com.kelvaya.ecobee.client.ParameterlessApi
 import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
-import com.kelvaya.ecobee.client.ClientSettings
+import com.kelvaya.ecobee.client.Uri
 
-import akka.http.scaladsl.model.Uri
+
 
 import com.typesafe.scalalogging.Logger
 
@@ -21,11 +22,9 @@ import zio.ZIO
 
 /** Constants used by [[ThermostatSummaryRequest]] */
 object ThermostatSummaryRequest {
-  private val Endpoint = Uri.Path("/thermostatSummary")
+  private val Endpoint = Uri("/thermostatSummary")
 
-  private def getJson(st : SelectType, es : Boolean) = {
-    Select(selectType = st, includeEquipmentStatus = es).toJson.compactPrint
-  }
+  private def getJson(st : SelectType, es : Boolean) = Select(selectType = st, includeEquipmentStatus = es).toJson
 }
 
 
@@ -35,12 +34,16 @@ object ThermostatSummaryRequest {
   * @param selectType The thermostat to query
   * @param equipStatus True if the equipment status should also be returned
   */
-case class ThermostatSummaryRequest(override val account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false)
-(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
+case class ThermostatSummaryRequest(val account: AccountID, selectType : SelectType, includeEquipStatus : Boolean = false)
+(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity with AuthorizedRequest[ParameterlessApi] {
   import ThermostatSummaryRequest._
 
-  val query: UIO[List[Querystrings.Entry]] = UIO( (("selection", getJson(selectType, includeEquipStatus))) :: Nil )
-  val uri: Uri.Path = ThermostatSummaryRequest.Endpoint
+  val query: UIO[List[Querystrings.Entry]] = UIO.succeed(Nil)
+  val queryBody: UIO[Option[String]] =  UIO {
+    val fullJson = JsObject(new JsField("selection",getJson(selectType, includeEquipStatus)))
+    Some(fullJson.compactPrint)
+  }
+  val uri: Uri = ThermostatSummaryRequest.Endpoint
 
 }
 
@@ -51,7 +54,7 @@ case class ThermostatSummaryRequest(override val account: AccountID, selectType 
 
 /** Implicits for JSON serialization of [[ThermostatSummaryResponse]] */
 object ThermostatSummaryResponse {
-  implicit def getResponseFormat(implicit lb : Logger) = DefaultJsonProtocol.jsonFormat4(ThermostatSummaryResponse.apply)
+  implicit val ResponseFormat = DefaultJsonProtocol.jsonFormat4(ThermostatSummaryResponse.apply)
 }
 
 /** Response from a [[ThermostatSummaryRequest]]

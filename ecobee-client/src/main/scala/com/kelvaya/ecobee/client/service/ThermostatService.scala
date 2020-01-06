@@ -2,18 +2,14 @@ package com.kelvaya.ecobee.client.service
 
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.AuthorizedRequest
+import com.kelvaya.ecobee.client.ClientSettings
 import com.kelvaya.ecobee.client.Page
 import com.kelvaya.ecobee.client.ParameterlessApi
-import com.kelvaya.ecobee.client.Querystrings
 import com.kelvaya.ecobee.client.RequestNoEntity
 import com.kelvaya.ecobee.client.ServiceError
 import com.kelvaya.ecobee.client.Status
 import com.kelvaya.ecobee.client.Thermostat
-import com.kelvaya.ecobee.client.ClientSettings
-
-import akka.http.scaladsl.model.Uri
-
-import com.typesafe.scalalogging.Logger
+import com.kelvaya.ecobee.client.Uri
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -23,7 +19,7 @@ import zio.ZIO
 
 /** Factories for [[ThermostatRequest]] */
 object ThermostatRequest {
-  private val Endpoint = Uri.Path("/thermostat")
+  private val Endpoint = Uri("/thermostat")
 
   /** Returns new [[ThermostatRequest]] to initially request information.
     *
@@ -51,17 +47,19 @@ object ThermostatRequest {
   * @param page The page of information to return
   * @param s (implicit) The application global settings
   */
-case class ThermostatRequest(override val account: AccountID, selection : Select, page : Option[Int] = None)
-(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity(account) with AuthorizedRequest[ParameterlessApi] {
+case class ThermostatRequest(val account: AccountID, selection : Select, page : Option[Int] = None)
+(implicit s : ClientSettings.Service[Any]) extends RequestNoEntity with AuthorizedRequest[ParameterlessApi] {
 
-  val pageQS : Option[Querystrings.Entry] = page map { p => (("page", Page(Some(p), None, None, None).toJson.compactPrint )) }
+  val pageQS : Option[JsField] = page map { p => new JsField("page", Page(Some(p), None, None, None).toJson ) }
 
-  val query: UIO[List[Querystrings.Entry]] =  UIO {
-    val list = collection.mutable.ListBuffer((("selection", selection.toJson.compactPrint)))
-    if (pageQS.isDefined) list += pageQS.get
-    list.toList
+  val queryBody: UIO[Option[String]] =  UIO {
+    val selectJson = "selection" -> selection.toJson
+    val jsonMap = (selectJson :: pageQS.map(p => List(p)).getOrElse(List.empty)).toMap
+    val fullJson = JsObject(jsonMap)
+    Some(fullJson.compactPrint)
   }
-  val uri: Uri.Path = ThermostatRequest.Endpoint
+  val query = UIO.succeed(Nil)
+  val uri = ThermostatRequest.Endpoint
 
 }
 
@@ -71,7 +69,7 @@ case class ThermostatRequest(override val account: AccountID, selection : Select
 
 /** Implicits for JSON serialization of [[ThermostatResponse]] */
 object ThermostatResponse {
-  implicit def responseFormat(implicit ev : Logger) = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
+  implicit val ResponseFormat = DefaultJsonProtocol.jsonFormat3(ThermostatResponse.apply)
 }
 
 
@@ -122,7 +120,7 @@ object ThermostatService {
     * @param ev (implicit) The logger of the caller
     * @param s (implicit) The application global settings
     */
-  implicit class ThermostatServiceImpl(o : ThermostatService.type)(implicit ev : Logger, s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
+  implicit class ThermostatServiceImpl(o : ThermostatService.type)(implicit s : ClientSettings.Service[Any]) extends EcobeeJsonService[ThermostatRequest,ThermostatResponse] {
 
     def execute(account : AccountID, selection : Select): ZIO[ClientEnv, ServiceError, ThermostatResponse] =
       pexecute(account, selection, None)

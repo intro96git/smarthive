@@ -3,16 +3,12 @@ package com.kelvaya.ecobee.test.client
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.TestClient
 import com.kelvaya.ecobee.client.DI
-import com.kelvaya.ecobee.client.ClientSettings
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.compatible.Assertion
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.HttpRequest
 
 import spray.json._
 import spray.json.AdditionalFormats
@@ -21,11 +17,11 @@ import spray.json.DefaultJsonProtocol
 import zio.DefaultRuntime
 import zio.Task
 
+
 trait BaseTestSpec extends FlatSpec
 with Matchers
 with OptionValues
 with TestConstants
-with SprayJsonSupport
 with DefaultJsonProtocol
 with AdditionalFormats {
 
@@ -47,15 +43,9 @@ object BaseTestSpec {
   final val DefaultAccount = new AccountID("test")
 
   /** Setup system dependencies.  Defaults to using `TestSettings` and `TestClient` */
-  def createDependencies(deps: DI.Dependencies = DI.Dependencies(ActorSystem("ecobee-lib-test-suite"),settings=Some(TestClientSettings.Default))) = {
+  def createDependencies(deps: DI.Dependencies = DI.Dependencies(settings=Some(TestClientSettings.Default))) = {
     val newDeps = deps.copy(executor=deps.executor.orElse(Some(new TestClient)))
     DI(newDeps)
-  }
-
-  def createRequestMap(mapping : Map[HttpRequest, String])(implicit s : ClientSettings.Service[Any]) : Map[HttpRequest, JsObject] = {
-    mapping.map {
-      case (k,v) =>  (k.withUri(s.EcobeeServerRoot),v.parseJson.asJsObject)
-    }
   }
 }
 

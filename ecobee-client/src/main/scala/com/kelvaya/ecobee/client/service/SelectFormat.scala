@@ -16,7 +16,7 @@ private[client] class SelectFormat extends RootJsonFormat[Select] with SprayImpl
   def write(obj : Select) : JsValue = {
     val fullMap = Map(
         "selectionType" -> JsString(obj.selectType.id.toString),
-        "selectionMatch" -> JsString(obj.selectType.selectionMatch),
+        "selectionMatch" -> obj.selectType.selectionMatch.map(m =>JsString(m)).getOrElse(JsBoolean(false)),
         "includeRuntime" -> JsBoolean(obj.includeRuntime),
         "includeExtendedRuntime" -> JsBoolean(obj.includeExtendedRuntime),
         "includeElectricity" -> JsBoolean(obj.includeElectricity),
@@ -87,11 +87,11 @@ private[client] class SelectFormat extends RootJsonFormat[Select] with SprayImpl
     findOptional[Boolean](json, "includeAudio") foreach { ms.includeAudio = _ }
     findOptional[Boolean](json, "includeEnergy") foreach { ms.includeEnergy = _ }
 
-    if (ms.selectionMatch.isEmpty || ms.selectionType.isEmpty)
-      throw new DeserializationException(s"${json} is not a valid Select; missing selectionMatch and/or selectionType.")
+    if (ms.selectionType.isEmpty)
+      throw new DeserializationException(s"${json} is not a valid Select; missing selectionType.")
     else
       Select(
-        selectType = getSelectType(ms.selectionType.get,ms.selectionMatch.get),
+        selectType = getSelectType(ms.selectionType.get,ms.selectionMatch),
         includeAlerts = ms.includeAlerts,
         includeAudio = ms.includeAudio,
         includeDevice = ms.includeDevice,
@@ -121,7 +121,7 @@ private[client] class SelectFormat extends RootJsonFormat[Select] with SprayImpl
 
 
 
-  private def getSelectType(selectionType : String, selectionMatch : String) = {
+  private def getSelectType(selectionType : String, selectionMatch : Option[String]) = {
     try SelectType.create(selectionType, selectionMatch)
     catch {
       case _ : MatchError =>

@@ -3,26 +3,22 @@ package com.kelvaya.ecobee.client.service.function
 import com.kelvaya.ecobee.client.service.Select
 import com.kelvaya.ecobee.client.service.SelectType
 import com.kelvaya.ecobee.client.service.ThermostatPostRequest
-import com.kelvaya.ecobee.test.client.BaseTestSpec
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
-import java.nio.charset.StandardCharsets
-
-import akka.http.scaladsl.model.HttpRequest
-import akka.stream.ActorMaterializer
-import spray.json._
-import spray.json.DefaultJsonProtocol._
-import org.joda.time.DateTime
 import com.kelvaya.ecobee.client.Temperature
 import com.kelvaya.ecobee.client.Event.FanMode
+import com.kelvaya.ecobee.test.client.BaseTestSpec
+
 import com.typesafe.scalalogging.Logger
+
+import spray.json._
+import spray.json.DefaultJsonProtocol._
+
+import com.twitter.finagle.http.{Request => HttpRequest}
+
+import org.joda.time.DateTime
 
 class EcobeeFunctionSpec extends BaseTestSpec {
 
   import deps.Implicits._
-  implicit val materializer = ActorMaterializer()
   implicit val log = Logger[EcobeeFunctionSpec]
 
   val now = DateTime.parse("2014-03-22T10:23:44")
@@ -31,21 +27,17 @@ class EcobeeFunctionSpec extends BaseTestSpec {
 
   "An Ecobee function" must "implicitly convert to a ThermostatFunction" in {
     val tf = TestFunction("world")
-    val req = ThermostatPostRequest(account, Select(SelectType.Thermostats), None, Some(Seq(tf)))
+    val req = ThermostatPostRequest(account, Select(SelectType.Registered), None, Some(Seq(tf)))
 
     val expectedPayload = """
       {
         "functions" : [ { "type" : "test", "params": { "hello" : "world" } }],
-        "selection" : { "selectionType" : "thermostats", "selectionMatch" : "" }
+        "selection" : { "selectionType" : "registered" }
       }
       """.parseJson
 
     val httpReq: HttpRequest = this.runtime.unsafeRun(req.createRequest.provide(store))
-    val entity = Await.result(httpReq.entity.toStrict(Duration(1, "second")), Duration(1, "second"))
-      .data
-      .decodeString(StandardCharsets.UTF_8)
-
-    entity.parseJson shouldBe expectedPayload
+    httpReq.contentString.parseJson shouldBe expectedPayload
   }
 
 
@@ -62,11 +54,11 @@ class EcobeeFunctionSpec extends BaseTestSpec {
     val uv = UnlinkVoice("voice")
     val us = UpdateSensor("sense", "rs:100", "1")
 
-    val req = ThermostatPostRequest(account, Select(SelectType.Thermostats), None, Some(Seq(ack, plug, vaca, dv, reset, resume, sm, sh, uv, us)))
+    val req = ThermostatPostRequest(account, Select(SelectType.Registered), None, Some(Seq(ack, plug, vaca, dv, reset, resume, sm, sh, uv, us)))
 
     val expectedPayload = """
       {
-        "selection" : { "selectionType" : "thermostats", "selectionMatch" : "" },
+        "selection" : { "selectionType" : "registered" },
         "functions" : [
           { "type" : "acknowledge", "params" : { "thermostatIdentifier" : "id", "ackRef": "ackRef", "ackType": "accept", "remindMeLater" : false }},
           { "type" : "controlPlug", "params" : { "plugName": "name", "plugState": "off", "startDate": "2014-03-22","startTime": "10:23:44",
@@ -86,11 +78,7 @@ class EcobeeFunctionSpec extends BaseTestSpec {
       """.parseJson
 
     val httpReq: HttpRequest = this.runtime.unsafeRun(req.createRequest.provide(store))
-    val entity = Await.result(httpReq.entity.toStrict(Duration(1, "second")), Duration(1, "second"))
-      .data
-      .decodeString(StandardCharsets.UTF_8)
-
-    entity.parseJson shouldBe expectedPayload
+    httpReq.contentString.parseJson shouldBe expectedPayload
   }
 }
 

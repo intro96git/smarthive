@@ -1,14 +1,14 @@
 package com.kelvaya.ecobee.client.service
 
-import com.kelvaya.ecobee.client.Request
 import com.kelvaya.ecobee.test.client.BaseTestSpec
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.Authorization
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import com.twitter.finagle.http.Method
+import com.twitter.finagle.http.Fields
+
 
 import spray.json._
 import com.typesafe.scalalogging.Logger
+import com.twitter.finagle.http.Message
 
 class ThermostatServiceSpec extends BaseTestSpec {
 
@@ -19,45 +19,40 @@ class ThermostatServiceSpec extends BaseTestSpec {
 
   "The thermostat service" must "serialize requests correctly" in {
 
-    val selection = Select(SelectType.Thermostats, includeRuntime=true)
+    val selection = Select(SelectType.Registered, includeRuntime=true)
 
     "ThermostatService.execute(account, selection)" should compile
 
     // ############
 
     val thermReq = ThermostatRequest(account, selection)
-    val req: HttpRequest = this.runtime.unsafeRun(thermReq.createRequest.provide(store))
-    req.method shouldBe HttpMethods.GET
-    req.entity shouldBe HttpEntity.empty(Request.ContentTypeJson)
-    req.uri.path shouldBe Uri.Path("/thermostat")
-    req.header[Authorization] shouldBe 'defined
-    req.header[Authorization].get shouldBe Authorization(OAuth2BearerToken(this.AccessToken))
+    val req = this.runtime.unsafeRun(thermReq.createRequest.provide(store))
+    req.method shouldBe Method.Get
+    req.contentString shouldBe ""
+    req.uri should startWith("/1/thermostat?")
+    req.contentType shouldBe Some(Message.ContentTypeJson)
+    req.headerMap.get(Fields.Authorization) shouldBe 'defined
+    req.headerMap(Fields.Authorization) shouldBe "Bearer " + AccessToken
 
 
-    val expectedSelectionQs = """{"selectionType":"thermostats","selectionMatch":"","includeRuntime":true}""".parseJson
+    val expectedBodyQs1 = """{"selection": {"selectionType":"registered","includeRuntime":true}}""".parseJson
 
-    val qsSelection = req.uri.query().get("selection")
-    qsSelection.value.parseJson shouldBe expectedSelectionQs
+    val qsSelection = req.params.get("body")
+    qsSelection.value.parseJson shouldBe expectedBodyQs1
 
-    val qsPage = req.uri.query().get("page")
-    qsPage shouldBe None
-
-    req.uri.query().size shouldBe 2
+    req.params.size shouldBe 2
 
     // ############
 
     val thermReq2 = ThermostatRequest(account, selection, 1)
-    val req2: HttpRequest = this.runtime.unsafeRun(thermReq2.createRequest.provide(store))
+    val req2 = this.runtime.unsafeRun(thermReq2.createRequest.provide(store))
 
-    val expectedPage2 = """{"page":1}""".parseJson
+    val expectedBodyQs2 = """{ "page" : {"page":1}, "selection": {"selectionType":"registered","includeRuntime":true }}""".parseJson
 
-    val qsSelection2 = req2.uri.query().get("selection")
-    qsSelection2.value.parseJson shouldBe expectedSelectionQs
-
-    val qsPage2 = req2.uri.query().get("page")
-    qsPage2.value.parseJson shouldBe expectedPage2
-
-    req2.uri.query().size shouldBe 3
+    val qsSelection2 = req2.params.get("body")
+    qsSelection2.value.parseJson shouldBe expectedBodyQs2
+    
+    req2.params.size shouldBe 2
   }
 
 

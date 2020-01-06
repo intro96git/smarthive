@@ -1,38 +1,51 @@
 package com.kelvaya.ecobee.client
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
-
 import spray.json._
-import spray.json.DefaultJsonProtocol._
+
+import com.twitter.finagle.http.{Request => HttpRequest}
+import com.twitter.finagle.http.{Response => HttpResponse}
+import com.twitter.finagle.http.{Status => HttpStatus}
+import com.twitter.finagle.Http
 
 import zio.{IO,Task,ZIO}
+import zio.interop.twitter._
 
 import com.typesafe.scalalogging.Logger
 
+
 /** Executor which calls the Ecobee REST endpoints
   *
-  * @param settings (implicit) The application global settings  (from dependency injection, `DI`)
-  * @param system (implicit) Akka Actor system for the HTTP service  (from dependency injection, `DI`)
-  *
+  * Use [[RequestExecutorImpl$]] to create an instance.
   * @see [[com.kelvaya.ecobee.client client]]
   */
-class RequestExecutorImpl(implicit system : ActorSystem) extends RequestExecutor with SprayJsonSupport {
+trait RequestExecutorImpl extends RequestExecutor {
 
-  val requestExecutor = new RequestExecutor.Service[Any] {
-    private implicit val _materializer = ActorMaterializer()
-    private lazy val _log = Logger[RequestExecutorImpl]
+  val settings : ClientSettings.Service[Any]
 
-    def executeRequest[S:JsonFormat,E<:ServiceError](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
-      val reqExec = Task.fromFuture { _ => 
+  private lazy val _log = Logger[RequestExecutorImpl]
+
+  private val _finagle : HttpRequest => zio.Task[HttpResponse] = { req => 
+    val service = zio.Managed.make(newService) { svc => zio.UIO { svc.close(); () } }
+    service.use[Any,Throwable,HttpResponse] { svc => Task.fromTwitterFuture(IO(svc(req))) }
+  }
+
+  private def newService = IO {
+    val root = settings.EcobeeServerRoot  
+    val base = Http.client
+    val client = {
+      if (root.getProtocol == "https") base.withTls(root.getHost)
+      else base
+    }
+
+    client.newService(root.getAuthority)
+  }
+
+  final val requestExecutor = new RequestExecutor.Service[Any] {
+
+    def executeRequest[E<:ServiceError,S:JsonFormat](request: HttpRequest, err: JsObject => E, fail: (Throwable,Option[HttpResponse]) => E) : IO[E,S] = {    
+      val reqExec = {
         _log.info(s"Connecting to ${request.uri}")
-        Http().singleRequest(request) 
+        _finagle(request)
       }
       
       val response : IO[E,S] = 
@@ -40,20 +53,35 @@ class RequestExecutorImpl(implicit system : ActorSystem) extends RequestExecutor
           .map { r => _log.info(s"Response to ${request.uri} completed with status ${r.status}"); r }
           .foldM(
             e  => ZIO.fail(fail(e,None)),
-            hr => hr match {
-              case r @ HttpResponse(StatusCodes.OK, _, _, _) => 
-                Task.fromFuture(implicit ec => Unmarshal(r.entity).to[JsObject])
+            hr => hr.status match {
+              case HttpStatus.Ok => 
+                Task(hr.contentString.parseJson.asJsObject)
                   .map(_.convertTo[S])
-                  .mapError(e => fail(e, Some(r))) : IO[E,S]
-              case r =>
-                Task.fromFuture(implicit ec => Unmarshal(r.entity).to[JsObject])
+                  .mapError(e => fail(e, Some(hr))) : IO[E,S]
+              case _ =>
+                Task(hr.contentString.parseJson.asJsObject)
                   .map(err)
-                  .mapError(e => fail(e, Some(r)))
-                  .flatMap(r => ZIO.fail(r)) : IO[E,S]
+                  .mapError { e => fail(new RuntimeException(s"Bad response: $hr", e), Some(hr)) }
+                  .flatMap { r => 
+                    println(s"REQUEST: ${request.headerMap}")
+                    ZIO.fail(r)
+                   } : IO[E,S]
             }
       )
       
       response
     }
+  }
+}
+
+/** Factory for [[RequestExecutorImpl]] */
+object RequestExecutorImpl {
+  
+  /** Returns a new [[RequestExecutorImpl]].
+    *
+    * @note This will require both [[ClientSettings]] to be provide in the environment.
+    */ 
+  def create : zio.URIO[ClientSettings,RequestExecutorImpl] = zio.ZIO.environment[ClientSettings].map { s =>
+    new RequestExecutorImpl { val settings: ClientSettings.Service[Any] = s.settings }
   }
 }
