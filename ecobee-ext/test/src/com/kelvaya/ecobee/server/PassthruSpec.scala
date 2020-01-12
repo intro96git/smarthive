@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.server
 
-import com.twitter.finagle.http.{Request => HttpRequest}
-import com.twitter.finagle.http.{Response => HttpResponse}
+import com.twitter.finagle.http.Request
+import com.twitter.finagle.http.Response
 
 import org.scalatest.compatible.Assertion
 import org.scalamock.scalatest.MockFactory
@@ -46,7 +46,11 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
   val mockRequestExec = mock[RequestExecutor.Service[Any]]
   
   def setupMockRequestExecExpectations[E<:ServiceError,S] = 
-    toMockFunction4(mockRequestExec.executeRequest[E,S](_ : HttpRequest,_ : JsObject=>E,_ : (Throwable, Option[HttpResponse]) => E)(_ : JsonFormat[S]))
+    toMockFunction4(mockRequestExec.executeRequest[E,S](_ : Request,_ : JsObject=>E,_ : (Throwable, Option[Response]) => E)(_ : JsonFormat[S]))
+
+  def requestMatcher[E<:ServiceError,S](expected : Request) = where {(req:Request,_ : JsObject=>E,_ : (Throwable, Option[Response]) => E, _ : JsonFormat[S]) => 
+    req.uri == expected.uri && req.method == expected.method && req.params == expected.params && req.content == expected.content && req.headerMap == expected.headerMap
+  }
 
 
   // #########################################################
@@ -63,9 +67,9 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     runWithMock(mockRequestExec) { client =>
       for {
         expectedHttp <- expectedReq.createRequest
-        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(mockResult))
-        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
-        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(emptyMockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(emptyMockResult))
 
         d            <- client.readThermostat(new ThermostatID("testtherm"))
         _            <- d shouldBe ThermostatStats("testtherm", Temperature(temp))
@@ -90,9 +94,9 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     runWithMock(mockRequestExec) { client =>
       for {
         expectedHttp <- expectedReq.createRequest
-        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(mockResult))
-        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
-        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(expectedHttp,*,*,*).returning(zio.UIO(emptyMockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
+        _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(emptyMockResult))
 
         d1           <- client.readThermostats
         _            <- d1 should contain theSameElementsAs Seq(ThermostatStats("testtherm2", Temperature(temp2)),ThermostatStats("testtherm", Temperature(temp1)))
