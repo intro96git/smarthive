@@ -3,44 +3,65 @@ package com.kelvaya.ecobee.server
 import com.twitter.finagle.http.Request
 import com.twitter.finagle.http.Response
 
-import org.scalatest.compatible.Assertion
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.compatible.Assertion
 
-import com.kelvaya.ecobee.client.ApiError
-import com.kelvaya.ecobee.client.ClientSettings
-import com.kelvaya.ecobee.client.RequestExecutor
-import com.kelvaya.ecobee.client.ServiceError
-import com.kelvaya.ecobee.client.Statuses
-import com.kelvaya.ecobee.client.Temperature
-import com.kelvaya.ecobee.client.service.ThermostatRequest
+import com.kelvaya.ecobee.client._
+import com.kelvaya.ecobee.client.service.InitialTokensRequest
+import com.kelvaya.ecobee.client.service.PinRequest
+import com.kelvaya.ecobee.client.service.PinResponse
 import com.kelvaya.ecobee.client.service.Select
 import com.kelvaya.ecobee.client.service.SelectType
+import com.kelvaya.ecobee.client.service.ThermostatRequest
 import com.kelvaya.ecobee.client.service.ThermostatResponse
+import com.kelvaya.ecobee.client.service.TokensResponse
+import com.kelvaya.ecobee.client.tokens.Tokens
+import com.kelvaya.ecobee.client.tokens.TokenStorageError
+
 import com.kelvaya.ecobee.client.tokens.TokenStorage
 import com.kelvaya.ecobee.test.server._
 
 import spray.json.JsObject
 import spray.json.JsonFormat
 
-import zio.ZIO
+import zio._
+import zio.clock.Clock
+import zio.blocking.Blocking
+import zio.console.{Console => ZConsole}
+import zio.system.System
+import zio.random.{Random => ZRandom}
 
 import scala.util.Random
 
 class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
 
-  def runWithMock[R >: ServerEnv](re : RequestExecutor.Service[Any])(testFn : ApiClient.Service[Any] => ZIO[R,Throwable,Assertion]) = {
+  def runWithMock[R >: ServerEnv](acct : Option[AccountID] = None, ts : Option[TokenStorage.Service[Any]] = None)(testFn : ApiClient.Service[Any] => ZIO[R,Throwable,Assertion]) = {
     val testToRun = { 
       val client = new ApiClientImpl { 
-        val account = Account
+        val account = acct.getOrElse(Account)
         val env: ClientEnv = new RequestExecutor with TokenStorage with ClientSettings {
           val settings: ClientSettings.Service[Any] = spec.runtime.environment.settings  
-          val requestExecutor: RequestExecutor.Service[Any] = re
-          val tokenStorage: TokenStorage.Service[Any] = spec.runtime.environment.tokenStorage
+          val requestExecutor: RequestExecutor.Service[Any] = mockRequestExec
+          val tokenStorage: TokenStorage.Service[Any] = ts.getOrElse(spec.runtime.environment.tokenStorage)
         }
       }
       testFn(client.apiClient)
     }
-    this.run(testToRun)
+
+    val rt = this.runtime.map { e =>
+      new RequestExecutor with TokenStorage with ServerSettings with Clock with ZConsole with System with ZRandom with Blocking {
+        val blocking = e.blocking
+        val clock = e.clock
+        val console = e.console
+        val random = e.random
+        val settings = e.settings
+        val system = e.system
+        val requestExecutor = mockRequestExec
+        val tokenStorage = ts.getOrElse(spec.runtime.environment.tokenStorage)
+      }
+    }
+    
+    rt.unsafeRun(testToRun)
   }
 
   val mockRequestExec = mock[RequestExecutor.Service[Any]]
@@ -64,7 +85,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     val mockResult = thermResponse(therm("testtherm", name="testtherm", runtime = Some(rt)))
     val emptyMockResult = thermResponse()
 
-    runWithMock(mockRequestExec) { client =>
+    runWithMock() { client =>
       for {
         expectedHttp <- expectedReq.createRequest
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
@@ -91,7 +112,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     val mockResult = thermResponse(therm("testtherm", name="testtherm", runtime = Some(rt1)), therm("testtherm2", name="testtherm2", runtime = Some(rt2)))
     val emptyMockResult = thermResponse()
 
-    runWithMock(mockRequestExec) { client =>
+    runWithMock() { client =>
       for {
         expectedHttp <- expectedReq.createRequest
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
@@ -109,6 +130,79 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
       } yield succeed
     }
   }
+
+
+  it must "support registering via PIN" in {
+    val newAccount = new AccountID("NewPinRequestAcct")
+    val expectedReq = new PinRequest()
+    val mockResult = PinResponse(Pin, 9, AuthCode, PinScope.SmartWrite, 5)
+    val mockErr = AuthError(AuthError.ErrorCodes.SlowDown.error, "err", "https://example.org")
+    val store = mock[TokenStorage.Service[Any]]
+
+    runWithMock(Some(newAccount), Some(store)) { client =>
+      for {
+        expectedHttp <- expectedReq.createRequest
+        _            =  setupMockRequestExecExpectations[AuthError,PinResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
+        _            =  setupMockRequestExecExpectations[AuthError,PinResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(mockErr))
+        _            =  (store.storeTokens _).expects(newAccount, Tokens(Some(AuthCode), None, None)).returning(zio.UIO.unit)
+
+        d1           <- client.register
+        _            <- d1 shouldBe Registration(Pin, 9, 5)
+        
+        e1           <- client.register.flip.mapError(_ => fail("Should have failed with 'SlowDown'"))
+        _            <- e1 shouldBe ClientError.ApiServiceError(mockErr)
+      } yield succeed
+    }
+  }
+
+
+  it must "support using the PIN to complete registration" in {
+    val PinTestAccount = new AccountID("pinTestAccount")
+    val expectedReq = new InitialTokensRequest(PinTestAccount)
+    val expectedResp = zio.UIO.succeed(TokensResponse("12345", TokenType.Bearer, 60, "ABCDEF", PinScope.SmartWrite))
+    val mockErr = AuthError(AuthError.ErrorCodes.AuthorizationExpired.error, "err", "https://example.org")
+    val store = mock[TokenStorage.Service[Any]]
+
+    runWithMock(Some(PinTestAccount), Some(store)) { client =>
+
+      (store.getTokens _).expects(PinTestAccount).returning(zio.UIO.succeed(Tokens(Some(AuthCode), None, None)))
+
+      for {
+        expectedHttp <- expectedReq.createRequest
+      
+        _            =  (store.getTokens _).expects(PinTestAccount).returning(zio.IO.fail(TokenStorageError.InvalidAccountError)).twice
+
+        e0           <- client.authorize.flip.mapError(e => fail(s"Should have failed with 'InvalidAccount'.  Actual: $e"))
+        _            <- e0 shouldBe ClientError.ApiServiceError(RequestError.TokenAccessError(TokenStorageError.InvalidAccountError))
+
+        _            =  inSequence {
+                          (store.getTokens _).expects(PinTestAccount).returning(zio.UIO.succeed(Tokens(Some(AuthCode), None, None))).twice
+                          setupMockRequestExecExpectations[AuthError,TokensResponse].expects(requestMatcher(expectedHttp)).returning(expectedResp)
+                          (store.storeTokens _).expects(PinTestAccount, Tokens(None, Some("12345"), Some("ABCDEF"))).returning(zio.UIO.unit)
+                        }
+
+
+        d1           <- client.authorize
+        _            <- d1 shouldBe AuthStatus.Succeeded(60)
+
+        _            =  (store.getTokens _).expects(PinTestAccount).returning(zio.UIO.succeed(Tokens(None, Some(AccessToken), Some(RefreshToken))))
+
+        d2           <- client.authorize
+        _            <- d2 shouldBe AuthStatus.AlreadyAuthorized
+                
+        _            =  inSequence {
+                          (store.getTokens _).expects(PinTestAccount).returning(zio.UIO.succeed(Tokens(Some(AuthCode), None, None))).twice
+                          setupMockRequestExecExpectations[AuthError,TokensResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(mockErr))
+                        }
+
+        d3           <- client.authorize
+        _            <- d3 shouldBe AuthStatus.RegistrationExpired
+      } yield succeed
+    }
+  }
+
+
+  it must "support refreshing tokens automatically" in (pending)
 
 
   it must "support reading a thermostat's humidity" in (pending)

@@ -16,4 +16,7 @@ object ClientError {
 
   /** The request returned no thermostats (although at least one was expected) */
   final case object ThermostatNotFound extends ClientError
+
+  /** The API client is misconfigured.  Check the server logs. */
+  final case object ConfigurationError extends ClientError
 }

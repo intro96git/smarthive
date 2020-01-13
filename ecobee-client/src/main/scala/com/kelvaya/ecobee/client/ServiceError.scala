@@ -62,18 +62,43 @@ object AuthError {
     /** Ecobee service error and associated HTTP status code */
     case class ErrorCode(error : String, code : HttpStatus) extends super.Val(error)
 
+    /** Authorization has been denied by the user. This is only used in the Authorization Code authorization browser redirect. */
     val AccessDenied = new ErrorCode("access_denied", HttpStatus.Found)
+
+    /** The request is malformed. Check parameters. */
     val InvalidRequest = new ErrorCode("invalid_request", HttpStatus.BadRequest)
+
+    /** Authentication error, invalid authentication method, lack of credentials, etc.*/
     val InvalidClient = new ErrorCode("invalid_client", HttpStatus.Unauthorized)
+    
+    /** The authorization grant, token or credentials are expired or invalid. */
     val InvalidGrant = new ErrorCode("invalid_grant", HttpStatus.BadRequest)
+
+    /** The authenticated client is not authorized to use this authorization grant type. */
     val UnauthorizedClient = new ErrorCode("unauthorized_client", HttpStatus.BadRequest)
+
+    /** The authorization grant type is not supported by the authorization server. */
     val UnsupportedGrant = new ErrorCode("unsupported_grant_type", HttpStatus.BadRequest)
+
+    /** The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner. */
     val InvalidScope = new ErrorCode("invalid_scope", HttpStatus.BadRequest)
+
+    /** HTTP method not supported for this request. */
     val NotSupported = new ErrorCode("not_supported", HttpStatus.BadRequest)
+
+    /** Account is temporarily locked. */
     val AccountLocked = new ErrorCode("account_locked", HttpStatus.Unauthorized)
+
+    /** Account is disabled. */
     val AccountDisabled = new ErrorCode("account_disabled", HttpStatus.Unauthorized)
+
+    /** Waiting for user to authorize application. */
     val AuthorizationPending = new ErrorCode("authorization_pending", HttpStatus.Unauthorized)
+
+    /** The authorization has expired waiting for user to authorize. */
     val AuthorizationExpired = new ErrorCode("authorization_expired", HttpStatus.Unauthorized)
+
+    /** Slow down polling to the requested interval. */
     val SlowDown = new ErrorCode("slow_down", HttpStatus.Unauthorized)
 
     implicit def toErrorCode(v : ErrorCodes.Value) = v match {

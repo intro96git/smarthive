@@ -3,7 +3,7 @@ package com.kelvaya.ecobee.test.client
 import com.kelvaya.ecobee.client.AccountID
 
 import com.kelvaya.ecobee.client.tokens._
-import zio.UIO
+import zio._
 
 
 object TestStorage extends TestConstants {
@@ -19,7 +19,10 @@ trait TestStorage extends TokenStorage {
     private var _tokens = testStorageParams
 
     // May throw exception...fix it!!
-    def getTokens(account : AccountID): UIO[Tokens] = UIO(_tokens(account))
+    def getTokens(account : AccountID): IO[TokenStorageError,Tokens] = {
+      val curr = _tokens.get(account)
+      IO.fromEither(curr.map(Right(_)).getOrElse(Left(TokenStorageError.InvalidAccountError)))
+    }
 
     // This won't handle parallelism or re-use.  Fix it!
     def storeTokens(account : AccountID, tokens: Tokens): UIO[Unit] = UIO { _tokens = _tokens + ((account, tokens)) }
