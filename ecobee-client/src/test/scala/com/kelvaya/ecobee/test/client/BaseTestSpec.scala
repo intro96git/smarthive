@@ -4,8 +4,8 @@ import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.TestClient
 import com.kelvaya.ecobee.client.DI
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.compatible.Assertion
 
@@ -18,7 +18,7 @@ import zio.DefaultRuntime
 import zio.Task
 
 
-trait BaseTestSpec extends FlatSpec
+trait BaseTestSpec extends AnyFlatSpec
 with Matchers
 with OptionValues
 with TestConstants

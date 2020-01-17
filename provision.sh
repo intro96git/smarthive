@@ -22,7 +22,7 @@ sudo -u vagrant -- systemctl --user enable bloop
 if [ -f /vagrant/.bashrc ]; then
 	cat /vagrant/.bashrc >> /home/vagrant/.bashrc
 fi
-curl -L https://github.com/lihaoyi/Ammonite/releases/download/1.9.3/2.12-1.9.3 > /usr/local/bin/amm && chmod +x /usr/local/bin/amm
+curl -L https://github.com/lihaoyi/Ammonite/releases/download/2.0.1/2.12-2.0.1 > /usr/local/bin/amm && chmod +x /usr/local/bin/amm
 cat >>/home/vagrant/.bashrc <<EOF
 export PATH=/vagrant:$PATH
 EOF

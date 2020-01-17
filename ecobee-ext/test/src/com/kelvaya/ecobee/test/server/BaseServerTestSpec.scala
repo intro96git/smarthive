@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.test.server
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.compatible.Assertion
 
@@ -21,7 +21,7 @@ import com.kelvaya.util.Time.DateOnly
 import com.kelvaya.ecobee.client.service.ThermostatResponse
 
 
-trait BaseServerTestSpec extends FlatSpec with Matchers with OptionValues with ServerTestConstants {
+trait BaseServerTestSpec extends AnyFlatSpec with Matchers with OptionValues with ServerTestConstants {
 }
 
 

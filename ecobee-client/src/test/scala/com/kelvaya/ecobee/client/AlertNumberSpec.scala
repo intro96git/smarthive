@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.client
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.OptionValues
 
 import spray.json._
@@ -9,7 +9,7 @@ import spray.json.DefaultJsonProtocol._
 import com.kelvaya.util.SprayImplicits
 
 
-class AlertNumberSpec extends FlatSpec with Matchers with OptionValues with SprayImplicits {
+class AlertNumberSpec extends AnyFlatSpec with Matchers with OptionValues with SprayImplicits {
   "Alert numbers" must "be able to encapsulate single value alerts" in {
 
     val num = AlertNumber.ACMaintenance
