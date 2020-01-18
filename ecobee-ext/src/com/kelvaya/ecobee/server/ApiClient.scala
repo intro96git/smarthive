@@ -4,16 +4,16 @@ import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.service._
 import com.kelvaya.ecobee.client.service.ThermostatService._
 import com.kelvaya.ecobee.client.tokens.Tokens
+import com.kelvaya.ecobee.client.tokens.TokenStorage
+import com.kelvaya.ecobee.client.tokens.TokenStorageError
 
 import com.typesafe.scalalogging.Logger
 
 import zio.ZIO
-import com.kelvaya.ecobee.client.tokens.TokenStorage
-import com.kelvaya.ecobee.client.tokens.TokenStorageError
 
 /** Ecobee API client used by the server 
   * 
-  * @see [[ApiClientImpl]]
+  * The default service implementation can be found at [[ApiClient$.Live]]
   */
 trait ApiClient {
 
@@ -28,46 +28,50 @@ object ApiClient {
     * 
     * @tparam R Environment needed to provide access for this client
     * 
-    * @see [[ApiClientImpl]]
+    * @see [[ApiClient]]
     */
-  trait Service[R] {
+  trait Service[-R] {
 
-    /** Returns an [[AuthStatus]] based on the user registering the app with a PIN. */
-    def authorize : ZIO[R,ClientError,AuthStatus]
+    /** Returns an [[AuthStatus]] based on the user registering the app with a PIN. 
+      * 
+      * @param account The Extensions account
+      */
+    def authorize(account : AccountID) : ZIO[R,ClientError,AuthStatus]
 
     /** Return the current statistics for the given thermostat 
       *
       * If the thermostat is not found, the implementation should return [[ClientError.ThermostatNotFound]]
       * 
+      * @param account The Extensions account
       * @param id The ID of the thermostat 
       */
-    def readThermostat(id : ThermostatID) : ZIO[R,ClientError,ThermostatStats]
+    def readThermostat(account : AccountID, id : ThermostatID) : ZIO[R,ClientError,ThermostatStats]
 
-    /** Return the current statistics for all registered thermostat */
-    def readThermostats : ZIO[R,ClientError,Iterable[ThermostatStats]]
+    /** Return the current statistics for all registered thermostat
+      * 
+      * @param account The Extensions account
+      */
+    def readThermostats(account : AccountID) : ZIO[R,ClientError,Iterable[ThermostatStats]]
 
-    /** Return registration PIN which must be entered by the user into the app */
-    def register : ZIO[R,ClientError,Registration]
+    /** Return registration PIN which must be entered by the user into the app 
+      * 
+      * @param account The Extensions account
+      */
+    def register(account : AccountID) : ZIO[R,ClientError,Registration]
   }
-}
 
 
-/** Default implementation of the Ecobee client API, using the Ecobee client library's [[RequestExecutor]] 
-  *  to provide access to the thermostat data.
-  * 
-  * @note One can use [[AplClientImpl$#create]] to instantiate a new instance.
-  */ 
-trait ApiClientImpl extends ApiClient {
-  val account : AccountID
-  val env : ClientEnv
+  /** Default implementation of the Ecobee client API, using the Ecobee client library's [[RequestExecutor]] 
+    *  to provide access to the thermostat data.
+    */ 
+  object Live extends ApiClient.Service[ClientEnv] {
+  
+    def authorize(account : AccountID): ZIO[ClientEnv,ClientError,AuthStatus] = {
 
-  private implicit lazy val _settings = env.settings
+      val _settings = ZIO.access[ClientSettings](_.settings)
+      val _storage = ZIO.environment[TokenStorage]
 
-  val apiClient = new ApiClient.Service[Any] {
-
-    def authorize: ZIO[Any,ClientError,AuthStatus] = {
-
-      def _authorize = 
+      def _authorize = _settings.flatMap { implicit s =>
         InitialTokensService
           .execute(account)
           .foldM( 
@@ -77,21 +81,23 @@ trait ApiClientImpl extends ApiClient {
             },
             _storeTokens
           )
-          .provide(env)
+      }
 
       
-      def _storeTokens(r : TokensResponse) : zio.IO[ClientError,AuthStatus] =
-        env.tokenStorage.storeTokens(account, Tokens(None, Some(r.access_token), Some(r.refresh_token)))
+      def _storeTokens(r : TokensResponse) : ZIO[TokenStorage,ClientError,AuthStatus] =
+        _storage
+          .flatMap(_.tokenStorage.storeTokens(account, Tokens(None, Some(r.access_token), Some(r.refresh_token))))
           .map(_ => AuthStatus.Succeeded(r.expires_in))
           .catchAll { err =>
             zio.IO.fail {
-              Logger[ApiClientImpl].error(s"Cannot use API client; unexpected token storage failure on save operation: $err") 
+              Logger[Live.type].error(s"Cannot use API client; unexpected token storage failure on save operation: $err") 
               ClientError.ConfigurationError
             } 
           }
 
-      def _tokenTask : zio.IO[ClientError,AuthStatus] =  
-        env.tokenStorage.getTokens(account)
+      def _tokenTask : ZIO[TokenStorage,ClientError,AuthStatus] =  
+        _storage
+          .flatMap(_.tokenStorage.getTokens(account))
           .map { toks => 
             if (toks.accessToken.isDefined && toks.refreshToken.isDefined) AuthStatus.AlreadyAuthorized
             else if (toks.authorizationToken.isDefined) AuthStatus.WaitingForAuthorization
@@ -100,7 +106,7 @@ trait ApiClientImpl extends ApiClient {
           .catchAll {
             case TokenStorageError.InvalidAccountError => zio.UIO.succeed(AuthStatus.NeedsAuthorization)
             case err => zio.IO.fail {
-              Logger[ApiClientImpl].error(s"Cannot use API client; token storage failure: $err") 
+              Logger[Live.type].error(s"Cannot use API client; token storage failure: $err") 
               ClientError.ConfigurationError 
             }
           }
@@ -117,79 +123,55 @@ trait ApiClientImpl extends ApiClient {
 
 
 
-    def readThermostat(id : ThermostatID) : ZIO[Any,ClientError,ThermostatStats] = {      
-      ThermostatService
-        .execute(account, Select(SelectType.Thermostats(id.id), includeRuntime=true))
-        .mapError(ClientError.ApiServiceError)
-        .flatMap { res =>
-          zio.IO.fromEither {
-            val tempOpt = for {
-              t <- res.thermostatList.headOption
-              r <- t.runtime
-            } yield ThermostatStats(t.name, Temperature(r.rawTemperature))
+    def readThermostat(account : AccountID, id : ThermostatID) : ZIO[ClientEnv,ClientError,ThermostatStats] = {
+      ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
+        ThermostatService
+          .execute(account, Select(SelectType.Thermostats(id.id), includeRuntime=true))
+          .mapError(ClientError.ApiServiceError)
+          .flatMap { res =>
+            zio.IO.fromEither {
+              val tempOpt = for {
+                t <- res.thermostatList.headOption
+                r <- t.runtime
+              } yield ThermostatStats(t.name, Temperature(r.rawTemperature))
 
-            tempOpt.map(t => Right(t)).getOrElse(Left(ClientError.ThermostatNotFound))
-          }
+              tempOpt.map(t => Right(t)).getOrElse(Left(ClientError.ThermostatNotFound))
+            }
         }
-        .provide(env)
+      }
     }
 
 
 
-    def readThermostats : ZIO[Any,ClientError,Iterable[ThermostatStats]] = {
-      ThermostatService
-        .execute(account, Select(SelectType.Registered, includeRuntime=true))
-        .mapError(ClientError.ApiServiceError)
-        .map(_.thermostatList.flatMap(t => t.runtime.map(r => ThermostatStats(t.name, Temperature(r.rawTemperature))))) 
-        .provide(env)
+    def readThermostats(account : AccountID) : ZIO[ClientEnv,ClientError,Iterable[ThermostatStats]] = {
+      ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
+        ThermostatService
+          .execute(account, Select(SelectType.Registered, includeRuntime=true))
+          .mapError(ClientError.ApiServiceError)
+          .map(_.thermostatList.flatMap(t => t.runtime.map(r => ThermostatStats(t.name, Temperature(r.rawTemperature))))) 
+      }
     }
 
 
 
-    def register: ZIO[Any,ClientError,Registration] = { 
-      val svcTask = 
+    def register(account : AccountID): ZIO[ClientEnv,ClientError,Registration] = { 
+      val svcTask = ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
         PinService
           .execute
           .mapError(ClientError.ApiServiceError)
-      
-      val go = 
-        for {
-          t <- svcTask
-          _ <- env.tokenStorage
+      }
+
+      for {
+        t <- svcTask
+        _ <- ZIO.accessM[TokenStorage] { ts =>
+              ts.tokenStorage
                 .storeTokens(account, Tokens(Some(t.code), None, None))
                 .catchAll { case tse =>
-                  Logger[ApiClientImpl].error(s"Cannot use API client; token storage failure: $tse")
+                  Logger[Live.type].error(s"Cannot use API client; token storage failure: $tse")
                   zio.IO.fail(ClientError.ConfigurationError)
                 }
-        } yield Registration(t.ecobeePin, t.expires_in, t.interval)
-
-      go.provide(env)
+            }
+      } yield Registration(t.ecobeePin, t.expires_in, t.interval)
     }
-  }
-}
-
-
-/** Factory for [[ApiClientImpl]]
-  * 
-  * Use [[#create]] to instantiate a new instance
-  */
-object ApiClientImpl {
-
-  /** Returns a new [[ApiClientImpl]]
-    * which requires a [[ClientEnv]] environment to use.
-    * 
-    * @param accountId The Account with which the API will connect to the Ecobee servers
-    * @param lb (implicit) Akka logging
-    */
-  def create(accountId : AccountID) : zio.URIO[ClientEnv,ApiClientImpl] = {
-    for {
-      cenv   <- zio.ZIO.environment[ClientEnv]
-      client <- zio.UIO {
-        new ApiClientImpl {
-          val account = accountId
-          val env = cenv
-        }
-      }
-    } yield client
   }
 }

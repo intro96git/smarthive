@@ -35,18 +35,7 @@ import scala.util.Random
 
 class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
 
-  def runWithMock[R >: ServerEnv](acct : Option[AccountID] = None, ts : Option[TokenStorage.Service[Any]] = None)(testFn : ApiClient.Service[Any] => ZIO[R,Throwable,Assertion]) = {
-    val testToRun = { 
-      val client = new ApiClientImpl { 
-        val account = acct.getOrElse(Account)
-        val env: ClientEnv = new RequestExecutor with TokenStorage with ClientSettings {
-          val settings: ClientSettings.Service[Any] = spec.runtime.environment.settings  
-          val requestExecutor: RequestExecutor.Service[Any] = mockRequestExec
-          val tokenStorage: TokenStorage.Service[Any] = ts.getOrElse(spec.runtime.environment.tokenStorage)
-        }
-      }
-      testFn(client.apiClient)
-    }
+  def runWithMock[R >: ServerEnv](ts : Option[TokenStorage.Service[Any]] = None)(test : ZIO[R,Throwable,Assertion]) = {
 
     val rt = this.runtime.map { e =>
       new RequestExecutor with TokenStorage with ServerSettings with Clock with ZConsole with System with ZRandom with Blocking {
@@ -61,7 +50,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
       }
     }
     
-    rt.unsafeRun(testToRun)
+    rt.unsafeRun(test)
   }
 
   val mockRequestExec = mock[RequestExecutor.Service[Any]]
@@ -85,20 +74,20 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     val mockResult = thermResponse(therm("testtherm", name="testtherm", runtime = Some(rt)))
     val emptyMockResult = thermResponse()
 
-    runWithMock() { client =>
+    runWithMock() { 
       for {
         expectedHttp <- expectedReq.createRequest
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(emptyMockResult))
 
-        d            <- client.readThermostat(new ThermostatID("testtherm"))
+        d            <- ApiClient.Live.readThermostat(Account, new ThermostatID("testtherm"))
         _            <- d shouldBe ThermostatStats("testtherm", Temperature(temp))
         
-        e1           <- client.readThermostat(new ThermostatID("testtherm")).flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
+        e1           <- ApiClient.Live.readThermostat(Account, new ThermostatID("testtherm")).flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
         _            <- e1 shouldBe ClientError.ApiServiceError(ApiError(Statuses.NotAuthorized))
         
-        e2           <- client.readThermostat(new ThermostatID("testtherm")).flip.mapError(_ => fail("Should have failed with no results"))
+        e2           <- ApiClient.Live.readThermostat(Account, new ThermostatID("testtherm")).flip.mapError(_ => fail("Should have failed with no results"))
         _            <- e2 shouldBe ClientError.ThermostatNotFound
       } yield succeed
     }
@@ -112,20 +101,20 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     val mockResult = thermResponse(therm("testtherm", name="testtherm", runtime = Some(rt1)), therm("testtherm2", name="testtherm2", runtime = Some(rt2)))
     val emptyMockResult = thermResponse()
 
-    runWithMock() { client =>
+    runWithMock() {
       for {
         expectedHttp <- expectedReq.createRequest
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(ApiError(Statuses.NotAuthorized)))
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(emptyMockResult))
 
-        d1           <- client.readThermostats
+        d1           <- ApiClient.Live.readThermostats(Account)
         _            <- d1 should contain theSameElementsAs Seq(ThermostatStats("testtherm2", Temperature(temp2)),ThermostatStats("testtherm", Temperature(temp1)))
         
-        e1           <- client.readThermostats.flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
+        e1           <- ApiClient.Live.readThermostats(Account).flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
         _            <- e1 shouldBe ClientError.ApiServiceError(ApiError(Statuses.NotAuthorized))
         
-        d2           <- client.readThermostats
+        d2           <- ApiClient.Live.readThermostats(Account)
         _            <- d2 shouldBe empty
       } yield succeed
     }
@@ -139,17 +128,17 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     val mockErr = AuthError(AuthError.ErrorCodes.SlowDown.error, "err", "https://example.org")
     val store = mock[TokenStorage.Service[Any]]
 
-    runWithMock(Some(newAccount), Some(store)) { client =>
+    runWithMock(Some(store)) {
       for {
         expectedHttp <- expectedReq.createRequest
         _            =  setupMockRequestExecExpectations[AuthError,PinResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(mockResult))
         _            =  setupMockRequestExecExpectations[AuthError,PinResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(mockErr))
         _            =  (store.storeTokens _).expects(newAccount, Tokens(Some(AuthCode), None, None)).returning(zio.UIO.unit)
 
-        d1           <- client.register
+        d1           <- ApiClient.Live.register(newAccount)
         _            <- d1 shouldBe Registration(Pin, 9, 5)
         
-        e1           <- client.register.flip.mapError(_ => fail("Should have failed with 'SlowDown'"))
+        e1           <- ApiClient.Live.register(newAccount).flip.mapError(_ => fail("Should have failed with 'SlowDown'"))
         _            <- e1 shouldBe ClientError.ApiServiceError(mockErr)
       } yield succeed
     }
@@ -163,7 +152,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     val mockErr = AuthError(AuthError.ErrorCodes.AuthorizationExpired.error, "err", "https://example.org")
     val store = mock[TokenStorage.Service[Any]]
 
-    runWithMock(Some(PinTestAccount), Some(store)) { client =>
+    runWithMock(Some(store)) {
 
       (store.getTokens _).expects(PinTestAccount).returning(zio.UIO.succeed(Tokens(Some(AuthCode), None, None)))
 
@@ -172,7 +161,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
       
         _            =  (store.getTokens _).expects(PinTestAccount).returning(zio.IO.fail(TokenStorageError.InvalidAccountError)).twice
 
-        e0           <- client.authorize.flip.mapError(e => fail(s"Should have failed with 'InvalidAccount'.  Actual: $e"))
+        e0           <- ApiClient.Live.authorize(PinTestAccount).flip.mapError(e => fail(s"Should have failed with 'InvalidAccount'.  Actual: $e"))
         _            <- e0 shouldBe ClientError.ApiServiceError(RequestError.TokenAccessError(TokenStorageError.InvalidAccountError))
 
         _            =  inSequence {
@@ -182,12 +171,12 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
                         }
 
 
-        d1           <- client.authorize
+        d1           <- ApiClient.Live.authorize(PinTestAccount)
         _            <- d1 shouldBe AuthStatus.Succeeded(60)
 
         _            =  (store.getTokens _).expects(PinTestAccount).returning(zio.UIO.succeed(Tokens(None, Some(AccessToken), Some(RefreshToken))))
 
-        d2           <- client.authorize
+        d2           <- ApiClient.Live.authorize(PinTestAccount)
         _            <- d2 shouldBe AuthStatus.AlreadyAuthorized
                 
         _            =  inSequence {
@@ -195,7 +184,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
                           setupMockRequestExecExpectations[AuthError,TokensResponse].expects(requestMatcher(expectedHttp)).returning(zio.IO.fail(mockErr))
                         }
 
-        d3           <- client.authorize
+        d3           <- ApiClient.Live.authorize(PinTestAccount)
         _            <- d3 shouldBe AuthStatus.RegistrationExpired
       } yield succeed
     }
