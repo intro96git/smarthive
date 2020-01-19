@@ -1,6 +1,7 @@
 package com.kelvaya.ecobee.client
 
 import com.kelvaya.ecobee.client.tokens._
+import doobie.h2.H2Transactor
 
 /** Defines the [[ClientEnv]] type used as the environment for ZIO effectful types */
 trait ClientEnvDefinition {
@@ -27,8 +28,8 @@ trait ClientEnvDefinition {
     * 
     * @param xa The Doobie Transactor used to execute queries against the H2 database
     */
-  def createEnv(xa : doobie.Transactor[zio.Task]) : ClientEnv = new RequestExecutorImpl with ClientSettings.Live with H2DbTokenStorage {
-    val transactor: doobie.Transactor[zio.Task] = xa
+  def createEnv(xaTask : zio.IO[TokenStorageError,H2Transactor[zio.Task]]) : ClientEnv = new RequestExecutorImpl with ClientSettings.Live with H2DbTokenStorage {
+    val transactor = xaTask
   }
 
 

@@ -1,12 +1,12 @@
 package com.kelvaya.ecobee.client.tokens
 
-import com.kelvaya.ecobee.client.tokens.H2DbTokenStorage.DbError
 import com.kelvaya.ecobee.client.ClientSettings
 import com.kelvaya.ecobee.test.client._
 
 import better.files.File
 
 import doobie.implicits._
+import doobie.util.transactor.Transactor
 
 import zio.Task
 import zio.UIO
@@ -22,47 +22,51 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
     val bad = "jdbc:h2:/data/sample;IFEXISTS=xx"
     val middle = "jdbc:h2:/data/sample;IFEXISTS=TRUE;OTHER=123"
 
-    H2DbTokenStorage.parseConnectionString(enabled, true) shouldBe Right(missing)
-    H2DbTokenStorage.parseConnectionString(enabled, false) shouldBe Right(enabled)
-
-    H2DbTokenStorage.parseConnectionString(missing, true) shouldBe Right(missing)
-    H2DbTokenStorage.parseConnectionString(missing, false) shouldBe Right(enabled)
-
-    H2DbTokenStorage.parseConnectionString(middle, true) shouldBe Right(missing + ";OTHER=123")
-    H2DbTokenStorage.parseConnectionString(middle, false) shouldBe Right(middle)
-
-    H2DbTokenStorage.parseConnectionString(bad, true) should matchPattern { case Left(DbError.InvalidConnection(_)) => }
-    H2DbTokenStorage.parseConnectionString(bad, false) should matchPattern { case Left(DbError.InvalidConnection(_)) => }
+    for {
+      a <- H2DbTokenStorage.parseConnectionString(enabled, true)
+      _ <- a shouldBe missing
+      b <- H2DbTokenStorage.parseConnectionString(enabled, false) 
+      _ <- b shouldBe enabled
+ 
+      c <- H2DbTokenStorage.parseConnectionString(missing, true) 
+      _ <- c shouldBe missing
+      d <- H2DbTokenStorage.parseConnectionString(missing, false)
+      _ <- d shouldBe enabled
+ 
+      f <- H2DbTokenStorage.parseConnectionString(middle, true)
+      _ <- f shouldBe missing + ";OTHER=123"
+      g <- H2DbTokenStorage.parseConnectionString(middle, false)
+      _ <- g  shouldBe middle
+ 
+      h <- H2DbTokenStorage.parseConnectionString(bad, true).flip
+      _ <- h shouldBe TokenStorageError.ConnectionError
+      i <- H2DbTokenStorage.parseConnectionString(bad, false).flip 
+      _ <- i shouldBe TokenStorageError.ConnectionError
+    } yield succeed
   }
 
 
   "The H2 database token storage driver" must "be initializable" in {
     val test = createTempDb { implicit s =>
       
-      val t1 = H2DbTokenStorage.initDb.map { db =>
+      val t1 =
         for {
-          init <- db.use(_ => Task(true))
+          init <- H2DbTokenStorage.initAndConnect.use(_ => Task(true))
           a    <- init shouldBe true
         }
         yield a
-      }
 
-      val t2 = H2DbTokenStorage.createConn(false).map { _.use { xa => 
+      val t2 = H2DbTokenStorage.createConn(false).use { xa => 
         for {
           cnt <- sql"select count(*) from token".query[Int].unique.transact(xa)
           a   <- cnt shouldBe 0
         } yield a
-      }}
-
-      val connOk = Task((t1.isRight && t2.isRight) shouldBe true)
-
-      lazy val t1r = t1.right.get
-      lazy val t2r = t2.right.get
+      }
 
       // t1 should succeed the first time, but should be an exception the second time
       // NB: The "mapError" will change the Exception error type into a Assertion "error" type 
       // (to keep the types correct for "leftOrFailException"). 
-      connOk *> t1r *> t1r.mapError(_ => succeed).either.leftOrFailException *> t2r
+      t1 *> t1.mapError(_ => succeed).flip.mapError(_ => fail("InitAndConnect should fail the 2nd time")) *> t2
       
     }
 
@@ -76,20 +80,18 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
 
   it must "return an error if the DB does not exist" in {
     val test = createTempDb { implicit s =>
-      val dbQueryResultTest : Either[DbError,Task[Assertion]] = H2DbTokenStorage.connect.map { db =>
-        db.use { store => 
-          
-          val queryRun = for {
-            _ <- store.tokenStorage.getTokens(account)
-          } yield fail("Should not have succeeded")
-          
-          queryRun.flip.flatMap(e => e shouldBe TokenStorageError.ConnectionError)
-        }
-      }
-
-      dbQueryResultTest.isRight shouldBe true
-      dbQueryResultTest.right.get
+      for {
+        qry  <- H2DbTokenStorage.connect.use { xa =>
+                  val store = new H2DbTokenStorage { val transactor = UIO(xa) }
+                  val queryRun = for {
+                    _ <- store.tokenStorage.getTokens(account)
+                  } yield fail("Should not have succeeded")
+                  
+                  queryRun.flip.map(e => e shouldBe TokenStorageError.ConnectionError)
+                }
+      } yield qry
     }
+
     run(test)
   }
 
@@ -101,7 +103,6 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
       val setup = withTestStore { s =>
         s.storeTokens(account, Tokens(Some("mytest"), None, None)).flatMap(_ => succeed)
       }
-      setup.isRight shouldBe true
 
 
       // verify directly through H2 Doobie library that we have records
@@ -129,7 +130,7 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
         }
       }
       
-      setup.right.get *> verify
+      setup *> verify
     }
 
     run(test)
@@ -141,9 +142,7 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
   // Is used as the function for the TokenStorageBehavior tests.
   private def usingStore(actions : TokenStorage.Service[Any] => Task[Assertion]) : Task[Assertion] = {
     createTempDb { implicit settings =>
-      val result = withTestStore { store => actions(store) }
-      result.isRight shouldBe true
-      result.right.get
+      withTestStore { store => actions(store) }
     }
   }
 
@@ -159,14 +158,20 @@ class H2DbTokenStorageSpec extends BaseTestSpec with TokenStorageBehavior with Z
 
 
   private def withTestStore[S](fn : TokenStorage.Service[Any] => Task[S])(implicit s : ClientSettings.Service[Any]) = {
-    val conn = H2DbTokenStorage.initDb
-    conn.map(_.use { store =>
-      val sql = 
-        sql"insert into token (account, authToken, accessToken, refreshToken) values ($account, $AuthCode, $AccessToken, $RefreshToken)"
-        .update
+    H2DbTokenStorage.initAndConnect.use { xa =>
+      _createDb(xa) *> {
+        val store =  new H2DbTokenStorage { val transactor = zio.IO.succeed(xa) }
+        fn(store.tokenStorage)
+      }
+    }    
+  }
 
-      sql.run.transact(store.transactor).flatMap(_ => fn(store.tokenStorage))
-    })
+  private def _createDb(xa : Transactor[Task]) = { 
+    val sql = 
+      sql"insert into token (account, authToken, accessToken, refreshToken) values ($account, $AuthCode, $AccessToken, $RefreshToken)"
+      .update
+
+    sql.run.transact(xa)
   }
 }
 

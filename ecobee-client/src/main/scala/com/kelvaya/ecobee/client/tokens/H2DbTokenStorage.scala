@@ -3,15 +3,15 @@ package com.kelvaya.ecobee.client.tokens
 import com.kelvaya.ecobee.client.AccountID
 import com.kelvaya.ecobee.client.ClientSettings
 
-import doobie._
 import doobie.h2.H2Transactor
 import doobie.implicits._
 
 import cats.effect.Blocker
-import cats.effect.Resource
 
 import zio.IO
+import zio.Managed
 import zio.Task
+import zio.UIO
 import zio.interop.catz._
 
 import com.typesafe.scalalogging.Logger
@@ -22,14 +22,14 @@ import com.typesafe.scalalogging.Logger
   * @note This storage is not suited for large sites that need high-availability or distributed storage.
   */
 trait H2DbTokenStorage extends TokenStorage {
-  
-  /** The Doobie `Transactor` for executing queries against H2 */
-  val transactor : Transactor[Task]
 
+  /** The Doobie `Transactor` for executing queries against H2 */
+  val transactor : IO[TokenStorageError,H2Transactor[Task]]
+  
   val tokenStorage = new TokenStorage.Service[Any] {
 
-    def getTokens(account: AccountID): IO[TokenStorageError,Tokens] = {
-      val sql = getSql(account).query[Tokens].option.transact(transactor)
+    def getTokens(account: AccountID): IO[TokenStorageError,Tokens] = transactor flatMap { xa =>
+      val sql = getSql(account).query[Tokens].option.transact(xa)
       
       sql
         .mapError { error =>
@@ -46,14 +46,16 @@ trait H2DbTokenStorage extends TokenStorage {
         }
     }
 
-    def storeTokens(account: AccountID, tokens: Tokens): IO[TokenStorageError,Unit] = {
-      storeSql(account, tokens).update.run.transact(transactor)
-        .mapError { e => 
-          H2DbTokenStorage.log.warn(s"Unexpected database error: $e")
-          TokenStorageError.ConnectionError
-        }
-        .map(_ => ())
-    }
+    def storeTokens(account: AccountID, tokens: Tokens): IO[TokenStorageError,Unit] = transactor flatMap { xa =>
+      storeSql(account, tokens).update
+      .run
+      .transact(xa)
+      .mapError { e => 
+        H2DbTokenStorage.log.warn(s"Unexpected database error: $e")
+        TokenStorageError.ConnectionError
+      }
+      .map(_ => ())
+    }      
 
     private def getSql(account : AccountID) = sql"select authToken, accessToken, refreshToken from token where account = ${account.id}"
 
@@ -64,39 +66,31 @@ trait H2DbTokenStorage extends TokenStorage {
 }
 
 
-/** Factory for [[H2DbTokenStorage]]
+/** Helper functions for [[H2DbTokenStorage]] transactors.
   *
-  * Call `H2DbTokenStorage.connect` to create a new instance or `H2DbTokenStorage.initDb` to create a new instance
+  * Call `H2DbTokenStorage.connect` to create a new transactor or `H2DbTokenStorage.initAndConnect` to create a new transactor
   * that points to a new database.
-  * 
   */
 object H2DbTokenStorage {
 
   private val log = Logger[H2DbTokenStorage]
-
-  /** [[TokenStorage]] backed by an H2 database.
-    *
-    * @note This storage is not suited for large sites that need high-availability or distributed storage.
-    *
-    * @param xa The Doobie `Transactor` for executing queries against H2
-    */
-  class Live (private[tokens] val xa : Transactor[Task]) extends H2DbTokenStorage {
-    val transactor: Transactor[zio.Task] = xa
-  }
 
 
   /** Returns a handle to a configured [[H2DbTokenStorage]] 
     *
     * @param settings (implicit) The application global settings
     */
-  def connect(implicit settings : ClientSettings.Service[Any]) : Either[DbError,Resource[Task,H2DbTokenStorage]] = 
-    createConn(false).map(_.map(new Live(_)))
+  def connect(implicit settings : ClientSettings.Service[Any]) : Managed[TokenStorageError,H2Transactor[Task]] = createConn(false)
 
-  /** Returns a handle to a configured [[H2DbTokenStorage]]
+
+  /** Returns a handle to a configured [[H2DbTokenStorage]] after initializing the storage
+    * with the required structure.
     *
+    * @note This will create a new database if necessary.
+    * 
     * @param settings (implicit) The application global settings
     */
-  def initDb(implicit settings : ClientSettings.Service[Any]) : Either[DbError,Resource[Task,H2DbTokenStorage]] = {
+  def initAndConnect(implicit settings : ClientSettings.Service[Any]) : Managed[TokenStorageError,H2Transactor[Task]] = {
     val create = sql"""
     create table token (
       id IDENTITY, 
@@ -109,15 +103,18 @@ object H2DbTokenStorage {
       .update
       .run
 
-    createConn(true).map { _.flatMap { xa => 
-      Resource.liftF { create.transact(xa).map(_ => new Live(xa)) }
-    }}
+    createConn(true) tapM { xa =>
+      create.transact(xa).catchAll { case t => 
+        Logger[H2DbTokenStorage].error(s"Could not initialize H2 database; [${t.getClass.getName}] ${t.getMessage}")
+        IO.fail(TokenStorageError.ConnectionError)
+      }
+    }
   }
 
 
-  private[tokens] def createConn(createIfMissing : Boolean)(implicit s : ClientSettings.Service[Any]) : Either[DbError,Resource[Task,H2Transactor[Task]]] = {
-    parseConnectionString(s.JdbcConnection, createIfMissing) map { connString => 
-      for {
+  private[tokens] def createConn(createIfMissing : Boolean)(implicit s : ClientSettings.Service[Any]) : Managed[TokenStorageError,H2Transactor[Task]] = {
+    val conn = parseConnectionString(s.JdbcConnection, createIfMissing) map { connString => 
+      (for {
         connWaitPool <- doobie.util.ExecutionContexts.fixedThreadPool[Task](s.H2DbThreadPoolSize)
         queryThread  <- Blocker[Task]
         xa           <- H2Transactor.newH2Transactor[Task](
@@ -127,32 +124,38 @@ object H2DbTokenStorage {
           connWaitPool,
           queryThread                                      
         )
-      } yield xa
+      } yield xa).toManagedZIO
     }
+
+    val handledConn : UIO[Managed[TokenStorageError,H2Transactor[Task]]] = conn.fold(
+      e => Managed.fail(e),
+      s => s.catchAll { case t => 
+        Logger[H2DbTokenStorage].error(s"Could not create H2 connection; [${t.getClass.getName}] ${t.getMessage}")
+        Managed.fail(TokenStorageError.ConnectionError)
+      }
+    )
+
+    val connect = handledConn <* UIO(Logger[H2DbTokenStorage].info(s"Connected to H2 database at ${s.JdbcConnection}"))
+    Managed(connect.flatMap(_.reserve))
   }
 
   private val CreateFlag = ";IFEXISTS="
   private val ValidCreateFlag = s"${CreateFlag}TRUE"
-  private[tokens] def parseConnectionString(conn : String, createIfMissing : Boolean) : Either[DbError,String] = {
+  private[tokens] def parseConnectionString(conn : String, createIfMissing : Boolean) : IO[TokenStorageError,String] = {
     val flagPos = conn.indexOf(CreateFlag)
     val flagEnabled = (flagPos > -1)
     lazy val syntaxPos = conn.indexOf(ValidCreateFlag)
     lazy val validFlag = (syntaxPos > -1)
 
     if (!flagEnabled && createIfMissing)          // No flag and we want autocreation
-      Right(conn)                        
+      IO.succeed(conn)                        
     else if (flagEnabled && !validFlag)           // Flag found, but not valid
-      Left(DbError.InvalidConnection(s"Cannot parse connection string, ${conn}; 'IFEXISTS' flag is invalid"))                               
+      IO.fail { Logger[H2DbTokenStorage].error(s"Cannot parse connection string, ${conn}; 'IFEXISTS' flag is invalid"); TokenStorageError.ConnectionError }                               
     else if (flagEnabled && createIfMissing)      // Flag found but we want to create if missing
-      Right(conn.take(syntaxPos) + conn.substring(syntaxPos + ValidCreateFlag.size))
+      IO.succeed(conn.take(syntaxPos) + conn.substring(syntaxPos + ValidCreateFlag.size))
     else if (flagEnabled)                         // Flag found and we want don't want autocreation
-      Right(conn)
+      IO.succeed(conn)
     else                                          // Flag not found and we do not want autocreation
-      Right(s"$conn$ValidCreateFlag")
-  }
-
-  sealed trait DbError extends RuntimeException
-  object DbError {
-    case class InvalidConnection(msg : String) extends DbError
+      IO.succeed(s"$conn$ValidCreateFlag")
   }
 }
