@@ -19,6 +19,7 @@ import com.kelvaya.ecobee.client.tokens.Tokens
 import com.kelvaya.ecobee.client.tokens.TokenStorageError
 
 import com.kelvaya.ecobee.client.tokens.TokenStorage
+import com.kelvaya.ecobee.test.client.TestStorage
 import com.kelvaya.ecobee.test.server._
 
 import spray.json.JsObject
@@ -35,7 +36,7 @@ import scala.util.Random
 
 class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
 
-  def runWithMock[R >: ServerEnv](ts : Option[TokenStorage.Service[Any]] = None)(test : ZIO[R,Throwable,Assertion]) = {
+  def runWithMock[R >: ServerEnv with RequestExecutor with TokenStorage](ts : Option[TokenStorage.Service[Any]] = None)(test : ZIO[R,Throwable,Assertion]) = {
 
     val rt = this.runtime.map { e =>
       new RequestExecutor with TokenStorage with ServerSettings with Clock with ZConsole with System with ZRandom with Blocking {
@@ -46,7 +47,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
         val settings = e.settings
         val system = e.system
         val requestExecutor = mockRequestExec
-        val tokenStorage = ts.getOrElse(spec.runtime.environment.tokenStorage)
+        val tokenStorage = ts.getOrElse(TestStorage.apply(Account).tokenStorage)
       }
     }
     

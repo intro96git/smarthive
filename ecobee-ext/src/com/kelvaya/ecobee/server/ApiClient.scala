@@ -63,6 +63,9 @@ object ApiClient {
 
   /** Default implementation of the Ecobee client API, using the Ecobee client library's [[RequestExecutor]] 
     *  to provide access to the thermostat data.
+    * 
+    * @note This can be used directly, but requires a [[ClientEnv]] to produce results.  The [[Default]] implementation
+    * should be used to integrate that environment.
     */ 
   object Live extends ApiClient.Service[ClientEnv] {
   
@@ -172,6 +175,31 @@ object ApiClient {
                 }
             }
       } yield Registration(t.ecobeePin, t.expires_in, t.interval)
+    }
+  }
+
+
+
+  /** Factory for default implementation of the Ecobee client API, [[Default]]. */ 
+  object Default {
+    def newClient = zio.ZIO.access[ClientEnv] { env => new Default(env) }
+  }
+
+  /** Default implementation of the Ecobee client API, build on [[Live]].
+    * 
+    * @param env The `ClientEnv` environment provided to `Live`.
+    * 
+    * @note To create a new implementation, use [[Default$.newClient]]
+    */ 
+  final class Default private (env : ClientEnv) extends ApiClient {
+    val apiClient = new Service[Any] {
+      import scala.language.implicitConversions
+      implicit def p[E,A](a : ZIO[ClientEnv,E,A]) : ZIO[Any,E,A] = a.provide(env)
+
+      def authorize(account: AccountID): ZIO[Any,ClientError,AuthStatus] = Live.authorize(account)
+      def readThermostat(account: AccountID, id: ThermostatID): ZIO[Any,ClientError,ThermostatStats] = Live.readThermostat(account, id)
+      def readThermostats(account: AccountID): ZIO[Any,ClientError,Iterable[ThermostatStats]] = Live.readThermostats(account)
+      def register(account: AccountID): ZIO[Any,ClientError,Registration] = Live.register(account)
     }
   }
 }

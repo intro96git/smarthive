@@ -3,7 +3,10 @@ import com.kelvaya.ecobee.client.ServiceError
 
 
 /** Error returned when using the [[ApiClient]] */
-sealed trait ClientError extends RuntimeException with Product
+sealed trait ClientError extends RuntimeException with Product {
+  override def getMessage(): String = toString()
+  override def toString(): String = scala.runtime.ScalaRunTime._toString(this)
+}
 
 /** Enumeration of valid [[ClientError]] values */
 object ClientError {

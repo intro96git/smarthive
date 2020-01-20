@@ -23,7 +23,11 @@ object CommonDeps {
   val ScalaMock = ivy"org.scalamock::scalamock:4.4.0"
   
   val AkkaHttpVersion = "10.1.11"
-  
+
+  val CirceVersion = "0.12.3"
+  val CirceCore =  ivy"io.circe::circe-core:$CirceVersion"
+  val CirceGeneric =  ivy"io.circe::circe-generic:$CirceVersion"
+
   val FinchVersion = "0.31.0"
   val Finagle = ivy"com.twitter::finagle-http:19.12.0"
   val Finch = ivy"com.github.finagle::finchx-core:$FinchVersion"
@@ -65,17 +69,11 @@ object `ecobee-client` extends u.CommonSbtModule {
 
   def ivyDeps = Agg(
     Finagle, 
-
     Slf4j, ScalaLogging,
-
     TypesafeConfig,
-
     BetterFiles,
-
     H2, DoobieCore, DoobieH2,
-
     ZIO, ZIOCats, ZIOTwitter,
-
     JodaTime, JodaConvert, ScalaTime
   )
 }
@@ -105,7 +103,9 @@ object `ecobee-ext` extends u.CommonModule {
     TypesafeConfig,
     H2, DoobieCore, DoobieH2,
     ZIO, ZIOCats,
-    JodaTime, JodaConvert, ScalaTime
+    JodaTime, JodaConvert, ScalaTime,
+    Slf4j, Logback, ScalaLogging,
+    CirceCore, CirceGeneric
   )
 }
 
