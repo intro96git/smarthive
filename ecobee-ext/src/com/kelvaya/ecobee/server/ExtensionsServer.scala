@@ -4,6 +4,9 @@ import io.finch._
 import io.finch.circe._
 import io.circe.generic.auto._
 
+import better.files._
+
+import com.twitter.app.Flag
 import com.twitter.finagle.Http
 import com.twitter.server.TwitterServer
 import com.twitter.util.Await
@@ -20,6 +23,9 @@ import com.kelvaya.ecobee.client.tokens.H2DbTokenStorage
 
 /** Main entry point for the Ecobee Extensions server */
 object ExtensionsServer extends TwitterServer with Endpoint.Module[Task] {
+
+  val useFile : Flag[java.io.File] = flag("useFileTokens", "If set, uses a file-based token storage instead of an H2 database.")
+  val initDb : Flag[Boolean] = flag("initDb", "If set, will create a new H2 token storage database if none exists.")
     
   // NB: An implicit runtime is necessary for the ZIO Cats implicits to properly work
   // (Just including the interop will not be enough without this extra implicit)
@@ -27,9 +33,13 @@ object ExtensionsServer extends TwitterServer with Endpoint.Module[Task] {
   
   private lazy val _transactor = {
     implicit val s = _rt.environment.settings 
-    if (args.length > 0 && args(0) == "--init") H2DbTokenStorage.initAndConnect
-    else H2DbTokenStorage.connect
+    if (initDb.isDefined) 
+      H2DbTokenStorage.initAndConnect
+    else 
+      H2DbTokenStorage.connect
   }
+
+  private lazy val _fileToken = useFile.get.map { _.toScala }
 
 
   private val _httpServer = {
@@ -71,7 +81,7 @@ object ExtensionsServer extends TwitterServer with Endpoint.Module[Task] {
       val environment =
         for {
           env     <-  zio.ZIO.environment[ServerEnv]
-          clientE =   createEnv(UIO(xa))
+          clientE <-  _fileToken.map(createEnvUsingFileStore).getOrElse(UIO.succeed(createEnv(UIO(xa))))
           client  <-  ApiClient.Default.newClient.provide(clientE)
           newEnv  =   new ServerSettings with Blocking with ApiClient {
             val apiClient = client.apiClient
