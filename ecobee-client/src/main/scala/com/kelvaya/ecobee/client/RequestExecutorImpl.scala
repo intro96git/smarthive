@@ -63,7 +63,7 @@ trait RequestExecutorImpl extends RequestExecutor {
                   .map(err)
                   .mapError { e => fail(new RuntimeException(s"Bad response: $hr", e), Some(hr)) }
                   .flatMap { r => 
-                    println(s"REQUEST: ${request.headerMap}")
+                    _log.debug(s"FAILED REQUEST: ${request}\n\nHEADERS : ${request.headerMap}\n\nRESPONSE: ${hr.contentString}")
                     ZIO.fail(r)
                    } : IO[E,S]
             }

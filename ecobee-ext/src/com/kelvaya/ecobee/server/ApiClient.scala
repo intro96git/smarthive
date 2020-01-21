@@ -136,7 +136,10 @@ object ApiClient {
               val tempOpt = for {
                 t <- res.thermostatList.headOption
                 r <- t.runtime
-              } yield ThermostatStats(t.name, Temperature(r.rawTemperature))
+              } yield {
+                val temp = Temperature(r.rawTemperature)
+                ThermostatStats(t.name, temp.C, temp.F)
+              }
 
               tempOpt.map(t => Right(t)).getOrElse(Left(ClientError.ThermostatNotFound))
             }
@@ -151,7 +154,10 @@ object ApiClient {
         ThermostatService
           .execute(account, Select(SelectType.Registered, includeRuntime=true))
           .mapError(ClientError.ApiServiceError)
-          .map(_.thermostatList.flatMap(t => t.runtime.map(r => ThermostatStats(t.name, Temperature(r.rawTemperature))))) 
+          .map(_.thermostatList.flatMap(t => t.runtime.map { r => 
+            val temp = Temperature(r.rawTemperature)
+            ThermostatStats(t.name, temp.C, temp.F)
+          })) 
       }
     }
 

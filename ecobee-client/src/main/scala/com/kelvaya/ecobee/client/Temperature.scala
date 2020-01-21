@@ -8,7 +8,7 @@ package com.kelvaya.ecobee.client
   *  @param degrees The temperature, in modified Fahrenheit degrees, as represented within the Ecobee API.
   */
 case class Temperature(degrees : Int) {
-  lazy val C = (F - 32) * 5 / 9
+  lazy val C = (((F - 32) * 50 / 9).round) / 10f
   lazy val F = degrees / 10f
 }
 

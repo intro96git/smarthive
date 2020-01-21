@@ -83,7 +83,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(emptyMockResult))
 
         d            <- ApiClient.Live.readThermostat(Account, new ThermostatID("testtherm"))
-        _            <- d shouldBe ThermostatStats("testtherm", Temperature(temp))
+        _            <- d shouldBe ThermostatStats("testtherm", Temperature(temp).C, Temperature(temp).F)
         
         e1           <- ApiClient.Live.readThermostat(Account, new ThermostatID("testtherm")).flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
         _            <- e1 shouldBe ClientError.ApiServiceError(ApiError(Statuses.NotAuthorized))
@@ -110,7 +110,10 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
         _            =  setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(expectedHttp)).returning(zio.UIO(emptyMockResult))
 
         d1           <- ApiClient.Live.readThermostats(Account)
-        _            <- d1 should contain theSameElementsAs Seq(ThermostatStats("testtherm2", Temperature(temp2)),ThermostatStats("testtherm", Temperature(temp1)))
+        _            <- d1 should contain theSameElementsAs Seq(
+                          ThermostatStats("testtherm2", Temperature(temp2).C, Temperature(temp2).F),
+                          ThermostatStats("testtherm", Temperature(temp1).C, Temperature(temp1).F)
+                        )
         
         e1           <- ApiClient.Live.readThermostats(Account).flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
         _            <- e1 shouldBe ClientError.ApiServiceError(ApiError(Statuses.NotAuthorized))
@@ -171,6 +174,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
                           (store.storeTokens _).expects(PinTestAccount, Tokens(None, Some("12345"), Some("ABCDEF"))).returning(zio.UIO.unit)
                         }
 
+// NEED TO TEST "WAITING FOR AUTH" ==============
 
         d1           <- ApiClient.Live.authorize(PinTestAccount)
         _            <- d1 shouldBe AuthStatus.Succeeded(60)
