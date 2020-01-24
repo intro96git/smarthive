@@ -9,6 +9,7 @@ import com.kelvaya.ecobee.server.ClientError._
 import com.kelvaya.ecobee.server.AuthStatus._
 import com.twitter.finagle.http.Status
 import io.circe._
+import com.typesafe.scalalogging.Logger
 
 
 /** [[Endpoint]] factory for the [[ExtensionsServer]] */
@@ -45,10 +46,20 @@ private final class ExtensionsEndpionts(implicit z : ServerRuntime) extends Endp
   // ########################################################
 
   private def run[A](call : ZIO[ServerEnv,ClientError,Output[A]]) = { () =>
-    val out : ZIO[ServerEnv, Nothing, Output[A]] = call.catchAll {
-      case ConfigurationError   => UIO.succeed(ServiceUnavailable(ConfigurationError))
-      case ThermostatNotFound   => UIO.succeed(NotFound(ThermostatNotFound))
-      case ApiServiceError(err) => UIO.succeed(ServiceUnavailable(err)) 
+    val out : ZIO[ServerEnv, Nothing, Output[A]] = call.catchAll { e =>
+      UIO { Logger[ExtensionsEndpionts].warn(s"Unexpected error received: $e")  } *>
+      UIO.succeed { e match {
+        case ThermostatNotFound       => NotFound(ThermostatNotFound)
+        case Unauthenticated          => io.finch.Unauthorized(Unauthenticated)
+        case AuthorizationExpired     => io.finch.Unauthorized(AuthorizationExpired)
+        case ConfigurationError       => ServiceUnavailable(ConfigurationError)
+        case ApiServiceError(err)     => ServiceUnavailable(err)
+        case ClientError.Unauthorized => io.finch.Unauthorized(ClientError.Unauthorized)
+        case AuthenticationFailure    => io.finch.Unauthorized(AuthenticationFailure)
+        case AuthorizationInProgress  => io.finch.Unauthorized(AuthorizationInProgress)
+        case TokenExpirationFailure   => io.finch.Unauthorized(TokenExpirationFailure)
+      }}
+
     }
     z.unsafeRun(out)
   }

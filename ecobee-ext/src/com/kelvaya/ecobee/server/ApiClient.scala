@@ -80,7 +80,7 @@ object ApiClient {
           .foldM( 
             err => err match {
               case AuthError(AuthError.ErrorCodes.AuthorizationExpired.error, _, _) => zio.IO.succeed(AuthStatus.RegistrationExpired)
-              case e => zio.IO.fail(ClientError.ApiServiceError(e))
+              case e => zio.IO.fail(ClientError.fromServiceError(e))
             },
             _storeTokens
           )
@@ -130,7 +130,7 @@ object ApiClient {
       ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
         ThermostatService
           .execute(account, Select(SelectType.Thermostats(id.id), includeRuntime=true))
-          .mapError(ClientError.ApiServiceError)
+          .mapError(ClientError.fromServiceError)
           .flatMap { res =>
             zio.IO.fromEither {
               val tempOpt = for {
@@ -153,7 +153,7 @@ object ApiClient {
       ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
         ThermostatService
           .execute(account, Select(SelectType.Registered, includeRuntime=true))
-          .mapError(ClientError.ApiServiceError)
+          .mapError(ClientError.fromServiceError)
           .map(_.thermostatList.flatMap(t => t.runtime.map { r => 
             val temp = Temperature(r.rawTemperature)
             ThermostatStats(t.name, temp.C, temp.F)
@@ -167,7 +167,7 @@ object ApiClient {
       val svcTask = ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
         PinService
           .execute
-          .mapError(ClientError.ApiServiceError)
+          .mapError(ClientError.fromServiceError)
       }
 
       for {

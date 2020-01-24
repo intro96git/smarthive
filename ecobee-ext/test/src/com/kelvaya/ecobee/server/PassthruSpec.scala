@@ -86,7 +86,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
         _            <- d shouldBe ThermostatStats("testtherm", Temperature(temp).C, Temperature(temp).F)
         
         e1           <- ApiClient.Live.readThermostat(Account, new ThermostatID("testtherm")).flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
-        _            <- e1 shouldBe ClientError.ApiServiceError(ApiError(Statuses.NotAuthorized))
+        _            <- e1 shouldBe ClientError.Unauthorized
         
         e2           <- ApiClient.Live.readThermostat(Account, new ThermostatID("testtherm")).flip.mapError(_ => fail("Should have failed with no results"))
         _            <- e2 shouldBe ClientError.ThermostatNotFound
@@ -116,7 +116,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
                         )
         
         e1           <- ApiClient.Live.readThermostats(Account).flip.mapError(_ => fail("Should have failed with 'NotAuthorized'"))
-        _            <- e1 shouldBe ClientError.ApiServiceError(ApiError(Statuses.NotAuthorized))
+        _            <- e1 shouldBe ClientError.Unauthorized
         
         d2           <- ApiClient.Live.readThermostats(Account)
         _            <- d2 shouldBe empty
@@ -166,7 +166,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
         _            =  (store.getTokens _).expects(PinTestAccount).returning(zio.IO.fail(TokenStorageError.InvalidAccountError)).twice
 
         e0           <- ApiClient.Live.authorize(PinTestAccount).flip.mapError(e => fail(s"Should have failed with 'InvalidAccount'.  Actual: $e"))
-        _            <- e0 shouldBe ClientError.ApiServiceError(RequestError.TokenAccessError(TokenStorageError.InvalidAccountError))
+        _            <- e0 shouldBe ClientError.Unauthenticated
 
         _            =  inSequence {
                           (store.getTokens _).expects(PinTestAccount).returning(zio.UIO.succeed(Tokens(Some(AuthCode), None, None))).twice
