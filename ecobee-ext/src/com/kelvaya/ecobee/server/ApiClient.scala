@@ -61,7 +61,7 @@ object ApiClient {
   }
 
 
-  /** Default implementation of the Ecobee client API, using the Ecobee client library's [[RequestExecutor]] 
+  /** Default implementation of the Ecobee client API, using the Ecobee client library's [[com.kelvaya.ecobee.client.RequestExecutor RequestExecutor]] 
     *  to provide access to the thermostat data.
     * 
     * @note This can be used directly, but requires a [[ClientEnv]] to produce results.  The [[Default]] implementation

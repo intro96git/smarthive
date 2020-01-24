@@ -1,7 +1,7 @@
 package com.kelvaya.ecobee.server
 
 
-/** Authorization status as returned by [[ApiClient#authorize]] 
+/** Authorization status as returned by [[ApiClient$.Service#authorize]] 
   *
   * All valid values are enumerated in [[AuthStatus$]] 
   */

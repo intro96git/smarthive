@@ -12,7 +12,7 @@ import io.circe._
 import com.typesafe.scalalogging.Logger
 
 
-/** [[Endpoint]] factory for the [[ExtensionsServer]] */
+/** [[Endpoint]] factory for the [[ExtensionsServer$]] */
 object ExtensionsEndpoints {
 
   /** Returns the top-level `Endpoint` containing all endpoints exposed by the server */

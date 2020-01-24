@@ -30,8 +30,8 @@ object ServerSettings {
   /** Default implementation for [[ServerSettings]], using the [[LiveService]] for the service. */
   object Live extends Live
 
-  /** Default implementation for [[ServerSettings.Service]].
-    * This is extends the default client library settings, [[ClientSettings.LiveService]]
+  /** Default implementation for [[Service]].
+    * This is extends the default client library settings, `ClientSettings.LiveService`
     */
   class LiveService extends ClientSettings.LiveService with Service[Any] {
     val ListenPort = ":%d".format(this.config.getInt("ecobee-ext.port"))

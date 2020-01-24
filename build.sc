@@ -96,6 +96,10 @@ object `ecobee-ext` extends u.CommonModule {
   
   def moduleDeps = Seq(`ecobee-client`, util.util)
 
+  def scalaDocOptions = super.scalaDocOptions.map { _ ++ 
+    Seq("-doc-external-doc:out/ecobee-client/compile/dest/classes#file:///home/mike/Projects/ecobee/out/ecobee-client/docJar/dest/javadoc") 
+  }
+
   def ivyDeps = Agg(
     Finch,
     FinchCirce,
