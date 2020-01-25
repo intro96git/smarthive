@@ -126,7 +126,7 @@ object ApiClient {
 
 
 
-    def readThermostat(account : AccountID, id : ThermostatID) : ZIO[ClientEnv,ClientError,ThermostatStats] = {
+    def readThermostat(account : AccountID, id : ThermostatID) : ZIO[ClientEnv,ClientError,ThermostatStats] = tryAuth(account) {
       ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
         ThermostatService
           .execute(account, Select(SelectType.Thermostats(id.id), includeRuntime=true))
@@ -149,7 +149,7 @@ object ApiClient {
 
 
 
-    def readThermostats(account : AccountID) : ZIO[ClientEnv,ClientError,Iterable[ThermostatStats]] = {
+    def readThermostats(account : AccountID) : ZIO[ClientEnv,ClientError,Iterable[ThermostatStats]] = tryAuth(account) {
       ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
         ThermostatService
           .execute(account, Select(SelectType.Registered, includeRuntime=true))
@@ -181,6 +181,38 @@ object ApiClient {
                 }
             }
       } yield Registration(t.ecobeePin, t.expires_in, t.interval)
+    }
+
+
+    // ###################################################################################################################
+    // ###################################################################################################################
+
+    /** Attempts the given effect, `z`, and, if it fails with an authentication error, refresh the account's tokens and try again. */
+    private def tryAuth[R <: ClientEnv,A](a : AccountID)(z : ZIO[R,ClientError,A]) : ZIO[R,ClientError,A] = {
+      z.catchSome {
+        case ClientError.TokenExpirationFailure => refreshToken(a) *> z
+      }
+    }
+
+    /** Refresh the given account's access and refresh tokens */
+    private def refreshToken(a : AccountID) : ZIO[ClientEnv,ClientError,Unit] = {
+      val svcTask = ZIO.access[ClientSettings](_.settings).flatMap { implicit s =>
+        RefreshTokensService
+          .execute(a)
+          .mapError(ClientError.fromServiceError)
+      }
+
+      for {
+        t <- svcTask
+        _ <- ZIO.accessM[TokenStorage] { ts =>
+          ts.tokenStorage
+            .storeTokens(a, Tokens(None, Some(t.access_token), Some(t.refresh_token)))
+            .catchAll { case tse =>
+              Logger[Live.type].error(s"Cannot refresh access tokens; token storage failure: $tse")
+              zio.IO.fail(ClientError.ConfigurationError)
+            }
+        }
+      } yield ()
     }
   }
 

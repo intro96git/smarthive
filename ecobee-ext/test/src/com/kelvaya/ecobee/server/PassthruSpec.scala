@@ -10,6 +10,7 @@ import com.kelvaya.ecobee.client._
 import com.kelvaya.ecobee.client.service.InitialTokensRequest
 import com.kelvaya.ecobee.client.service.PinRequest
 import com.kelvaya.ecobee.client.service.PinResponse
+import com.kelvaya.ecobee.client.service.RefreshTokensRequest
 import com.kelvaya.ecobee.client.service.Select
 import com.kelvaya.ecobee.client.service.SelectType
 import com.kelvaya.ecobee.client.service.ThermostatRequest
@@ -47,7 +48,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
         val settings = e.settings
         val system = e.system
         val requestExecutor = mockRequestExec
-        val tokenStorage = ts.getOrElse(TestStorage.apply(Account).tokenStorage)
+        val tokenStorage = ts.getOrElse(TestStorage(Account).tokenStorage)
       }
     }
     
@@ -60,6 +61,7 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
     toMockFunction4(mockRequestExec.executeRequest[E,S](_ : Request,_ : JsObject=>E,_ : (Throwable, Option[Response]) => E)(_ : JsonFormat[S]))
 
   def requestMatcher[E<:ServiceError,S](expected : Request) = where {(req:Request,_ : JsObject=>E,_ : (Throwable, Option[Response]) => E, _ : JsonFormat[S]) => 
+    // println(s"URI:${req.uri}|${expected.uri}:METHOD:${req.method}|${expected.method}:PARAMS:${req.params}|${expected.params}:CONTENT:${req.content}|${expected.content}:HEADERS:${req.headerMap}|:${expected.headerMap}")
     req.uri == expected.uri && req.method == expected.method && req.params == expected.params && req.content == expected.content && req.headerMap == expected.headerMap
   }
 
@@ -196,7 +198,42 @@ class PassthruSpec extends ZioServerTestSpec with MockFactory { spec =>
   }
 
 
-  it must "support refreshing tokens automatically" in (pending)
+  it must "support refreshing tokens automatically" in {
+    val expectedThermReq = ThermostatRequest(Account, Select(SelectType.Registered, includeRuntime = true))
+    val expectedRefreshReq = new RefreshTokensRequest(Account)
+    val temp = 700
+    val mockThermResult = thermResponse(therm("testtherm", name="testtherm", runtime = Some(thermRuntime(rawTemperature = temp))))
+    val mockRefreshResult = new TokensResponse("NewAccessToken", TokenType.Bearer, 30, "NewRefreshToken", PinScope.SmartWrite)
+    val store = mock[TokenStorage.Service[Any]]
+
+    runWithMock(Some(store)) {
+      
+      inSequence {
+        (store.getTokens _).expects(Account).returning(zio.UIO.succeed(Tokens(None, Some(AccessToken), Some(RefreshToken))))
+        (store.getTokens _).expects(Account).returning(zio.UIO.succeed(Tokens(None, Some("NewAccessToken"), Some("NewRefreshToken"))))
+        (store.getTokens _).expects(Account).returning(zio.UIO.succeed(Tokens(None, Some(AccessToken), Some(RefreshToken))))
+      }
+      
+      for {
+        thermReq1   <- expectedThermReq.createRequest
+        thermReq2   <- expectedThermReq.createRequest
+        refreshReq  <- expectedRefreshReq.createRequest
+        _           =  inSequence {
+                          (store.getTokens _).expects(Account).returning(zio.UIO.succeed(Tokens(None, Some(AccessToken), Some(RefreshToken))))
+                          setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(thermReq1)).returning(zio.IO.fail(ApiError(Statuses.ExpiredToken)))
+                          (store.getTokens _).expects(Account).returning(zio.UIO.succeed(Tokens(None, Some(AccessToken), Some(RefreshToken))))
+                          setupMockRequestExecExpectations[ApiError,TokensResponse].expects(requestMatcher(refreshReq)).returning(zio.UIO.succeed(mockRefreshResult))
+                          (store.storeTokens _).expects(Account, Tokens(None, Some("NewAccessToken"), Some("NewRefreshToken"))).returning(zio.UIO.unit)
+                          (store.getTokens _).expects(Account).returning(zio.UIO.succeed(Tokens(None, Some("NewAccessToken"), Some("NewRefreshToken"))))
+                          setupMockRequestExecExpectations[ApiError,ThermostatResponse].expects(requestMatcher(thermReq2)).returning(zio.UIO(mockThermResult))
+                        }
+        
+        d1          <-  ApiClient.Live.readThermostats(Account)
+        _           <-  d1 shouldBe Seq(ThermostatStats("testtherm", Temperature(temp).C, Temperature(temp).F))
+
+      } yield succeed
+    }
+  }
 
 
   it must "support reading a thermostat's humidity" in (pending)
