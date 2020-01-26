@@ -1,13 +1,22 @@
 package com.kelvaya.ecobee.client
 
-import spray.json.DefaultJsonProtocol
-import spray.json.DefaultJsonProtocol._
 import scala.collection.mutable
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 
 
 /** Implicit conversion for JSON serialization and enumeration of status codes */
 object Status {
-  implicit val StatusFormat = DefaultJsonProtocol.jsonFormat2(Status.apply)
+  implicit object StatusFormat extends RootJsonFormat[Status] {
+    private val default = DefaultJsonProtocol.jsonFormat2(Status.apply)
+    
+    def read(json: JsValue): Status = {
+      val tryStatus = default.read(json)
+      Statuses.All.get(tryStatus.code).getOrElse(tryStatus)
+    }
+    
+    def write(obj: Status): JsValue = default.write(obj)
+  }
 }
 
 /** Status returned by the Ecobee API for a request 
